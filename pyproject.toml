@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "crumb"
+version = "0.1.0"
+description = ""
+authors = ["alta7700 <alta7700@mail.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.11.3"
+flet = "0.7.4"
+tortoise-orm = "0.19.3"
+asyncpg = "0.27.0"
+aerich = "0.7.1"
+
+[tool.aerich]
+tortoise_orm = "configuration.settings.DATABASE"
+location = "./configuration/.migrations"
+src_folder = "./."
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
