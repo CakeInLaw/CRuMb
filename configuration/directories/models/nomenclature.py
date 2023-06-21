@@ -25,7 +25,7 @@ class Nomenclature(Directory):
 
     is_group: bool = fields.BooleanField()
     parent: Union["Nomenclature", fields.ForeignKeyNullableRelation["Nomenclature"]] = fields.ForeignKeyField(
-        'models.Nomenclature', related_name='children', on_delete=fields.RESTRICT, null=True
+        'directories.Nomenclature', related_name='children', on_delete=fields.RESTRICT, null=True
     )
     children: list["Nomenclature"] | fields.BackwardFKRelation["Nomenclature"]
 

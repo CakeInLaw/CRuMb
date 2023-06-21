@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import TYPE_CHECKING, Union
 
 from tortoise import fields
@@ -15,7 +14,7 @@ class Document(BaseDocument):
     """Базовая модель для всех документов движения"""
 
     owner: Union["Employee", fields.ForeignKeyRelation["Employee"]] = fields.ForeignKeyField(
-        'models.Employee', on_delete=fields.RESTRICT
+        'directories.Employee', on_delete=fields.RESTRICT
     )
 
     class Meta:
@@ -26,7 +25,7 @@ class DocumentValue(BaseDocumentValue):
     """Базовая модель списка для документов движения номенклатуры"""
 
     nomenclature: Union["Nomenclature", fields.ForeignKeyRelation["Nomenclature"]] = fields.ForeignKeyField(
-        'models.Nomenclature', on_delete=fields.RESTRICT
+        'directories.Nomenclature', on_delete=fields.RESTRICT
     )
 
     class Meta:

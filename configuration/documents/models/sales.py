@@ -18,7 +18,7 @@ class Sale(Document):
     PREFIX: str = 'ПР'
 
     customer: Union["Customer", fields.ForeignKeyRelation["Customer"]] = fields.ForeignKeyField(
-        'models.Customer', related_name='sales', on_delete=fields.RESTRICT
+        'directories.Customer', related_name='sales', on_delete=fields.RESTRICT
     )
 
     values_list: list["SaleValue"] | fields.BackwardFKRelation["SaleValue"]
@@ -33,7 +33,7 @@ class SaleValue(DocumentValue):
     count: float = fields.FloatField(validators=[MinValueValidator(0)])
     price: float = fields.FloatField(validators=[MinValueValidator(0)])
     doc: Union["Sale", fields.ForeignKeyRelation["Sale"]] = fields.ForeignKeyField(
-        'models.Sale', related_name='values_list', on_delete=fields.CASCADE
+        'documents.Sale', related_name='values_list', on_delete=fields.CASCADE
     )
 
     class Meta:

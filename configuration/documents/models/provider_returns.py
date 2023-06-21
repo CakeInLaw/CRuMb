@@ -18,7 +18,7 @@ class ProviderReturn(Document):
     PREFIX: str = 'ВПТ'
 
     receive: Union["Receive", fields.ForeignKeyRelation["Receive"]] = fields.ForeignKeyField(
-        'models.Receive', related_name='returns', on_delete=fields.RESTRICT
+        'documents.Receive', related_name='returns', on_delete=fields.RESTRICT
     )
 
     values_list: list["ProviderReturnValue"] | fields.BackwardFKRelation["ProviderReturnValue"]
@@ -32,7 +32,7 @@ class ProviderReturnValue(DocumentValue):
     count: float = fields.FloatField(validators=[MinValueValidator(0)])
     price: float = fields.FloatField(validators=[MinValueValidator(0)])
     doc: Union["ProviderReturn", fields.ForeignKeyRelation["ProviderReturn"]] = fields.ForeignKeyField(
-        'models.ProviderReturn', related_name='values_list', on_delete=fields.CASCADE
+        'documents.ProviderReturn', related_name='values_list', on_delete=fields.CASCADE
     )
 
     class Meta:

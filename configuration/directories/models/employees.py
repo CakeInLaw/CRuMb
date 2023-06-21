@@ -17,10 +17,10 @@ class Employee(Directory):
     first_name: str = fields.CharField(max_length=40)
     fathers_name: str = fields.CharField(max_length=40)
     position: Union["Position", fields.ForeignKeyRelation["Position"]] = fields.ForeignKeyField(
-        'models.Position', related_name='employees', on_delete=fields.RESTRICT
+        'directories.Position', related_name='employees', on_delete=fields.RESTRICT
     )
     user: Union["User", fields.OneToOneNullableRelation["User"]] = fields.OneToOneField(
-        'models.User', related_name='employee', on_delete=fields.RESTRICT, null=True
+        'directories.User', related_name='employee', on_delete=fields.RESTRICT, null=True
     )
 
     nomenclature_write_offs_responsible_for: Union[

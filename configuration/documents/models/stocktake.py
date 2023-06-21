@@ -25,7 +25,7 @@ class Stocktake(Document):
 class StocktakeValue(DocumentValue):
     count: float = fields.FloatField()
     doc: Union["Stocktake", fields.ForeignKeyRelation["Stocktake"]] = fields.ForeignKeyField(
-        'models.Stocktake', related_name='values_list', on_delete=fields.CASCADE
+        'documents.Stocktake', related_name='values_list', on_delete=fields.CASCADE
     )
 
     class Meta:

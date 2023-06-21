@@ -18,7 +18,7 @@ class ProductAssembly(Document):
     PREFIX: str = 'СБ'
 
     product: Union["Nomenclature", fields.ForeignKeyRelation["Nomenclature"]] = fields.ForeignKeyField(
-        'models.Nomenclature',
+        'directories.Nomenclature',
     )
     count: float = fields.FloatField(validators=[MinValueValidator(0)])
 
@@ -32,7 +32,7 @@ class ProductAssembly(Document):
 class ProductAssemblyValue(DocumentValue):
     count: float = fields.FloatField(validators=[MinValueValidator(0)])
     doc: Union["ProductAssembly", fields.ForeignKeyRelation["ProductAssembly"]] = fields.ForeignKeyField(
-        'models.ProductAssembly', related_name='values_list', on_delete=fields.CASCADE
+        'documents.ProductAssembly', related_name='values_list', on_delete=fields.CASCADE
     )
 
     class Meta:

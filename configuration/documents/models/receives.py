@@ -19,7 +19,7 @@ class Receive(Document):
     PREFIX: str = 'ПТ'
 
     provider: Union["Provider", fields.ForeignKeyRelation["Provider"]] = fields.ForeignKeyField(
-        'models.Provider', related_name='receives', on_delete=fields.RESTRICT
+        'directories.Provider', related_name='receives', on_delete=fields.RESTRICT
     )
     provider_doc_id: str = fields.CharField(max_length=20)
     provider_doc_dt: datetime = fields.DatetimeField()
@@ -36,7 +36,7 @@ class ReceiveValue(DocumentValue):
     count: float = fields.FloatField(validators=[MinValueValidator(0)])
     price: float = fields.FloatField(validators=[MinValueValidator(0)])
     doc: Union["Receive", fields.ForeignKeyRelation["Receive"]] = fields.ForeignKeyField(
-        'models.Receive', related_name='values_list', on_delete=fields.CASCADE
+        'documents.Receive', related_name='values_list', on_delete=fields.CASCADE
     )
 
     class Meta:

@@ -18,7 +18,7 @@ class CustomerReturn(Document):
     PREFIX: str = 'ВПТ'
 
     sale: Union["Sale", fields.ForeignKeyRelation["Sale"]] = fields.ForeignKeyField(
-        'models.Sale', related_name='returns', on_delete=fields.RESTRICT
+        'documents.Sale', related_name='returns', on_delete=fields.RESTRICT
     )
 
     values_list: list["CustomerReturnValue"] | fields.BackwardFKRelation["CustomerReturnValue"]
@@ -32,7 +32,7 @@ class CustomerReturnValue(DocumentValue):
     count: float = fields.FloatField(validators=[MinValueValidator(0)])
     price: float = fields.FloatField(validators=[MinValueValidator(0)])
     doc: Union["CustomerReturn", fields.ForeignKeyRelation["CustomerReturn"]] = fields.ForeignKeyField(
-        'models.CustomerReturn', related_name='values_list', on_delete=fields.CASCADE
+        'documents.CustomerReturn', related_name='values_list', on_delete=fields.CASCADE
     )
 
     class Meta:

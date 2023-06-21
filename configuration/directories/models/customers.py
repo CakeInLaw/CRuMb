@@ -17,7 +17,7 @@ class Customer(Directory):
 
     customer_locations: list["CustomerLocations"] | fields.BackwardFKRelation["CustomerLocations"]
     price_group: Union["PriceGroup", fields.ForeignKeyNullableRelation["PriceGroup"]] = fields.ForeignKeyField(
-        'models.PriceGroup', related_name='customers', on_delete=fields.RESTRICT
+        'directories.PriceGroup', related_name='customers', on_delete=fields.RESTRICT
     )
 
     class Meta:

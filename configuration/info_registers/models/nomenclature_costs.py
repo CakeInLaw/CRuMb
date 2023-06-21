@@ -17,7 +17,7 @@ __all__ = ["NomenclatureCost"]
 class NomenclatureCost(InfoRegister):
     id: int = fields.BigIntField(pk=True)
     nomenclature: Union["Nomenclature", fields.ForeignKeyRelation["Nomenclature"]] = fields.ForeignKeyField(
-        'models.Nomenclature', related_name='cost', on_delete=fields.RESTRICT
+        'directories.Nomenclature', related_name='cost', on_delete=fields.RESTRICT
     )
     document_ref: Optional[str] = fields.CharField(max_length=DOCUMENT_REF_LEN, null=True)
     cost: float = fields.FloatField(validators=[MinValueValidator(0)])
