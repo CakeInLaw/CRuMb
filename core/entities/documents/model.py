@@ -3,7 +3,7 @@ from typing import Union
 
 from tortoise import fields
 
-from core.base.model import BaseModel
+from core.base_model import BaseModel
 
 
 __all__ = ["Document", "DocumentValue"]

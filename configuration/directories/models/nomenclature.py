@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Union, Optional
 
 from tortoise import fields
 
-from core.directories.model import Directory
+from core.entities.directories.model import Directory
 from configuration.enums import NomenclatureTypes, NomenclatureUnits
 
 if TYPE_CHECKING:

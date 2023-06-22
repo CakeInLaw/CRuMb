@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Union
 
 from tortoise import fields
-from core.documents.model import Document as BaseDocument, DocumentValue as BaseDocumentValue
+from core.entities.documents.model import Document as BaseDocument, DocumentValue as BaseDocumentValue
 
 if TYPE_CHECKING:
     from configuration.directories.models import Employee, Nomenclature

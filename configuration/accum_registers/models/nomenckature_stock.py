@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Union
 
 from tortoise import fields
 
-from core.accum_registers.model import AccumRegister, AccumRegisterResult
+from core.entities.accum_registers import AccumRegister, AccumRegisterResult
 from configuration.constants import DOCUMENT_REF_LEN
 
 

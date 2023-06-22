@@ -1,4 +1,4 @@
-from core.base.model import BaseModel
+from core.base_model import BaseModel
 
 
 __all__ = ["AccumRegister", "AccumRegisterResult"]

@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Union
 
 from tortoise import fields
-from core.directories.model import Directory
+from core.entities.directories.model import Directory
 
 if TYPE_CHECKING:
     from configuration.directories.models import Customer, User
@@ -24,4 +24,3 @@ class CustomerLocations(Directory):
     class Meta:
         table = "dir__customer_locations"
         ordering = ('id',)
-        app = 'directories'
