@@ -64,9 +64,17 @@ class Repository(Generic[MODEL, PK]):
     select_related: tuple[str]
     prefetch_related: tuple[str]
 
-    def __init__(self, by: str = '', extra: dict[str, Any] = None):
+    def __init__(
+            self,
+            by: str = '',
+            extra: dict[str, Any] = None,
+            select_related: tuple[str] = (),
+            prefetch_related: tuple[str] = (),
+    ):
         self.by = by
         self.extra = extra or {}
+        self.select_related = select_related
+        self.prefetch_related = prefetch_related
 
     def get_queryset(self):
         query = self.model.all()
@@ -171,7 +179,7 @@ class Repository(Generic[MODEL, PK]):
 
             for t in ('o2o', 'fk'):
                 t: Literal["o2o", "fk"]
-                for field_name, value in {sorted_data[t]}:
+                for field_name, value in sorted_data[t]:
                     direct_related[field_name] = await self.repository_of(field_name)(
                         by=f'{self.by}__{self.model.__name__}',
                         extra=self.extra
