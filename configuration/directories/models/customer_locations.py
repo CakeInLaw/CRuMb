@@ -1,16 +1,17 @@
 from typing import TYPE_CHECKING, Union
 
 from tortoise import fields
+
 from core.entities.directories.model import Directory
 
 if TYPE_CHECKING:
     from configuration.directories.models import Customer, User
 
 
-__all__ = ["CustomerLocations"]
+__all__ = ["CustomerLocation"]
 
 
-class CustomerLocations(Directory):
+class CustomerLocation(Directory):
     id: int = fields.IntField(pk=True)
     order: int = fields.SmallIntField()
     customer: Union["Customer", fields.ForeignKeyRelation["Customer"]] = fields.ForeignKeyField(

@@ -14,7 +14,7 @@ from .content import Content
 from .layout import Header, Sidebar
 
 if TYPE_CHECKING:
-    from core.resource import Resource
+    from .resource import Resource
 
 
 class CRuMbAdmin(UserControl):

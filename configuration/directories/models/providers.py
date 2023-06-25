@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from tortoise import fields
+
 from core.entities.directories.model import Directory
 
 if TYPE_CHECKING:

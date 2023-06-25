@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Union
 
 from tortoise import fields
 
-from core.entities.accum_registers import AccumRegister, AccumRegisterResult
+from core.entities.accum_registers.model import AccumRegister, AccumRegisterResult
 from configuration.constants import DOCUMENT_REF_LEN
 
 
@@ -23,6 +23,7 @@ class NomenclatureStock(AccumRegister):
     count: float = fields.FloatField()
     dt: datetime = fields.DatetimeField()
     commit: str = fields.TextField()
+
     class Meta:
         table = "accum_register__nomenclature_stock"
 

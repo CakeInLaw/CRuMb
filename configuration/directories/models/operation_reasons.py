@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING
 
 from tortoise import fields
-from core.entities.directories.model import Directory
 
+from core.entities.directories.model import Directory
 from configuration.enums import Operations
 
 if TYPE_CHECKING:

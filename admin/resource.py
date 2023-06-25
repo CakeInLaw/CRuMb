@@ -1,21 +1,23 @@
 from typing import TYPE_CHECKING, Generic, TypeVar, Type
 
+from core.repository import Repository
 from .lists import ListView
 from .forms import FormView
 
 if TYPE_CHECKING:
-    from .base_model import BaseModel
+    from .app import CRuMbAdmin
 
 
-MODEL = TypeVar['MODEL', BaseModel]
+REPOSITORY = TypeVar('REPOSITORY', bound=Repository)
 
 
-class Resource(Generic[MODEL]):
-    model: Type[MODEL]
-    current_instance: MODEL
+class Resource(Generic[REPOSITORY]):
+    repo: Type[REPOSITORY]
+    ru_name: str
+    app: "CRuMbAdmin"
 
-    def __init__(self, instance: MODEL) -> None:
-        self.current_instance = instance
+    def __init__(self, app: "CRuMbAdmin") -> None:
+        self.app = app
 
     def get_list(self) -> ListView:
         pass
@@ -28,3 +30,6 @@ class Resource(Generic[MODEL]):
 
     def get_edit_form(self):
         return self._get_form(create=False)
+
+    def delete(self):
+        pass
