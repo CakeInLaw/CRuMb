@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS "accum_register__nomenclature_stock" (
     "document_ref" VARCHAR(20) NOT NULL,
     "count" DOUBLE PRECISION NOT NULL,
     "dt" TIMESTAMPTZ NOT NULL,
+    "commit" TEXT NOT NULL,
     "nomenclature_id" BIGINT NOT NULL REFERENCES "dir__nomenclature" ("id") ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS "accum_register__nomenclature_stock__result" (

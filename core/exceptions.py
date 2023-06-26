@@ -1,20 +1,20 @@
 from typing import Union, Type, Self, Sequence, Optional
 
 
-class ItemNotFound(Exception):
+class ItemNotFound(ValueError):
     """Выбрасывается Repository.get_one() если объект не найден"""
 
 
-class UnexpectedDataKey(Exception):
+class UnexpectedDataKey(ValueError):
     """Выбрасывается, если в фукнцию создния или изменения элемента прилетает поле, которого там не может быть"""
 
 
-class InvalidType(Exception):
+class InvalidType(ValueError):
     """Выбрасывается, когда в репозиторий передано значение не того типа"""
 
 
-class NoDefaultRepository(Exception):
-    """Выбрасывается, когда неродивый программист пытается создать через объект (передав словарь) модель данных,
+class NoDefaultRepository(AttributeError):
+    """Выбрасывается, когда неродивый программист пытается работать со связанной моделью,
     которая не имеет репозитория по умолчанию"""
 
 
@@ -112,7 +112,10 @@ class ObjectErrors(Exception):
         return errors
 
     def add(self, field: str, error: Union[Type["FieldError"], "FieldError", "ObjectErrors"]) -> Self:
-        self.errors[field] = error
+        if field == '__root__':
+            self.root = error
+        else:
+            self.errors[field] = error
         return self
 
     def merge(self, obj_error: "ObjectErrors") -> Self:

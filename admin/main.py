@@ -18,7 +18,31 @@ if __name__ == '__main__':
     asyncio.get_event_loop().run_until_complete(
         Tortoise.init(config=settings.DATABASE)
     )
+    ##
+    from core.repository import Repository, default_repository
+    from configuration.directories.models import CustomerLocation, Customer, PriceGroup
 
+    @default_repository
+    class CustomerLocationRepository(Repository):
+        model = CustomerLocation
+
+    @default_repository
+    class CustomerRepository(Repository):
+        model = Customer
+
+    @default_repository
+    class PriceGroupRepository(Repository):
+        model = PriceGroup
+    print(PriceGroupRepository.describe()['back_fk']['customers'].__dict__)
+
+    # async def create():
+    #     price_group = await PriceGroupRepository().create({'name': 'Первая'})
+    #     print(await CustomerRepository().create({'name': 'ИП Тамразов', 'register_address': '', 'price_group': {'name': 'вторая'}}))
+    #
+    # asyncio.get_event_loop().run_until_complete(
+    #     create()
+    # )
+    ##
     ft.app(
         target=main,
         view=ft.WEB_BROWSER,
