@@ -51,9 +51,9 @@ CREATE TABLE IF NOT EXISTS "dir__price_groups" (
 );
 CREATE TABLE IF NOT EXISTS "dir__customers" (
     "id" SERIAL NOT NULL PRIMARY KEY,
-    "name" VARCHAR(50) NOT NULL,
+    "name" VARCHAR(50) NOT NULL UNIQUE,
     "register_address" VARCHAR(200) NOT NULL,
-    "price_group_id" INT NOT NULL REFERENCES "dir__price_groups" ("id") ON DELETE RESTRICT
+    "price_group_id" INT REFERENCES "dir__price_groups" ("id") ON DELETE RESTRICT
 );
 CREATE TABLE IF NOT EXISTS "dir__providers" (
     "id" SERIAL NOT NULL PRIMARY KEY,

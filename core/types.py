@@ -1,4 +1,5 @@
-from typing import TypeVar, Any, Literal, TypedDict
+from dataclasses import dataclass, field
+from typing import TypeVar, Any, TypedDict
 from uuid import UUID
 
 from tortoise import fields
@@ -28,7 +29,8 @@ class M2MData(TypedDict, total=False):
     remove: list[PK]
 
 
-class SortedData(TypedDict):
+@dataclass
+class SortedData:
     db_field: dict[str, Any]
     o2o: dict[str, DATA]
     o2o_pk: dict[str, int]
@@ -39,13 +41,14 @@ class SortedData(TypedDict):
     m2m: dict[str, M2MData]
 
 
-class RepositoryDescription(TypedDict):
-    _all: dict[str, FieldTypes]
-    db_field: dict[str, fields.Field]
-    o2o: dict[str, fields.relational.OneToOneFieldInstance]
-    o2o_pk: dict[str, FK_TYPE]
-    fk: dict[str, fields.relational.ForeignKeyFieldInstance]
-    fk_pk: dict[str, FK_TYPE]
-    back_o2o: dict[str, fields.relational.BackwardOneToOneRelation]
-    back_fk: dict[str, fields.relational.BackwardFKRelation]
-    m2m: dict[str, fields.relational.ManyToManyFieldInstance]
+@dataclass
+class RepositoryDescription:
+    all: dict[str, FieldTypes] = field(default_factory=dict)
+    db_field: dict[str, fields.Field] = field(default_factory=dict)
+    o2o: dict[str, fields.relational.OneToOneFieldInstance] = field(default_factory=dict)
+    o2o_pk: dict[str, FK_TYPE] = field(default_factory=dict)
+    fk: dict[str, fields.relational.ForeignKeyFieldInstance] = field(default_factory=dict)
+    fk_pk: dict[str, FK_TYPE] = field(default_factory=dict)
+    back_o2o: dict[str, fields.relational.BackwardOneToOneRelation] = field(default_factory=dict)
+    back_fk: dict[str, fields.relational.BackwardFKRelation] = field(default_factory=dict)
+    m2m: dict[str, fields.relational.ManyToManyFieldInstance] = field(default_factory=dict)

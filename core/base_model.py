@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Type, Callable, Any, Optional
+from typing import TYPE_CHECKING, Type, Optional
 
 from tortoise import Model
 
@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from .repository import Repository
 
 
-__all__ = ["BaseModel", "get_field_param", "max_len_of", "default_of"]
+__all__ = ["BaseModel"]
 
 
 class BaseModel(Model):
@@ -18,15 +18,3 @@ class BaseModel(Model):
 
     class Meta:
         abstract = True
-
-
-def get_field_param(model: Type[BaseModel], field_name: str, field_param: str):
-    return getattr(model._meta.fields_map[field_name], field_param)
-
-
-def max_len_of(model: Type[BaseModel]) -> Callable[[str], int]:
-    return lambda field_name: get_field_param(model, field_name, 'max_length')
-
-
-def default_of(model: Type[BaseModel]) -> Callable[[str], Any]:
-    return lambda field_name: get_field_param(model, field_name, 'default')

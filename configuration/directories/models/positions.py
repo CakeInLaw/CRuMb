@@ -2,10 +2,10 @@ from typing import TYPE_CHECKING
 
 from tortoise import fields
 
-from core.entities.directories.model import Directory
+from core.entities.directories import Directory
 
 if TYPE_CHECKING:
-    from configuration.directories.models import Employee
+    from . import Employee
 
 
 __all__ = ["Position"]
