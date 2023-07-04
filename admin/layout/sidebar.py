@@ -25,27 +25,28 @@ class Sidebar(Container):
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
             animate=100,
         )
+
         self.app = app
-        self.items = [
-            MenuItem(
-                icon=resource.ICON,
-                label=resource.name_plural,
-                destination=path,
-                app=self.app
-            )
-            for path, resource in self.app.all_resources().items()
-        ]
-        self.active = None
         self.btn_pin = BtnPin(pinned=False, sidebar=self)
+        self.children = []
+        for group_cls in self.app.menu_groups:
+            group = group_cls(app)
+            if group.children:
+                self.children.append(group)
+
         self.content = Column([
             Container(
-                content=Container(Column(self.items, scroll=ft.ScrollMode.ADAPTIVE, expand=True), padding=4),
+                content=Column(self.children, scroll=ft.ScrollMode.ADAPTIVE, expand=True, spacing=0),
                 on_hover=self.toggle_size,
-                expand=True
+                expand=True,
+                animate=100
             ),
             self.btn_pin
-        ])
+        ], spacing=0)
+
+        self.active = None
         self.expanded = False
+        self.menu_items = self.collect_menu_items()
 
     async def did_mount_async(self):
         await self.set_suitable_active()
@@ -57,14 +58,14 @@ class Sidebar(Container):
 
     def minimize(self):
         self.width = 50
-        for item in self.items:
-            item.minimize()
+        for child in self.children:
+            child.minimize()
         self.btn_pin.minimize()
 
     def maximize(self):
-        self.width = 200
-        for item in self.items:
-            item.maximize()
+        self.width = 250
+        for child in self.children:
+            child.maximize()
         self.btn_pin.maximize()
 
     @property
@@ -87,12 +88,15 @@ class Sidebar(Container):
         await self.update_async()
 
     async def set_suitable_active(self):
-        route: str = self.app.page.route
-        if not route.startswith('/'):
-            route = '/' + route
-        if route.count('/') == 1:
-            find = route
-        else:
-            find = route[:route.find('/', 1)]
-        suitable_items = list(filter(lambda x: x.destination == find, self.items))
+        q = self.app.page.query
+        q()
+        route = q.path[1:]
+        find = route if '/' in route else route[:route.find('/', 1)]
+        suitable_items = list(filter(lambda x: x.entity == find, self.menu_items))
         await self.set_active(suitable_items[0] if suitable_items else None)
+
+    def collect_menu_items(self) -> list[MenuItem]:
+        result = []
+        for group in self.children:
+            result.extend(group.collect_menu_items())
+        return result

@@ -1,8 +1,9 @@
-from typing import Optional, Any
+from typing import Optional
 
 from flet import Control, UserControl, Column, Row
 
 from admin.widgets.inputs.user_input import UserInputWidget, UserInput
+from core.base_model import BaseModel
 from core.exceptions import ObjectErrors
 from .schema import FormSchema, InputGroup
 
@@ -16,13 +17,13 @@ class Form(UserControl):
     fields_map: FIELDS_MAP
     action_bar: Optional[Control]
     submit_bar: Optional[Control]
-    initial_data: Optional[dict[str, Any]]
+    initial_data: Optional[BaseModel]
 
     def __init__(
             self,
             action_bar: Optional[Control] = None,
             submit_bar: Optional[Control] = None,
-            initial_data: dict[str, Any] = None
+            initial_data: Optional[BaseModel] = None
     ):
         super().__init__()
         self.fields_map = {}

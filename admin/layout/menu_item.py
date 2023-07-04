@@ -1,55 +1,53 @@
 from typing import TYPE_CHECKING, Optional
 
-from flet import Container, Row, Text, Icon
+from flet import ListTile, Text, Icon, ControlEvent
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
     from .menu_group import MenuGroup
 
 
-class MenuItem(Container):
+class MenuItem(ListTile):
 
     def __init__(
             self,
             icon: str,
             label: str,
-            destination: str,
+            entity: str,
             app: "CRuMbAdmin",
             parent: Optional["MenuGroup"] = None,
     ):
         super().__init__(
+            dense=True,
             on_click=self.go_link,
-            border_radius=15,
-            padding=10,
+            on_long_press=self.open_in_new_tab,
         )
-        self.destination = destination
+        self.entity = entity
         self.app = app
-        self.active = False
         self.parent = parent
-        self.icon = Icon(icon, size=20)
-        self.text = Text(label)
-        self.content = Row([
-            self.icon,
-            self.text
-        ])
+        self.leading = Icon(icon, size=24)
+        self.title = Text(label, no_wrap=True, size=14)
 
-    async def go_link(self, e):
-        await self.app.page.go_async(self.destination)
+    async def go_link(self, e: ControlEvent):
+        await self.app.page.go_async(self.app.create_path(self.entity))
         if self.app.sidebar.active is not self:
             await self.app.sidebar.set_active(self)
 
+    async def open_in_new_tab(self, e: ControlEvent):
+        await self.app.page.launch_url_async(self.app.create_url(self.entity))
+
     def activate(self):
-        self.bgcolor = 'red'
+        self.selected = True
         if self.parent:
             self.parent.activate()
 
     def deactivate(self):
-        self.bgcolor = None
+        self.selected = False
         if self.parent:
             self.parent.deactivate()
 
     def minimize(self):
-        self.text.visible = False
+        self.title.visible = False
 
     def maximize(self):
-        self.text.visible = True
+        self.title.visible = True

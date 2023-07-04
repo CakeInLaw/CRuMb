@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from flet import ListTile, Text, Icon, icons
+from flet import ListTile, Text, Icon, icons, TextOverflow
 
 if TYPE_CHECKING:
     from .sidebar import Sidebar
@@ -12,8 +12,8 @@ class BtnPin(ListTile):
             on_click=self.click_handler,
             on_long_press=self.long_click_handler
         )
-        self.leading = Icon()
-        self.title = Text(overflow='clip', no_wrap=True)
+        self.leading = Icon(size=24)
+        self.title = Text(overflow=TextOverflow.CLIP, no_wrap=True, size=14)
         self.pinned = pinned
         self.sidebar = sidebar
 

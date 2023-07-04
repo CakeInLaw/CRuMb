@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from flet import Page, UserControl, Container
+from flet import Page, UserControl, Container, TemplateRoute
 import flet as ft
 
 if TYPE_CHECKING:
@@ -31,20 +31,25 @@ class Content(UserControl):
         self.app.page.on_route_change = self.on_route_change
 
     async def did_mount_async(self):
-        await self.sync_with_route(self.page.route)
+        await self.sync_with_route()
         await self.root.update_async()
 
     def build(self):
         return self.root
 
     async def on_route_change(self, e: ft.RouteChangeEvent):
-        await self.sync_with_route(e.route)
+        await self.sync_with_route()
         await self.root.update_async()
 
-    async def sync_with_route(self, route: str):
-        print(route)
-        resource = self.app.find_resource(route)
-        if not resource:
-            self.root.content = ft.Text('Не найдена нужная страница')
+    async def sync_with_route(self):
+        q = self.app.page.query
+        q()
+        path = q.path[1:]
+        query = q.to_dict
+        if path == '':
+            return
+        if '/' in path:
+            entity, method, *_ = path.split('/')
         else:
-            self.root.content = await resource.datagrid()
+            entity, method = path, ''
+        self.root.content = await self.app.open(entity, method, **query)
