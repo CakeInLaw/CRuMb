@@ -7,7 +7,7 @@ from tortoise import models, fields
 from tortoise.queryset import QuerySet
 from tortoise.transactions import in_transaction
 
-from .base_model import BaseModel
+from core.orm.base_model import BaseModel
 from .constants import EMPTY_TUPLE
 from .exceptions import ItemNotFound, ObjectErrors, UnexpectedDataKey, FieldError, NotUnique, NotUniqueTogether, \
     FieldRequired, NotFoundFK, RequiredMissed, InvalidType, AnyFieldError, NoDefaultRepository, ListFieldError
@@ -763,10 +763,16 @@ class Repository(Generic[MODEL]):
 
     @classmethod
     def get_field_instance(cls, field_name: str) -> fields.Field:
-        field_type = cast(str, cls.get_field_type(field_name).value)
-        if field_type in RepositoryDescription.__annotations__:
-            return getattr(cls.describe(), field_type)[field_name]
-        return cls.describe().db_field[field_name]
+        _, field_instance = cls.get_field_type_and_instance(field_name)
+        return field_instance
+
+    @classmethod
+    def get_field_type_and_instance(cls, field_name: str) -> tuple[FieldTypes, fields.Field]:
+        field_type = cls.get_field_type(field_name)
+        field_type_value = cast(str, field_type.value)
+        if field_type_value in RepositoryDescription.__annotations__:
+            return getattr(cls.describe(), field_type_value)[field_name]
+        return field_type, cls.describe().db_field[field_name]
 
     @classmethod
     def field_is_required(cls, field: fields.Field) -> bool:

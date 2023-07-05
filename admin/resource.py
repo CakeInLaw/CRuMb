@@ -2,11 +2,12 @@ from typing import TYPE_CHECKING, Generic, Type, Callable, Coroutine
 
 from flet import Control, Text, icons
 
-from admin.forms.model_form import model_form_factory
+from admin.forms.model_form import PRIMITIVE
+from core.orm.base_model import BaseModel
 from core.exceptions import ItemNotFound
 from core.repository import REPOSITORY
 from admin.datagrid import DatagridView
-from admin.forms import Form
+from admin.forms import Form, ModelForm
 from core.types import PK
 
 if TYPE_CHECKING:
@@ -22,10 +23,12 @@ class Resource(Generic[REPOSITORY]):
     app: "CRuMbAdmin"
     ICON = icons.SPORTS_GYMNASTICS
     SELECTED_ICON = None
-    datagrid_columns: list[str]
     present_in: tuple["MenuGroup"] = ()
-    create_form = None
-    edit_form = None
+
+    datagrid_columns: list[str]
+    form_primitive = None
+    create_form_primitive = None
+    edit_form_primitive = None
 
     def __init__(self, app: "CRuMbAdmin") -> None:
         self.app = app
@@ -52,15 +55,14 @@ class Resource(Generic[REPOSITORY]):
         dg.pagination.rebuild()
         return dg
 
-    def _get_form(self, *, create: bool) -> Type[Form]:
-        return model_form_factory(self.repository)
+    def _get_form(self, *, obj: BaseModel = None, primitive: PRIMITIVE = None) -> Form:
+        return ModelForm(self.repository, lang=self.app.LANG, primitive=primitive, initial_data=obj)
 
-    async def get_create_form(self) -> Control:
-        form = self.create_form or self._get_form(create=True)
-        return form()
+    async def get_create_form(self) -> Control | Form:
+        primitive = self.create_form_primitive or self.form_primitive
+        return self._get_form(primitive=primitive)
 
-    async def get_edit_form(self, pk: PK) -> Control:
-        form = self.edit_form or self._get_form(create=False)
+    async def get_edit_form(self, pk: PK) -> Control | Form:
         try:
             obj = await self.repository(
                 by='admin',
@@ -68,7 +70,8 @@ class Resource(Generic[REPOSITORY]):
             ).get_one(pk)
         except ItemNotFound:
             return Text('Объект не найден')
-        return form(initial_data=obj)
+        primitive = self.edit_form_primitive or self.form_primitive
+        return self._get_form(obj=obj, primitive=primitive)
 
     async def delete(self):
         pass
@@ -77,11 +80,16 @@ class Resource(Generic[REPOSITORY]):
     def entity(cls) -> str:
         return cls.repository.entity()
 
-    @property
-    def methods(self) -> dict[str, Callable[[...], Coroutine]]:
+    def _methods(self):
         return {
             '': self.datagrid,
             'list': self.datagrid,
             'create': self.get_create_form,
             'edit': self.get_edit_form,
         }
+
+    @property
+    def methods(self) -> dict[str, Callable[[...], Coroutine]]:
+        if not hasattr(self, '_cached_methods'):
+            setattr(self, '_cached_methods', self._methods())
+        return getattr(self, '_cached_methods')

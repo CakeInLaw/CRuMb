@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Union
 
 from tortoise import fields
+from core.orm import fields as orm_fields
 
 from core.entities.accum_registers import AccumRegister, AccumRegisterResult
 from configuration.constants import DOCUMENT_REF_LEN
@@ -19,8 +20,8 @@ class NomenclatureStock(AccumRegister):
     nomenclature: Union["Nomenclature", fields.ForeignKeyRelation["Nomenclature"]] = fields.ForeignKeyField(
         'directories.Nomenclature', related_name='stock_history', on_delete=fields.CASCADE
     )
-    document_ref: str = fields.CharField(max_length=DOCUMENT_REF_LEN)
-    count: float = fields.FloatField()
+    document_ref: str = orm_fields.CharField(max_length=DOCUMENT_REF_LEN)
+    count: float = orm_fields.FloatField()
     dt: datetime = fields.DatetimeField()
     commit: str = fields.TextField()
 
@@ -33,7 +34,7 @@ class NomenclatureStockResult(AccumRegisterResult):
     nomenclature: Union["Nomenclature", fields.OneToOneRelation["Nomenclature"]] = fields.OneToOneField(
         'directories.Nomenclature', related_name='stock', on_delete=fields.CASCADE
     )
-    count: float = fields.FloatField()
+    count: float = orm_fields.FloatField()
     dt: datetime = fields.DatetimeField(auto_now=True)
 
     class Meta:

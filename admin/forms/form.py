@@ -3,7 +3,7 @@ from typing import Optional
 from flet import Control, UserControl, Column, Row
 
 from admin.widgets.inputs.user_input import UserInputWidget, UserInput
-from core.base_model import BaseModel
+from core.orm.base_model import BaseModel
 from core.exceptions import ObjectErrors
 from .schema import FormSchema, InputGroup
 
@@ -13,7 +13,7 @@ FIELDS_MAP = dict[str, UserInputWidget]
 
 class Form(UserControl):
 
-    form_schema: FormSchema = None
+    schema: FormSchema = None
     fields_map: FIELDS_MAP
     action_bar: Optional[Control]
     submit_bar: Optional[Control]
@@ -21,14 +21,10 @@ class Form(UserControl):
 
     def __init__(
             self,
-            action_bar: Optional[Control] = None,
-            submit_bar: Optional[Control] = None,
             initial_data: Optional[BaseModel] = None
     ):
         super().__init__()
         self.fields_map = {}
-        self.action_bar = action_bar
-        self.submit_bar = submit_bar
         self.initial_data = initial_data
 
     def build(self):
@@ -60,16 +56,23 @@ class Form(UserControl):
                 controls.append(widget)
         return group.to_control(controls)
 
-    def get_action_bar(self):
-        return self.action_bar
+    def get_action_bar(self) -> Control:
+        pass
 
-    def get_submit_bar(self):
-        return self.submit_bar
+    def get_submit_bar(self) -> Control:
+        pass
 
     def get_form_schema(self) -> FormSchema:
-        assert self.form_schema
-        return self.form_schema
+        assert self.schema
+        return self.schema
 
     async def set_object_errors(self, err: ObjectErrors):
         for field, e in err.to_error().items():
             await self.fields_map[field].set_error(e['msg'])
+
+    @property
+    def dirty_data(self):
+        return {name: field.final_value() for name, field in self.fields_map.items()}
+
+    def cleaned_data(self):
+        return self.dirty_data

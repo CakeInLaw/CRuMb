@@ -10,7 +10,6 @@ class FieldTypes(StrEnum):
     STR = 'str'
     TEXT = 'text'
     BOOL = 'bool'
-    SELECT = 'select'
     ENUM = 'enum'
     DATE = 'date'
     DATETIME = 'datetime'

@@ -3,8 +3,9 @@ from typing import TypeVar, Any, TypedDict
 from uuid import UUID
 
 from tortoise import fields
+from core.orm import fields as orm_fields
 
-from .base_model import BaseModel
+from core.orm.base_model import BaseModel
 from .enums import FieldTypes
 from .filters import Filter
 
@@ -15,7 +16,7 @@ SORT = list[str]
 FILTERS = list[Filter]
 DATA = dict[str, Any]
 FK_TYPE = fields.IntField | fields.SmallIntField | fields.BigIntField |\
-          fields.UUIDField | fields.CharField | fields.Field
+          fields.UUIDField | orm_fields.CharField | fields.Field
 
 
 class BackFKData(TypedDict, total=False):

@@ -5,7 +5,7 @@ from flet import UserControl, Column, Text, \
     DataTable, DataColumn, DataRow, DataCell
 
 from admin.datagrid.pagination import Pagination
-from core.base_model import BaseModel
+from core.orm.base_model import BaseModel
 from core.enums import FieldTypes
 from core.repository import Repository
 from core.types import SORT, FILTERS

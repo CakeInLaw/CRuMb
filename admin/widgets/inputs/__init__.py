@@ -6,3 +6,4 @@ from .date_input import DateInputWidget, DateInput
 from .datetime_input import DatetimeInputWidget, DatetimeInput
 from .checkbox import CheckboxWidget, Checkbox
 from .enum_choice import EnumChoiceWidget, EnumChoice
+from .user_input import UserInput

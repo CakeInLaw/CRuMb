@@ -32,7 +32,8 @@ class EnumChoiceWidget(UserInputWidget[Enum], dropdown.Dropdown):
     def _set_initial_value(self, value: Optional[Enum]) -> None:
         self.value = None if value is None else value.value
 
-    def to_value(self) -> Optional[Enum]:
+    @property
+    def final_value(self) -> Optional[Enum]:
         return None if self.value == EMPTY else self.enum_type(self.value)
 
 

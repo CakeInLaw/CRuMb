@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Union
 
 from tortoise import fields
+from core.orm import fields as orm_fields
 
 from core.entities.directories import Directory
 
@@ -20,7 +21,7 @@ class CustomerLocation(Directory):
     user: Union["User", fields.OneToOneRelation["User"]] = fields.OneToOneField(
         'directories.User', related_name='customer_location', on_delete=fields.RESTRICT
     )
-    delivery_address: str = fields.CharField(max_length=200)
+    delivery_address: str = orm_fields.CharField(max_length=200)
 
     class Meta:
         table = "dir__customer_locations"

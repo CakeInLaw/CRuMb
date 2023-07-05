@@ -44,7 +44,8 @@ class DateInputWidget(InputWidget[date]):
     def to_date(cls, v) -> date:
         return datetime.strptime(v, cls.date_fmt).date()
 
-    def to_value(self) -> Optional[date]:
+    @property
+    def final_value(self) -> Optional[date]:
         if self.value == '':
             return
         return self.to_date(self.value)

@@ -97,8 +97,9 @@ class CRuMbAdmin(UserControl):
     def create_path(self, entity: str, method: str = '', **query):
         resource = self.find_resource(entity)
         assert method in resource.methods
+        path = f'/{entity}{("/" + method) if method != "" else ""}'
         qs = '?' + '&'.join([f'{k}={v}' for k, v in query.items()]) if query else ''
-        return f'/{entity}/{method}{qs}'
+        return path + qs
 
     async def open(self, entity: str, method: str, **query) -> Control:
         resource = self.find_resource(entity)

@@ -35,7 +35,8 @@ class IntInputWidget(InputWidget[int]):
         if self.max_value is not None and num > self.max_value:
             raise InputValidationError(f'Максимум {self.max_value}')
 
-    def to_value(self) -> int:
+    @property
+    def final_value(self) -> int:
         return int(self.value)
 
     def _set_initial_value(self, value: int) -> None:

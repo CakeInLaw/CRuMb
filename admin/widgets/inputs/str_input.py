@@ -26,7 +26,8 @@ class StrInputWidget(InputWidget[str]):
         self.empty_as_none = empty_as_none
         assert not (self.empty_as_none and self.required), 'empty_as_none и required не могут быть одновременно True'
 
-    def to_value(self) -> Optional[str]:
+    @property
+    def final_value(self) -> Optional[str]:
         if self.value == '' and self.empty_as_none:
             return None
         return self.value

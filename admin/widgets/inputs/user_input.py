@@ -35,7 +35,8 @@ class UserInputWidget(Generic[T]):
 
         self._set_initial_value(value)
 
-    def to_value(self) -> T:
+    @property
+    def final_value(self) -> T:
         raise NotImplementedError
 
     def _set_initial_value(self, value: T) -> None:

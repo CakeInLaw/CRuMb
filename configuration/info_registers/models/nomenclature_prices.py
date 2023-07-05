@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Union
 from datetime import datetime
 
 from tortoise import fields
-from tortoise.validators import MinValueValidator
+from core.orm import fields as orm_fields
 from core.entities.info_registers.model import InfoRegister
 
 from configuration.constants import DOCUMENT_REF_LEN
@@ -19,8 +19,8 @@ class NomenclaturePrice(InfoRegister):
     nomenclature: Union["Nomenclature", fields.ForeignKeyRelation["Nomenclature"]] = fields.ForeignKeyField(
         'directories.Nomenclature', related_name='prices', on_delete=fields.RESTRICT
     )
-    document_ref: str = fields.CharField(max_length=DOCUMENT_REF_LEN)
-    price: float = fields.FloatField(validators=[MinValueValidator(0)])
+    document_ref: str = orm_fields.CharField(max_length=DOCUMENT_REF_LEN)
+    price: float = orm_fields.FloatField(min_value=0)
     price_group: Union["PriceGroup", fields.ForeignKeyRelation["PriceGroup"]] = fields.ForeignKeyField(
         'directories.PriceGroup', related_name='prices', on_delete=fields.CASCADE
     )

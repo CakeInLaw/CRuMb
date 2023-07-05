@@ -1,8 +1,3 @@
-"""
-Схема не определяет типы полей или их контект, схема только определяет компоновку полей на странице.
-По ходу разработки сюда будут добавляться всякие приколы для UI
-"""
-
 from dataclasses import dataclass, field
 from typing import Union, Optional, Literal
 
@@ -13,18 +8,21 @@ from admin.widgets.inputs.user_input import UserInput
 
 @dataclass
 class InputGroup:
-    fields: list[Union[UserInput, "InputGroup"], ...]
+    fields: list[Union[UserInput, "InputGroup"], ...] = field(default_factory=list)
     label: Optional[str] = field(default=None)
     direction: Literal['horizontal', 'vertical'] = field(default='horizontal')
 
     def __iter__(self):
         return self.fields.__iter__()
 
-    def to_control(self, controls: list[Control]):
+    def to_control(self, controls: list[Control]) -> Control:
         if self.direction == 'horizontal':
             return Row(controls=controls, spacing=30)
         else:
             return Column(controls=controls)
+
+    def add_field(self, item: Union[UserInput, "InputGroup"]) -> None:
+        self.fields.append(item)
 
 
 class FormSchema:

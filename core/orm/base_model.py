@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Type, Optional
 from tortoise import Model
 
 if TYPE_CHECKING:
-    from .repository import Repository
+    from core.repository import Repository
 
 
 __all__ = ["BaseModel"]
