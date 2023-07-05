@@ -1,7 +1,7 @@
 from admin.resource import Resource
 from ..repositories import CustomerRepository
 from configuration.admin import CakeInLawAdmin
-from configuration.menu_groups import Sells, Storage, Receives
+from configuration.menu_groups import Sells
 
 
 @CakeInLawAdmin.register
