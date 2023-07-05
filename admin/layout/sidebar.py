@@ -1,43 +1,102 @@
-from flet import Page, NavigationRail, NavigationRailDestination, Text
+from typing import TYPE_CHECKING, Optional
+
+from flet import Container, Column
 import flet as ft
+
+from .btn_pin import BtnPin
+from .menu_item import MenuItem
+
+if TYPE_CHECKING:
+    from ..app import CRuMbAdmin
 
 
 __all__ = ["Sidebar"]
 
 
-class Sidebar(NavigationRail):
-    menu_items: list[NavigationRailDestination]
-    page: Page
+class Sidebar(Container):
+    items: list[MenuItem]
+    app: "CRuMbAdmin"
 
-    def __init__(self, page: Page, **kwargs):
-        kwargs.setdefault('extended', True)
-        kwargs.setdefault('min_width', 50)
-        kwargs.setdefault('min_extended_width', 200)
-        kwargs.setdefault('label_type', 'none')
+    active: Optional[MenuItem]
 
-        kwargs.setdefault('destinations', [
-            NavigationRailDestination(
-                label_content=Text("Покупатели"),
-                label="/dir/customers",
-                icon=ft.icons.BOOK_OUTLINED,
-                selected_icon=ft.icons.BOOK_OUTLINED
+    def __init__(self, app: "CRuMbAdmin"):
+
+        super().__init__(
+            clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
+            animate=100,
+        )
+
+        self.app = app
+        self.btn_pin = BtnPin(pinned=False, sidebar=self)
+        self.children = []
+        for group_cls in self.app.menu_groups:
+            group = group_cls(app)
+            if group.children:
+                self.children.append(group)
+
+        self.content = Column([
+            Container(
+                content=Column(self.children, scroll=ft.ScrollMode.ADAPTIVE, expand=True, spacing=0),
+                on_hover=self.toggle_size,
+                expand=True,
+                animate=100
             ),
-            NavigationRailDestination(
-                label_content=Text("Поставщики"),
-                label="/dir/providers",
-                icon=ft.icons.PERSON,
-                selected_icon=ft.icons.PERSON,
-            ),
-        ])
+            self.btn_pin
+        ], spacing=0)
 
-        super().__init__(**kwargs)
-        self.page = page
-        self.on_change = self.set_active_route
+        self.active = None
+        self.expanded = False
+        self.menu_items = self.collect_menu_items()
 
-    async def toggle_sidebar(self, e):
-        self.extended = not self.extended
+    async def did_mount_async(self):
+        await self.set_suitable_active()
+
+    async def toggle_size(self, e: ft.ControlEvent):
+        if not self.btn_pin.pinned:
+            self.expanded = e.data == 'true'
+            await self.update_async()
+
+    def minimize(self):
+        self.width = 50
+        for child in self.children:
+            child.minimize()
+        self.btn_pin.minimize()
+
+    def maximize(self):
+        self.width = 250
+        for child in self.children:
+            child.maximize()
+        self.btn_pin.maximize()
+
+    @property
+    def expanded(self) -> bool:
+        return self._expanded
+
+    @expanded.setter
+    def expanded(self, v: bool):
+        if hasattr(self, '_expanded') and v == self.expanded:
+            return
+        self._expanded = v
+        self.maximize() if self.expanded else self.minimize()
+
+    async def set_active(self, item: Optional[MenuItem]):
+        if self.active:
+            self.active.deactivate()
+        self.active = item
+        if self.active:
+            self.active.activate()
         await self.update_async()
 
-    async def set_active_route(self, e: ft.ControlEvent):
-        self.page.route = self.destinations[e.control.selected_index].label
-        await self.page.update_async()
+    async def set_suitable_active(self):
+        q = self.app.page.query
+        q()
+        route = q.path[1:]
+        find = route if '/' in route else route[:route.find('/', 1)]
+        suitable_items = list(filter(lambda x: x.entity == find, self.menu_items))
+        await self.set_active(suitable_items[0] if suitable_items else None)
+
+    def collect_menu_items(self) -> list[MenuItem]:
+        result = []
+        for group in self.children:
+            result.extend(group.collect_menu_items())
+        return result

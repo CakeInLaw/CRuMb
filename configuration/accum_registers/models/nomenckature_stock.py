@@ -23,6 +23,7 @@ class NomenclatureStock(AccumRegister):
     count: float = fields.FloatField()
     dt: datetime = fields.DatetimeField()
     commit: str = fields.TextField()
+
     class Meta:
         table = "accum_register__nomenclature_stock"
 

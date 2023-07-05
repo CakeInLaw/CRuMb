@@ -1,7 +1,8 @@
 from typing import TYPE_CHECKING, Union
 
 from tortoise import fields
-from core.entities.directories.model import Directory
+
+from core.entities.directories import Directory
 
 if TYPE_CHECKING:
     from configuration.directories.models import Nomenclature

@@ -2,10 +2,11 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Union
 
 from tortoise import fields
-from core.entities.directories.model import Directory
+
+from core.entities.directories import Directory
 
 if TYPE_CHECKING:
-    from configuration.directories.models import Employee, CustomerLocations
+    from configuration.directories.models import Employee, CustomerLocation
 
 
 __all__ = ["User"]
@@ -24,7 +25,7 @@ class User(Directory):
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
 
     employee: Union["Employee", fields.BackwardOneToOneRelation["Employee"]]
-    customer_location: Union["CustomerLocations", fields.BackwardOneToOneRelation["CustomerLocations"]]
+    customer_location: Union["CustomerLocation", fields.BackwardOneToOneRelation["CustomerLocation"]]
 
     class Meta:
         table = "dir__users"

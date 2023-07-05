@@ -3,7 +3,7 @@ from datetime import datetime
 
 from tortoise import fields
 from tortoise.validators import MinValueValidator
-from core.entities.info_registers import InfoRegister
+from core.entities.info_registers.model import InfoRegister
 
 from configuration.constants import DOCUMENT_REF_LEN
 
