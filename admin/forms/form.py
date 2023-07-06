@@ -1,10 +1,10 @@
-from typing import Optional
+from typing import Optional, Any
 
-from flet import Control, UserControl, Column, Row
+from flet import Control, UserControl, Column, Row, Container, padding
 
-from admin.widgets.inputs.user_input import UserInputWidget, UserInput
 from core.orm.base_model import BaseModel
 from core.exceptions import ObjectErrors
+from admin.widgets.inputs import UserInputWidget, UserInput, UndefinedValue
 from .schema import FormSchema, InputGroup
 
 
@@ -37,7 +37,7 @@ class Form(UserControl):
         controls.append(body)
         if submit_bar:
             controls.append(submit_bar)
-        return Column(controls=controls)
+        return Container(Column(controls=controls), padding=padding.all(10))
 
     def build_form(self) -> Column:
         return Column(controls=self._build_form())
@@ -51,7 +51,7 @@ class Form(UserControl):
             if isinstance(subgroup_or_input, InputGroup):
                 controls.append(self._build_group(subgroup_or_input))
             elif isinstance(subgroup_or_input, UserInput):
-                widget = subgroup_or_input.widget()
+                widget = subgroup_or_input.widget(initial=self.initial_for(subgroup_or_input))
                 self.fields_map[subgroup_or_input.name] = widget
                 controls.append(widget)
         return group.to_control(controls)
@@ -67,12 +67,29 @@ class Form(UserControl):
         return self.schema
 
     async def set_object_errors(self, err: ObjectErrors):
-        for field, e in err.to_error().items():
-            await self.fields_map[field].set_error(e['msg'])
+        _err = err.to_error()
+        if '__root__' in _err:
+            root = _err.pop('__root__')
+            # TODO
+        for field, e in _err.items():
+            await self.fields_map[field].set_object_error(e)
+
+    async def form_is_valid(self):
+        is_valid = True
+        for widget in self.fields_map.values():
+            if not await widget.is_valid():
+                is_valid = False
+        return is_valid
 
     @property
     def dirty_data(self):
-        return {name: field.final_value() for name, field in self.fields_map.items()}
+        return {name: field.final_value for name, field in self.fields_map.items()}
 
     def cleaned_data(self):
         return self.dirty_data
+
+    def initial_for(self, item: UserInput) -> Any:
+        if not self.initial_data:
+            return UndefinedValue
+        return getattr(self.initial_data, item.name, UndefinedValue)
+

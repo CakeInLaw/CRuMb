@@ -56,7 +56,13 @@ class Resource(Generic[REPOSITORY]):
         return dg
 
     def _get_form(self, *, obj: BaseModel = None, primitive: PRIMITIVE = None) -> Form:
-        return ModelForm(self.repository, lang=self.app.LANG, primitive=primitive, initial_data=obj)
+        return ModelForm(
+            self.repository,
+            create=obj is None,
+            lang=self.app.LANG,
+            primitive=primitive,
+            initial_data=obj
+        )
 
     async def get_create_form(self) -> Control | Form:
         primitive = self.create_form_primitive or self.form_primitive

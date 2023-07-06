@@ -3,7 +3,7 @@ from typing import Union, Optional, Literal
 
 from flet import Control, Row, Column
 
-from admin.widgets.inputs.user_input import UserInput
+from admin.widgets.inputs import UserInput
 
 
 @dataclass
@@ -15,7 +15,7 @@ class InputGroup:
     def __iter__(self):
         return self.fields.__iter__()
 
-    def to_control(self, controls: list[Control]) -> Control:
+    def to_control(self, controls: list[Control]) -> Row | Column:
         if self.direction == 'horizontal':
             return Row(controls=controls, spacing=30)
         else:

@@ -22,3 +22,7 @@ class Checkbox(UserInput[CheckboxWidget]):
     @property
     def widget_type(self):
         return CheckboxWidget
+
+    @property
+    def default_initial(self) -> bool:
+        return False

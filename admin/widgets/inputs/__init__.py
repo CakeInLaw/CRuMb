@@ -1,3 +1,6 @@
+from .user_input import UserInputWidget, UserInput, UndefinedValue
+from .input import InputWidget, Input
+
 from .int_input import IntInputWidget, IntInput
 from .float_input import FloatInputWidget, FloatInput
 from .str_input import StrInputWidget, StrInput
@@ -6,4 +9,4 @@ from .date_input import DateInputWidget, DateInput
 from .datetime_input import DatetimeInputWidget, DatetimeInput
 from .checkbox import CheckboxWidget, Checkbox
 from .enum_choice import EnumChoiceWidget, EnumChoice
-from .user_input import UserInput
+from .object_input import ObjectInputWidget, ObjectInput

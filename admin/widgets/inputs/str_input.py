@@ -39,7 +39,7 @@ class StrInputWidget(InputWidget[str]):
             raise InputValidationError(msg=f'Минимум символов - {self.min_length}')
 
     def _set_initial_value(self, value: str) -> None:
-        self.value = value or ''
+        self.value = value
 
 
 S = TypeVar('S', bound=StrInputWidget)
@@ -54,3 +54,7 @@ class StrInput(Input[S]):
     @property
     def widget_type(self):
         return StrInputWidget
+
+    @property
+    def default_initial(self) -> str:
+        return ''

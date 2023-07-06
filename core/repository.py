@@ -771,7 +771,7 @@ class Repository(Generic[MODEL]):
         field_type = cls.get_field_type(field_name)
         field_type_value = cast(str, field_type.value)
         if field_type_value in RepositoryDescription.__annotations__:
-            return getattr(cls.describe(), field_type_value)[field_name]
+            return field_type, getattr(cls.describe(), field_type_value)[field_name]
         return field_type, cls.describe().db_field[field_name]
 
     @classmethod
@@ -853,7 +853,7 @@ class Repository(Generic[MODEL]):
 
     @classmethod
     def translate_field(cls, field_name: str, lang: str) -> str:
-        return cls.get_translation(lang=lang)['fields'].get(field_name, field_name)
+        return cls.get_translation(lang=lang).get('fields', {}).get(field_name, field_name)
 
 
 REPOSITORY = TypeVar('REPOSITORY', bound=Type[Repository])

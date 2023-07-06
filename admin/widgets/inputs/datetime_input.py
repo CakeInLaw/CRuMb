@@ -1,8 +1,9 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
-
+import pytz
 from flet import KeyboardType
+from tortoise import timezone
 
 from admin.exceptions import InputValidationError
 from .input import InputWidget, Input
@@ -42,7 +43,8 @@ class DatetimeInputWidget(InputWidget[datetime]):
 
     @classmethod
     def to_datetime(cls, v) -> datetime:
-        return datetime.strptime(v, cls.dt_fmt)
+        print(timezone.make_aware(datetime.strptime(v, cls.dt_fmt)))
+        return timezone.make_aware(datetime.strptime(v, cls.dt_fmt))
 
     @property
     def final_value(self) -> Optional[datetime]:
@@ -51,8 +53,10 @@ class DatetimeInputWidget(InputWidget[datetime]):
         return self.to_datetime(self.value)
 
     def _set_initial_value(self, value: datetime) -> None:
-        value = datetime.now() if value is None else value
-        self.value = value.strftime(self.dt_fmt)
+        if value is None:
+            self.value = ''
+        else:
+            self.value = timezone.make_naive(value).strftime(self.dt_fmt)
 
 
 @dataclass
@@ -63,3 +67,8 @@ class DatetimeInput(Input[DatetimeInputWidget]):
     @property
     def widget_type(self):
         return DatetimeInputWidget
+
+    @property
+    def default_initial(self) -> Optional[datetime]:
+        if self.required:
+            return timezone.now()

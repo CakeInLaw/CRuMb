@@ -22,7 +22,7 @@ class UserInputWidget(Generic[T]):
             label: Optional[str] = None,
             validate_on_blur: bool = True,
             required: bool = False,
-            value: T = None,
+            initial_value: T = None,
             **kwargs
     ):
         super().__init__(**kwargs)
@@ -33,7 +33,8 @@ class UserInputWidget(Generic[T]):
         if self.validate_on_blur:
             self.on_blur = self.validate
 
-        self._set_initial_value(value)
+        self.initial_value = initial_value
+        self._set_initial_value(self.initial_value)
 
     @property
     def final_value(self) -> T:
@@ -42,31 +43,43 @@ class UserInputWidget(Generic[T]):
     def _set_initial_value(self, value: T) -> None:
         raise NotImplementedError
 
+    def has_changed(self) -> bool:
+        return self.initial_value == self.final_value
+
     def _validate(self, v: Any) -> None:
         pass
 
-    async def validate(self, e: ControlEvent, reraise: bool = False) -> None:
+    async def validate(self, e: ControlEvent = None, reraise: bool = False) -> None:
         try:
             self._validate(self.value)
             await self.on_success_validation()
         except InputValidationError as err:
-            await self.set_error(err.msg)
+            await self.on_error_validation(err)
             if reraise:
                 raise err
 
     async def on_success_validation(self):
         pass
 
-    async def set_error(self, msg: Optional[str]):
-        self.error_text = msg
-        await self.update_async()
+    async def on_error_validation(self, err: InputValidationError):
+        await self.set_error_text(err.msg)
+
+    async def set_error_text(self, text: Optional[str]):
+        pass
+
+    async def set_object_error(self, err: dict[str, Any]):
+        await self.set_error_text(err.get('msg', 'Какая-то ошибка'))
 
     async def is_valid(self) -> bool:
         try:
-            await self.validate(self.value, reraise=True)
+            await self.validate(reraise=True)
         except InputValidationError:
             return False
         return True
+
+
+class UndefinedValue:
+    pass
 
 
 @dataclass
@@ -76,8 +89,14 @@ class UserInput(Generic[_I]):
     validate_on_blur: bool = True
     required: bool = False
 
-    def widget(self, initial: Any = None) -> _I:
-        return self.widget_type(**self.__dict__, value=initial)
+    def widget(self, initial: Any = UndefinedValue) -> _I:
+        if initial is UndefinedValue:
+            initial = self.default_initial
+        return self.widget_type(**self.__dict__, initial_value=initial)
+
+    @property
+    def default_initial(self) -> Any:
+        return None
 
     @property
     def widget_type(self) -> Type[_I]:

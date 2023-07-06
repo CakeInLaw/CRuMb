@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Optional
 
@@ -51,8 +51,10 @@ class DateInputWidget(InputWidget[date]):
         return self.to_date(self.value)
 
     def _set_initial_value(self, value: date) -> None:
-        value = date.today() if value is None else value
-        self.value = value.strftime(self.date_fmt)
+        if value is None:
+            self.value = ''
+        else:
+            self.value = value.strftime(self.date_fmt)
 
 
 @dataclass
@@ -63,3 +65,8 @@ class DateInput(Input[DateInputWidget]):
     @property
     def widget_type(self):
         return DateInputWidget
+
+    @property
+    def default_initial(self) -> Optional[date]:
+        if self.required:
+            return date.today()
