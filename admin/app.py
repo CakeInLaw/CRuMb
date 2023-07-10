@@ -1,8 +1,9 @@
 import asyncio
 from typing import Type, TypeVar
 
-from flet import UserControl, Control, Row, Page, app as flet_app
+from flet import Page, UserControl, Control, Row, Text, SnackBar, RouteChangeEvent, app as flet_app
 
+from core.enums import NotifyStatus
 from .content import Content
 from .layout import Header, Sidebar, MenuGroup
 
@@ -25,6 +26,7 @@ class CRuMbAdmin(UserControl):
 
         self._init_resources()
         self.page = page
+        self.page.on_route_change = self.on_route_change
 
         self.appbar = Header(app=self)
         self.sidebar = Sidebar(app=self)
@@ -101,6 +103,53 @@ class CRuMbAdmin(UserControl):
         qs = '?' + '&'.join([f'{k}={v}' for k, v in query.items()]) if query else ''
         return path + qs
 
-    async def open(self, entity: str, method: str, **query) -> Control:
+    async def did_mount_async(self):
+        await self.sync_with_route()
+
+    async def on_route_change(self, e: RouteChangeEvent):
+        await self.sync_with_route()
+
+    async def sync_with_route(self) -> None:
+        q = self.page.query
+        q()
+        path = q.path[1:]
+        query = q.to_dict
+        if path == '':
+            return
+        if '/' in path:
+            entity, method, *_ = path.split('/')
+        else:
+            entity, method = path, ''
+        await self._open(entity, method, **query)
+
+    async def _open(self, entity: str, method: str, **query) -> None:
         resource = self.find_resource(entity)
-        return await resource.methods[method](**query)
+        self.content.content = await resource.methods.get(method, '')(**query)
+        await self.update_async()
+
+    async def open(self, entity: str, method: str, **query) -> None:
+        self.page.route = self.create_path(entity, method, **query)
+        await self.page.update_async()
+
+    async def notify(
+            self,
+            content: Control | str,
+            status: NotifyStatus = NotifyStatus.INFO
+    ) -> None:
+        if isinstance(content, str):
+            content = Text(content)
+        match status:
+            case NotifyStatus.SUCCESS:
+                bgcolor = 'primary'
+            case NotifyStatus.ERROR:
+                bgcolor = 'error'
+            case NotifyStatus.WARN:
+                bgcolor = 'orange'
+            case _:
+                bgcolor = None
+        self.page.snack_bar = SnackBar(
+            content=content,
+            bgcolor=bgcolor,
+            open=True,
+        )
+        await self.page.update_async()

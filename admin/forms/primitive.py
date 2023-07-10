@@ -1,20 +1,22 @@
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
-from admin.forms.schema import InputGroup
-from admin.widgets import inputs
+from . import inputs, InputGroup
+
 
 PRIMITIVE_ITEM = str | tuple[str, dict[str, Any]] | dict[str, Any] | inputs.UserInput | InputGroup
-PRIMITIVE = list[PRIMITIVE_ITEM]
 
 
 class Primitive:
-    values: PRIMITIVE
+    values: list[PRIMITIVE_ITEM]
 
-    def __init__(self, values: Union[PRIMITIVE,  "Primitive"]):
-        self.values = values.values if isinstance(values, Primitive) else values
+    def __init__(self, *values: PRIMITIVE_ITEM):
+        self.values = list(values)
 
-    def __get__(self, instance, owner):
-        return self.values
+    def __iter__(self):
+        return self.values.__iter__()
+
+    def add(self, item: PRIMITIVE_ITEM):
+        self.values.append(item)
 
     @staticmethod
     def describe(item: str | tuple[str, dict[str, Any]]) -> tuple[str, Optional[dict[str, Any]]]:

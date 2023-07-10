@@ -21,3 +21,6 @@ class CustomerLocationRepository(DirectoryRepository):
             'delivery_address': 'Адрес доставки',
         }
     }
+
+    def qs_select_related(self) -> set[str]:
+        return {'user', 'customer'}

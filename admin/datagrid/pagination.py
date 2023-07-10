@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from flet import Row, Control, ContainerTapEvent, Container, Text, Icon, icons
+from flet import Row, ContainerTapEvent, Container, Text, Icon, icons
 
 if TYPE_CHECKING:
     from .view import DatagridView

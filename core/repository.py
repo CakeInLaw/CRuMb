@@ -242,9 +242,9 @@ class Repository(Generic[MODEL]):
 
         if validate:
             await self.validate(data, instance)
-        # clean_edit_data got history
+        # TODO: clean_edit_data for history
 
-        async def get_new_instance() -> MODEL:
+        async def get_updated_instance() -> MODEL:
             direct_related = {}
             sorted_data: SortedData = self.sort_data_by_field_types(data)
 
@@ -264,11 +264,12 @@ class Repository(Generic[MODEL]):
                 for field_name, value in getattr(sorted_data, t).items():
                     direct_related[field_name] = value
 
-            await self.model.update_from_dict({
+            instance.update_from_dict({
                 **(defaults or {}),
                 **sorted_data.db_field,
                 **direct_related
             })
+            await instance.save(force_update=True)
 
             for field_name, value in sorted_data.back_o2o.items():
                 remote_repository = self.repository_of(field_name)(
@@ -311,15 +312,15 @@ class Repository(Generic[MODEL]):
                     values,
                 )
 
-            await self.post_create(instance)
+            await self.post_edit(instance)
             return instance
 
         if run_in_transaction:
             async with in_transaction():
-                new_instance = await get_new_instance()
-                return await self.get_one(new_instance.pk)
+                updated_instance = await get_updated_instance()
+                return await self.get_one(updated_instance.pk)
         else:
-            return await get_new_instance()
+            return await get_updated_instance()
 
     async def post_edit(self, instance: MODEL) -> None:
         """Override this function"""
@@ -373,6 +374,8 @@ class Repository(Generic[MODEL]):
             data: DATA,
             instance: Optional[MODEL] = None,
     ) -> None:
+        if instance and getattr(instance, field_name) == value:
+            return
         if await self.model.exists(**{field_name: value}):
             raise NotUnique
 
@@ -495,7 +498,7 @@ class Repository(Generic[MODEL]):
             data: DATA,
             instance: Optional[MODEL]
     ):
-        rel_instance = self.get_relational(instance, field_name) if instance else None
+        rel_instance = await self.get_relational(instance, field_name) if instance else None
         await self.repository_of(field_name)(
             by=f'{self.by}__{self.model.__name__}',
             extra=self.extra

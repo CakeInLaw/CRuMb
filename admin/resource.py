@@ -2,13 +2,12 @@ from typing import TYPE_CHECKING, Generic, Type, Callable, Coroutine
 
 from flet import Control, Text, icons
 
-from admin.forms.model_form import PRIMITIVE
+from core.types import PK
 from core.orm.base_model import BaseModel
 from core.exceptions import ItemNotFound
 from core.repository import REPOSITORY
 from admin.datagrid import DatagridView
-from admin.forms import Form, ModelForm
-from core.types import PK
+from admin.forms import Form, ModelForm, Primitive
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
@@ -26,9 +25,9 @@ class Resource(Generic[REPOSITORY]):
     present_in: tuple["MenuGroup"] = ()
 
     datagrid_columns: list[str]
-    form_primitive = None
-    create_form_primitive = None
-    edit_form_primitive = None
+    form_primitive: Primitive = None
+    create_form_primitive: Primitive = None
+    edit_form_primitive: Primitive = None
 
     def __init__(self, app: "CRuMbAdmin") -> None:
         self.app = app
@@ -55,13 +54,13 @@ class Resource(Generic[REPOSITORY]):
         dg.pagination.rebuild()
         return dg
 
-    def _get_form(self, *, obj: BaseModel = None, primitive: PRIMITIVE = None) -> Form:
+    def _get_form(self, *, obj: BaseModel = None, primitive: Primitive = None) -> Form:
         return ModelForm(
-            self.repository,
-            create=obj is None,
+            app=self.app,
+            repository=self.repository,
             lang=self.app.LANG,
             primitive=primitive,
-            initial_data=obj
+            instance=obj
         )
 
     async def get_create_form(self) -> Control | Form:

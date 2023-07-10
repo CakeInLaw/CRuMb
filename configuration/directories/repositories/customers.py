@@ -17,5 +17,6 @@ class CustomerRepository(DirectoryRepository):
         'fields': {
             'name': 'Наименование',
             'register_address': 'Адрес регистрации',
+            'price_group_id': 'Ценовая группа'
         },
     }

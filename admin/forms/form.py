@@ -1,11 +1,13 @@
-from typing import Optional, Any
+from typing import TYPE_CHECKING, Optional, Any
 
 from flet import Control, UserControl, Column, Row, Container, padding
 
-from core.orm.base_model import BaseModel
 from core.exceptions import ObjectErrors
-from admin.widgets.inputs import UserInputWidget, UserInput, UndefinedValue
 from .schema import FormSchema, InputGroup
+from .inputs import UserInputWidget, UserInput, UndefinedValue
+
+if TYPE_CHECKING:
+    from admin.app import CRuMbAdmin
 
 
 FIELDS_MAP = dict[str, UserInputWidget]
@@ -17,15 +19,18 @@ class Form(UserControl):
     fields_map: FIELDS_MAP
     action_bar: Optional[Control]
     submit_bar: Optional[Control]
-    initial_data: Optional[BaseModel]
 
     def __init__(
             self,
-            initial_data: Optional[BaseModel] = None
+            app: "CRuMbAdmin",
+            initial_data: Optional[dict] = None,
+            lang: str = 'RU',
     ):
         super().__init__()
+        self.app = app
         self.fields_map = {}
-        self.initial_data = initial_data
+        self.initial_data = initial_data or {}
+        self.LANG = lang
 
     def build(self):
         controls = []
@@ -54,6 +59,8 @@ class Form(UserControl):
                 widget = subgroup_or_input.widget(initial=self.initial_for(subgroup_or_input))
                 self.fields_map[subgroup_or_input.name] = widget
                 controls.append(widget)
+            else:
+                raise ValueError('что-то пошло не так')
         return group.to_control(controls)
 
     def get_action_bar(self) -> Control:
@@ -89,7 +96,4 @@ class Form(UserControl):
         return self.dirty_data
 
     def initial_for(self, item: UserInput) -> Any:
-        if not self.initial_data:
-            return UndefinedValue
-        return getattr(self.initial_data, item.name, UndefinedValue)
-
+        return self.initial_data.get(item.name, UndefinedValue)

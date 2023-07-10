@@ -1,37 +1,48 @@
-from typing import Type, Any, Callable
+from typing import TYPE_CHECKING, Type, Any, Callable, Optional
 
-from flet import ElevatedButton, Row, Control, MainAxisAlignment
+from flet import ElevatedButton, Row, Control, MainAxisAlignment, ControlEvent
 from tortoise import fields
 
 from core.exceptions import ObjectErrors
-from core.orm import fields as orm_fields
-
-from core.enums import FieldTypes
+from core.orm import BaseModel, fields as orm_fields
+from core.enums import FieldTypes, NotifyStatus
 from core.repository import Repository
-from admin.widgets import inputs
-from .form import Form
-from .primitive import Primitive, PRIMITIVE
+from .inputs import UserInput, UndefinedValue
+
 from .schema import FormSchema, InputGroup
+from . import Form, Primitive, inputs
+
+if TYPE_CHECKING:
+    from admin.app import CRuMbAdmin
 
 
 class ModelForm(Form):
 
     def __init__(
             self,
+            app: "CRuMbAdmin",
             repository: Type[Repository],
-            create: bool,
             *,
-            lang: str = 'RU',
-            primitive: PRIMITIVE = None,
-            subform: bool = False,
+            instance: Optional[BaseModel] = None,
+            primitive: Primitive = None,
+            is_subform: bool = False,
             **kwargs
     ):
-        super().__init__(**kwargs)
+        super().__init__(app, **kwargs)
         self.repository = repository
-        self.create = create
-        self.LANG = lang
-        self.primitive = Primitive(primitive) if primitive else None
-        self.subform = subform
+        self.instance = instance
+        self.is_subform = is_subform
+        self.primitive = primitive
+
+    @property
+    def create(self) -> bool:
+        return self.instance is None
+
+    def initial_for(self, item: UserInput) -> Any:
+        if self.create:
+            return super().initial_for(item=item)
+        else:
+            return getattr(self.instance, item.name, UndefinedValue)
 
     def get_form_schema(self) -> FormSchema:
         return self.schema or self._generate_form_schema()
@@ -63,47 +74,66 @@ class ModelForm(Form):
         creator = self._input_schema_creators[field_type]
         return creator(field, extra)
 
-    def _generate_primitive(self) -> PRIMITIVE:
+    def _generate_primitive(self) -> Primitive:
         describe = self.repository.describe()
-        primitive = []
+        primitive = Primitive()
         for name, field in describe.db_field.items():
             if not field.generated:
-                primitive.append(name)
-        if not self.subform:
+                primitive.add(name)
+        if not self.is_subform:
             for name, field in describe.o2o.items():
                 if field.required:
-                    primitive.append(name)
+                    primitive.add(name)
             for name, field in describe.fk.items():
                 if field.required:
-                    primitive.append(name)
+                    primitive.add(name)
         # for name, field in describe.o2o_pk.items():
         #     if self.subform or not field.required:
-        #         primitive.append(name)
+        #         primitive.add(name)
         # for name, field in describe.fk_pk.items():
         #     if self.subform or not field.required:
-        #         primitive.append(name)
+        #         primitive.add(name)
         return primitive
 
-    async def on_click_create(self, e):
+    async def on_click_create(self, e: ControlEvent):
         if not await self.form_is_valid():
             return
         try:
-            await self.repository(
+            instance = await self.repository(
                 by='admin',
                 extra={'target': 'create'}
             ).create(self.cleaned_data())
+            await self.app.notify('Создан 1 элемент', NotifyStatus.SUCCESS)
+            await self.app.open(self.repository.entity(), 'edit', pk=instance.pk)
         except ObjectErrors as err:
             await self.set_object_errors(err)
+            await self.app.notify('Исправьте ошибки', NotifyStatus.ERROR)
 
     def create_btn(self) -> ElevatedButton:
         return ElevatedButton('Создать', on_click=self.on_click_create)
 
+    async def on_click_edit(self, e: ControlEvent):
+        if not await self.form_is_valid():
+            return
+        try:
+            instance = await self.repository(
+                by='admin',
+                extra={'target': 'create'}
+            ).edit(self.instance, self.cleaned_data())
+            await self.app.notify('Элемент изменен', NotifyStatus.SUCCESS)
+            await self.app.open(self.repository.entity(), 'edit', pk=instance.pk)
+        except ObjectErrors as err:
+            await self.set_object_errors(err)
+            await self.app.notify('Исправьте ошибки', NotifyStatus.ERROR)
+
+    def edit_btn(self) -> ElevatedButton:
+        return ElevatedButton('Изменить', on_click=self.on_click_edit)
+
     def get_submit_bar(self) -> Control:
-        if self.create:
-            return Row(
-                controls=[self.create_btn()],
-                alignment=MainAxisAlignment.END
-            )
+        return Row(
+            controls=[self.create_btn() if self.create else self.edit_btn()],
+            alignment=MainAxisAlignment.END
+        )
 
     @property
     def _input_schema_creators(
@@ -225,20 +255,19 @@ class ModelForm(Form):
             kwargs.update(extra)
             return inputs.ObjectInput(**kwargs)
 
-        relative_model_form = self.__class__(
-            repository=self.repository.repository_of(kwargs['name']),
-            create=self.create,
-            lang=self.LANG,
-            subform=True,
-        )
+        primitive = None
         if 'primitive' in extra:
             primitive = extra.pop('primitive')
-        else:
-            primitive = relative_model_form._generate_primitive()
-
+        relative_model_form = self.__class__(
+            app=self.app,
+            repository=self.repository.repository_of(kwargs['name']),
+            lang=self.LANG,
+            primitive=primitive,
+            is_subform=True,
+        )
         processed_fields: list[InputGroup, inputs.UserInput] = [
             relative_model_form._from_primitive_item(item)
-            for item in primitive
+            for item in relative_model_form.primitive or relative_model_form._generate_primitive()
         ]
 
         kwargs.update(extra)

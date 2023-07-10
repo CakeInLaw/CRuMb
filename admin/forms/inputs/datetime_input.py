@@ -43,7 +43,6 @@ class DatetimeInputWidget(InputWidget[datetime]):
 
     @classmethod
     def to_datetime(cls, v) -> datetime:
-        print(timezone.make_aware(datetime.strptime(v, cls.dt_fmt)))
         return timezone.make_aware(datetime.strptime(v, cls.dt_fmt))
 
     @property

@@ -1,7 +1,7 @@
 from enum import StrEnum
 
 
-__all__ = ["FieldTypes"]
+__all__ = ["FieldTypes", "NotifyStatus"]
 
 
 class FieldTypes(StrEnum):
@@ -20,3 +20,10 @@ class FieldTypes(StrEnum):
     BACK_O2O = 'back_o2o'
     BACK_FK = 'back_fk'
     M2M = 'm2m'
+
+
+class NotifyStatus(StrEnum):
+    INFO = 'info'
+    SUCCESS = 'success'
+    WARN = 'warn'
+    ERROR = 'error'

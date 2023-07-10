@@ -1,11 +1,12 @@
 from dataclasses import dataclass, field
-from typing import Any, Union
+from typing import Any
 
 from flet import Container, Row, Column, Control, ControlEvent
 
 from admin.exceptions import InputValidationError
-from admin.forms.schema import InputGroup
+from core.orm import BaseModel
 from .user_input import UserInputWidget, UserInput, UndefinedValue
+from .. import InputGroup
 
 
 class ObjectInputWidget(UserInputWidget[dict[str, Any]], Container):
@@ -53,7 +54,12 @@ class ObjectInputWidget(UserInputWidget[dict[str, Any]], Container):
     def initial_for(self, item: UserInput) -> Any:
         if self.initial_value is None:
             return UndefinedValue
-        return self.initial_value.get(item.name, UndefinedValue)
+        if isinstance(self.initial_value, dict):
+            return self.initial_value.get(item.name, UndefinedValue)
+        elif isinstance(self.initial_value, BaseModel):
+            return getattr(self.initial_value, item.name, UndefinedValue)
+        else:
+            raise TypeError(f'Почему {type(item)}, {item}?')
 
     @property
     def final_value(self) -> dict[str, Any]:
@@ -100,7 +106,7 @@ class ObjectInput(UserInput[ObjectInputWidget]):
     def widget_type(self):
         return ObjectInputWidget
 
-    def add_field(self, item: Union[UserInput, InputGroup]) -> None:
+    def add_field(self, item: UserInput | InputGroup) -> None:
         self.fields.append(item)
 
     @property

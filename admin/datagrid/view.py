@@ -1,14 +1,16 @@
 import math
 from typing import TYPE_CHECKING, Type
 
-from flet import UserControl, Column, Text, \
-    DataTable, DataColumn, DataRow, DataCell
+from flet import UserControl, Column, Text, DataTable, DataColumn, DataRow, DataCell, \
+    TextSpan, TextStyle, TextDecoration
 
-from admin.datagrid.pagination import Pagination
-from core.orm.base_model import BaseModel
+
+from core.orm import BaseModel
 from core.enums import FieldTypes
 from core.repository import Repository
-from core.types import SORT, FILTERS
+from core.types import SORT, FILTERS, PK
+
+from .pagination import Pagination
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
@@ -79,15 +81,29 @@ class DatagridView(UserControl):
         self._items = v
         self.fill_items()
 
+    def open_edit_form(self, pk: PK):
+        async def wrapper(e):
+            await self.app.open(self.repository.entity(), 'edit', pk=pk)
+        return wrapper
+
     def fill_items(self):
         self.datagrid.rows = rows = []
         for item in self.items:
-            rows.append(
-                DataRow([
-                    DataCell(Text(self.get_value(item, field)))
-                    for field in self.columns
-                ])
-            )
+            fields = list(self.columns.keys())
+            cols = [
+                DataCell(Text(spans=[
+                    TextSpan(
+                        text=self.get_value(item, fields[0]),
+                        style=TextStyle(color='primary', decoration=TextDecoration.UNDERLINE),
+                        on_click=self.open_edit_form(item.pk)
+                    ),
+                ]))
+            ]
+            for field in fields[1:]:
+                cols.append(
+                    DataCell(Text(self.get_value(item, field)), data=item.pk)
+                )
+            rows.append(DataRow(cols))
 
     def get_value(self, item: BaseModel, field: str):
         value = getattr(item, field)
@@ -111,6 +127,7 @@ class DatagridView(UserControl):
 
     @columns.setter
     def columns(self, v: list[str]):
+        assert len(v) >= 1
         fields = self.repository.describe().all
         self._columns_map = {}
         for name in v:

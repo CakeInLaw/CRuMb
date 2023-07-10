@@ -10,3 +10,4 @@ class CustomerLocationResource(Resource):
     repository = CustomerLocationRepository
     datagrid_columns = ['order', 'customer']
     present_in = (Sells,)
+
