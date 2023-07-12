@@ -22,6 +22,7 @@ class Sidebar(Container):
     def __init__(self, app: "CRuMbAdmin"):
 
         super().__init__(
+            bgcolor='white',
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
             animate=100,
         )

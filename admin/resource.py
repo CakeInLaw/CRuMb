@@ -93,9 +93,12 @@ class Resource(Generic[REPOSITORY]):
     def entity(cls) -> str:
         return cls.repository.entity()
 
+    @classmethod
+    def default_method(cls) -> str:
+        return 'list'
+
     def _methods(self):
         return {
-            '': self.get_list_view,
             'list': self.get_list_view,
             'choice': self.get_choice_view,
             'create': self.get_create_form,
@@ -107,3 +110,21 @@ class Resource(Generic[REPOSITORY]):
         if not hasattr(self, '_cached_methods'):
             setattr(self, '_cached_methods', self._methods())
         return getattr(self, '_cached_methods')
+
+    # функции для сравнения параметров вкладок.
+    # Если True, то вкладка создаваться не будет и откроется существующая
+    # Если False, то создастся новая вкладка
+    def compare_tab(self, method: str, query1: dict[str, Any], query2: dict[str, Any]) -> bool:
+        return getattr(self, f'_compare_tab_{method}')(query1, query2)
+
+    def _compare_tab_list(self, query1: dict[str, Any], query2: dict[str, Any]) -> bool:
+        return True
+
+    def _compare_tab_choice(self, query1: dict[str, Any], query2: dict[str, Any]) -> bool:
+        return False
+
+    def _compare_tab_create(self, query1: dict[str, Any], query2: dict[str, Any]) -> bool:
+        return True
+
+    def _compare_tab_edit(self, query1: dict[str, Any], query2: dict[str, Any]) -> bool:
+        return query1['pk'] == query2['pk']

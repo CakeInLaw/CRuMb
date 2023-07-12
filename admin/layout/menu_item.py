@@ -24,7 +24,7 @@ class MenuItem(ListTile):
             label: str,
             app: "CRuMbAdmin",
             entity: str,
-            method: str = '',
+            method: str,
             query: dict[str, Any] = None,
             parent: Optional["MenuGroup"] = None,
     ):
@@ -32,11 +32,11 @@ class MenuItem(ListTile):
             dense=True,
             on_click=self.handle_click,
         )
+        self.app = app
+        self.parent = parent
         self.entity = entity
         self.method = method
         self.query = query or {}
-        self.app = app
-        self.parent = parent
         self.leading = Icon(icon, size=24)
         self.title = Text(label, no_wrap=True, size=14)
 
