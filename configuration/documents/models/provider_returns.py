@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Union
 
 from tortoise import fields
-from tortoise.validators import MinValueValidator
+from core.orm import fields as orm_fields
 
 from .nomenclature_move_documents import Document, DocumentValue
 
@@ -29,8 +29,8 @@ class ProviderReturn(Document):
 
 
 class ProviderReturnValue(DocumentValue):
-    count: float = fields.FloatField(validators=[MinValueValidator(0)])
-    price: float = fields.FloatField(validators=[MinValueValidator(0)])
+    count: float = orm_fields.FloatField(min_value=0)
+    price: float = orm_fields.FloatField(min_value=0)
     doc: Union["ProviderReturn", fields.ForeignKeyRelation["ProviderReturn"]] = fields.ForeignKeyField(
         'documents.ProviderReturn', related_name='values_list', on_delete=fields.CASCADE
     )

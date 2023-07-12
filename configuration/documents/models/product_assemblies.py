@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Union
 
 from tortoise import fields
-from tortoise.validators import MinValueValidator
+from core.orm import fields as orm_fields
 
 from .nomenclature_move_documents import Document, DocumentValue
 
@@ -20,7 +20,7 @@ class ProductAssembly(Document):
     product: Union["Nomenclature", fields.ForeignKeyRelation["Nomenclature"]] = fields.ForeignKeyField(
         'directories.Nomenclature',
     )
-    count: float = fields.FloatField(validators=[MinValueValidator(0)])
+    count: float = orm_fields.FloatField(min_value=0)
 
     values_list: list["ProductAssemblyValue"] | fields.BackwardFKRelation["ProductAssemblyValue"]
 
@@ -30,7 +30,7 @@ class ProductAssembly(Document):
 
 
 class ProductAssemblyValue(DocumentValue):
-    count: float = fields.FloatField(validators=[MinValueValidator(0)])
+    count: float = orm_fields.FloatField(min_value=0)
     doc: Union["ProductAssembly", fields.ForeignKeyRelation["ProductAssembly"]] = fields.ForeignKeyField(
         'documents.ProductAssembly', related_name='values_list', on_delete=fields.CASCADE
     )

@@ -1,15 +1,14 @@
 from enum import Enum
-from typing import Generic, TypeVar, Type, Literal, Any, Optional, Coroutine, Callable, \
-    overload, cast
+from typing import Generic, TypeVar, Type, Literal, Any, Optional, Coroutine, Callable, overload, cast
 
-from pydantic.error_wrappers import ValidationError
 from tortoise import models, fields
 from tortoise.queryset import QuerySet
 from tortoise.transactions import in_transaction
+from tortoise.exceptions import ValidationError
 
-from .base_model import BaseModel
+from core.orm.base_model import BaseModel
 from .constants import EMPTY_TUPLE
-from .exceptions import ItemNotFound, ObjectErrors, UnexpectedDataKey, FieldError, NotUnique, NotUniqueTogether, \
+from .exceptions import ItemNotFound, ObjectErrors, UnexpectedDataKey, FieldError, NotUnique, \
     FieldRequired, NotFoundFK, RequiredMissed, InvalidType, AnyFieldError, NoDefaultRepository, ListFieldError
 from .enums import FieldTypes
 from .maps import field_instance_to_type
@@ -25,21 +24,22 @@ T = TypeVar('T')
 class Repository(Generic[MODEL]):
     model: Type[MODEL]
 
-    by: str
-    extra: dict[str, Any]
-    select_related: tuple[str]
-    prefetch_related: tuple[str]
+    hidden_fields: set[str] = set()
+    extra_allowed: set[str] = set()
+
     _TRANSLATION_DEFAULT: dict[str, Any]
 
     def __init__(
             self,
             by: str = '',
             extra: dict[str, Any] = None,
+            instance: MODEL = None,
             select_related: tuple[str] = EMPTY_TUPLE,
             prefetch_related: tuple[str] = EMPTY_TUPLE,
     ):
         self.by = by
         self.extra = extra or {}
+        self.instance = instance
         self.select_related = select_related
         self.prefetch_related = prefetch_related
 
@@ -122,6 +122,13 @@ class Repository(Generic[MODEL]):
             raise ItemNotFound()
         return instance
 
+    async def handle_create(
+            self,
+            data: DATA,
+            extra_data: DATA
+    ) -> MODEL:
+        return await self.model.create(**data)
+
     async def create(
             self,
             data: DATA,
@@ -168,11 +175,10 @@ class Repository(Generic[MODEL]):
                     # при валидации мы убедились, что запись в бд есть, поэтому просто подвязываем по первичному ключу
                     direct_related[field_name] = value
 
-            instance = await self.model.create(**{
-                **(defaults or {}),
-                **sorted_data.db_field,
-                **direct_related
-            })
+            instance = await self.handle_create(
+                data={**(defaults or {}), **sorted_data.db_field, **direct_related},
+                extra_data=sorted_data.extra
+            )
 
             for field_name, value in sorted_data.back_o2o.items():
                 relation_field = self.get_field_instance(field_name).relation_source_field  # type: ignore
@@ -213,6 +219,15 @@ class Repository(Generic[MODEL]):
         """Override this function"""
         pass
 
+    async def handle_edit(
+            self,
+            instance: MODEL,
+            data: DATA,
+            extra_data: DATA
+    ):
+        instance.update_from_dict(data)
+        await instance.save(force_update=True)
+
     async def edit(
             self,
             instance: MODEL,
@@ -242,9 +257,9 @@ class Repository(Generic[MODEL]):
 
         if validate:
             await self.validate(data, instance)
-        # clean_edit_data got history
+        # TODO: clean_edit_data for history
 
-        async def get_new_instance() -> MODEL:
+        async def get_updated_instance() -> MODEL:
             direct_related = {}
             sorted_data: SortedData = self.sort_data_by_field_types(data)
 
@@ -264,11 +279,11 @@ class Repository(Generic[MODEL]):
                 for field_name, value in getattr(sorted_data, t).items():
                     direct_related[field_name] = value
 
-            await self.model.update_from_dict({
-                **(defaults or {}),
-                **sorted_data.db_field,
-                **direct_related
-            })
+            await self.handle_edit(
+                instance=instance,
+                data={**(defaults or {}), **sorted_data.db_field, **direct_related},
+                extra_data=sorted_data.extra
+            )
 
             for field_name, value in sorted_data.back_o2o.items():
                 remote_repository = self.repository_of(field_name)(
@@ -311,15 +326,15 @@ class Repository(Generic[MODEL]):
                     values,
                 )
 
-            await self.post_create(instance)
+            await self.post_edit(instance)
             return instance
 
         if run_in_transaction:
             async with in_transaction():
-                new_instance = await get_new_instance()
-                return await self.get_one(new_instance.pk)
+                updated_instance = await get_updated_instance()
+                return await self.get_one(updated_instance.pk)
         else:
-            return await get_new_instance()
+            return await get_updated_instance()
 
     async def post_edit(self, instance: MODEL) -> None:
         """Override this function"""
@@ -373,6 +388,8 @@ class Repository(Generic[MODEL]):
             data: DATA,
             instance: Optional[MODEL] = None,
     ) -> None:
+        if instance and getattr(instance, field_name) == value:
+            return
         if await self.model.exists(**{field_name: value}):
             raise NotUnique
 
@@ -382,38 +399,36 @@ class Repository(Generic[MODEL]):
             instance: Optional[MODEL] = None
     ) -> None:
         """Недоделано"""
-        errors = ObjectErrors()
-        for combo in self.opts().unique_together:
-            values = {}
-            # if instance:
-            for field_name in combo:
-                # field = self.get_field_instance(field_name)
-                # :) посмотри какие именно значения добавляются в unique_together, если пишешь туда o2o и fk
-                raise NotImplementedError
-            if await self.model.exists(**values):
-                errors.add('__root__', NotUniqueTogether(combo))
-        if errors:
-            raise errors
+        raise NotImplementedError
+        # errors = ObjectErrors()
+        # for combo in self.opts().unique_together:
+        #     values = {}
+        # if instance:
+        # for field_name in combo:
+        # field = self.get_field_instance(field_name)
+        # :) посмотри какие именно значения добавляются в unique_together, если пишешь туда o2o и fk
+        # if await self.model.exists(**values):
+        #     errors.add('__root__', NotUniqueTogether(combo))
+        # if errors:
+        #     raise errors
 
     @classmethod
     def sort_data_by_field_types(cls, data: DATA) -> SortedData:
         _all_fields: dict[str, FieldTypes] = cls.describe().all
-        sorted_data = SortedData(
-            db_field={},
-            o2o={},
-            o2o_pk={},
-            fk={},
-            fk_pk={},
-            back_o2o={},
-            back_fk={},
-            m2m={},
-        )
+        sorted_data = SortedData()
+
         for key, value in data.items():
-            if key not in _all_fields:
-                raise UnexpectedDataKey(f'Unexpected key `{key}` in model `{cls.model}`')
-            field_type = cast(str, _all_fields[key].value)
-            if field_type in sorted_data.__dict__:
-                getattr(sorted_data, field_type)[key] = value
+            field_type = _all_fields.get(key)
+            if field_type is None:
+                if key in cls.extra_allowed:
+                    sorted_data.extra[key] = value
+                    continue
+                raise UnexpectedDataKey(f'`{key}` не представлен в `{cls.model}`')
+            if field_type == FieldTypes.HIDDEN:
+                raise UnexpectedDataKey(f'`{key}` скрыт в `{cls.model}`')
+            field_type_value = cast(str, field_type.value)
+            if field_type_value in sorted_data.__dict__:
+                getattr(sorted_data, field_type_value)[key] = value
             else:
                 sorted_data.db_field[key] = value
         return sorted_data
@@ -457,7 +472,10 @@ class Repository(Generic[MODEL]):
             instance: Optional[MODEL],
             default_validator: Callable[[str, T, DATA, Optional[MODEL]], Coroutine[Any, Any, None]]
     ) -> Optional[Coroutine[Any, Any, None]]:
-        return getattr(self, f'_validate_{field_name}', default_validator)(field_name, value, data, instance)
+        validator = getattr(self, f'_validate_{field_name}', None)
+        if validator:
+            return validator(value, data, instance)
+        return default_validator(field_name, value, data, instance)
 
     async def get_relational(self, instance: MODEL, field_name: str) -> Optional[BaseModel]:
         rel_instance = getattr(instance, field_name)
@@ -495,7 +513,7 @@ class Repository(Generic[MODEL]):
             data: DATA,
             instance: Optional[MODEL]
     ):
-        rel_instance = self.get_relational(instance, field_name) if instance else None
+        rel_instance = await self.get_relational(instance, field_name) if instance else None
         await self.repository_of(field_name)(
             by=f'{self.by}__{self.model.__name__}',
             extra=self.extra
@@ -717,42 +735,85 @@ class Repository(Generic[MODEL]):
             except ValidationError as exc:
                 raise AnyFieldError('invalid', str(exc))
 
+    async def validate_extra(
+            self,
+            field_name: str,
+            value: Any,
+            data: DATA,
+            instance: Optional[MODEL]
+    ) -> None:
+        pass
+
     @classmethod
     def describe(cls) -> RepositoryDescription:
         if not hasattr(cls, '_describe_result'):
             description = RepositoryDescription()
             opts = cls.opts()
 
+            def add_to_hidden(_name: str, _field: fields.Field):
+                description.hidden[_name] = _field
+                description.all[_name] = FieldTypes.HIDDEN
+
             for name in opts.o2o_fields:
                 field = cast(models.OneToOneFieldInstance, opts.fields_map[name])
-                description.o2o[name] = field
-                description.all[name] = FieldTypes.O2O
-                description.o2o_pk[field.source_field] = opts.fields_map[field.source_field]
-                description.all[field.source_field] = FieldTypes.O2O_PK
+                if name in cls.hidden_fields:
+                    add_to_hidden(name, field)
+                else:
+                    description.o2o[name] = field
+                    description.all[name] = FieldTypes.O2O
+                source_field = field.source_field
+                if source_field in cls.hidden_fields:
+                    add_to_hidden(name, field)
+                else:
+                    description.o2o_pk[source_field] = opts.fields_map[source_field]
+                    description.all[source_field] = FieldTypes.O2O_PK
 
             for name in opts.fk_fields:
                 field = cast(models.ForeignKeyFieldInstance, opts.fields_map[name])
-                description.fk[name] = field
-                description.all[name] = FieldTypes.FK
-                description.fk_pk[field.source_field] = opts.fields_map[field.source_field]
-                description.all[field.source_field] = FieldTypes.FK_PK
+                if name in cls.hidden_fields:
+                    add_to_hidden(name, field)
+                else:
+                    description.fk[name] = field
+                    description.all[name] = FieldTypes.FK
+                source_field = field.source_field
+                if source_field in cls.hidden_fields:
+                    add_to_hidden(name, field)
+                else:
+                    description.fk_pk[source_field] = opts.fields_map[source_field]
+                    description.all[source_field] = FieldTypes.FK_PK
 
             for name in opts.backward_o2o_fields:
-                description.back_o2o[name] = cast(fields.relational.BackwardOneToOneRelation, opts.fields_map[name])
-                description.all[name] = FieldTypes.BACK_O2O
+                field = cast(fields.relational.BackwardOneToOneRelation, opts.fields_map[name])
+                if name in cls.hidden_fields:
+                    add_to_hidden(name, field)
+                else:
+                    description.back_o2o[name] = field
+                    description.all[name] = FieldTypes.BACK_O2O
 
             for name in opts.backward_fk_fields:
-                description.back_fk[name] = cast(fields.relational.BackwardFKRelation, opts.fields_map[name])
+                field = cast(fields.relational.BackwardFKRelation, opts.fields_map[name])
+                if name in cls.hidden_fields:
+                    add_to_hidden(name, field)
+                description.back_fk[name] = field
                 description.all[name] = FieldTypes.BACK_FK
 
             for name in opts.m2m_fields:
-                description.m2m[name] = cast(fields.relational.ManyToManyFieldInstance, opts.fields_map[name])
-                description.all[name] = FieldTypes.M2M
+                field = cast(fields.relational.ManyToManyFieldInstance, opts.fields_map[name])
+                if name in cls.hidden_fields:
+                    add_to_hidden(name, field)
+                else:
+                    description.m2m[name] = field
+                    description.all[name] = FieldTypes.M2M
 
             for name in opts.db_fields:
-                if name not in description.all:  # если не o2o_pk/fk_pk
-                    description.db_field[name] = field = opts.fields_map[name]
-                    description.all[name] = field_instance_to_type[field.__class__]
+                # если не o2o_pk/fk_pk
+                if name not in description.all:
+                    field = opts.fields_map[name]
+                    if name in cls.hidden_fields:
+                        add_to_hidden(name, field)
+                    else:
+                        description.db_field[name] = field
+                        description.all[name] = field_instance_to_type[field.__class__]
 
             setattr(cls, '_describe_result', description)
         return getattr(cls, '_describe_result')
@@ -763,10 +824,16 @@ class Repository(Generic[MODEL]):
 
     @classmethod
     def get_field_instance(cls, field_name: str) -> fields.Field:
-        field_type = cast(str, cls.get_field_type(field_name).value)
-        if field_type in RepositoryDescription.__annotations__:
-            return getattr(cls.describe(), field_type)[field_name]
-        return cls.describe().db_field[field_name]
+        _, field_instance = cls.get_field_type_and_instance(field_name)
+        return field_instance
+
+    @classmethod
+    def get_field_type_and_instance(cls, field_name: str) -> tuple[FieldTypes, fields.Field]:
+        field_type = cls.get_field_type(field_name)
+        field_type_value = cast(str, field_type.value)
+        if field_type_value in RepositoryDescription.__annotations__:
+            return field_type, getattr(cls.describe(), field_type_value)[field_name]
+        return field_type, cls.describe().db_field[field_name]
 
     @classmethod
     def field_is_required(cls, field: fields.Field) -> bool:
@@ -847,7 +914,7 @@ class Repository(Generic[MODEL]):
 
     @classmethod
     def translate_field(cls, field_name: str, lang: str) -> str:
-        return cls.get_translation(lang=lang)['fields'].get(field_name, field_name)
+        return cls.get_translation(lang=lang).get('fields', {}).get(field_name, field_name)
 
 
 REPOSITORY = TypeVar('REPOSITORY', bound=Type[Repository])

@@ -1,6 +1,7 @@
 from typing import Union
 
 from tortoise import fields
+from core.orm import fields as orm_fields
 
 from .nomenclature_move_documents import Document, DocumentValue
 
@@ -23,7 +24,7 @@ class Stocktake(Document):
 
 
 class StocktakeValue(DocumentValue):
-    count: float = fields.FloatField()
+    count: float = orm_fields.FloatField()
     doc: Union["Stocktake", fields.ForeignKeyRelation["Stocktake"]] = fields.ForeignKeyField(
         'documents.Stocktake', related_name='values_list', on_delete=fields.CASCADE
     )

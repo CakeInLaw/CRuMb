@@ -4,7 +4,7 @@ from typing import Type, Optional
 
 from flet import dropdown
 
-from admin.widgets.inputs.user_input import UserInputWidget, UserInput
+from .user_input import UserInputWidget, UserInput
 
 
 EMPTY = "__EMPTY__"
@@ -24,15 +24,19 @@ class EnumChoiceWidget(UserInputWidget[Enum], dropdown.Dropdown):
         self.enum_type = enum_type
         super().__init__(**kwargs)
         self.options = [
-            dropdown.Option(key=x.value, text=x.name.title()) for x in self.enum_type
+            dropdown.Option(key=x.value, text=x.name) for x in self.enum_type
         ]
         if not self.required:
             self.options.insert(0, dropdown.Option(key=EMPTY, text=EMPTY_TEXT))
 
-    def _set_initial_value(self, value: Optional[Enum]) -> None:
-        self.value = None if value is None else value.value
+    def _set_initial_value(self, value: Enum | str) -> None:
+        if isinstance(value, Enum):
+            self.value = value.value
+        else:
+            self.value = EMPTY
 
-    def to_value(self) -> Optional[Enum]:
+    @property
+    def final_value(self) -> Optional[Enum]:
         return None if self.value == EMPTY else self.enum_type(self.value)
 
 
@@ -43,3 +47,9 @@ class EnumChoice(UserInput[EnumChoiceWidget]):
     @property
     def widget_type(self):
         return EnumChoiceWidget
+
+    @property
+    def default_initial(self) -> str | Enum:
+        if self.required:
+            return next(self.enum_type.__iter__())
+        return EMPTY

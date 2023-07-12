@@ -23,11 +23,14 @@ class IntInputWidget(InputWidget[int]):
         self.min_value = min_value
         self.max_value = max_value
 
-    def _validate(self, v: str) -> None:
-        if self.required and v == '':
+    def _validate(self) -> None:
+        empty = self.value == ''
+        if self.required and empty:
             raise InputValidationError('Обязательное поле')
+        if empty:
+            return None
         try:
-            num = int(v)
+            num = int(self.value)
         except ValueError:
             raise InputValidationError('Введите число')
         if self.min_value is not None and num < self.min_value:
@@ -35,11 +38,12 @@ class IntInputWidget(InputWidget[int]):
         if self.max_value is not None and num > self.max_value:
             raise InputValidationError(f'Максимум {self.max_value}')
 
-    def to_value(self) -> int:
+    @property
+    def final_value(self) -> int:
         return int(self.value)
 
     def _set_initial_value(self, value: int) -> None:
-        self.value = '0' if value is None else str(value)
+        self.value = '' if value is None else str(value)
 
 
 @dataclass
@@ -50,3 +54,11 @@ class IntInput(Input[IntInputWidget]):
     @property
     def widget_type(self):
         return IntInputWidget
+
+    @property
+    def default_initial(self) -> Optional[int]:
+        if self.required:
+            if self.min_value is not None:
+                return self.min_value
+            return 0
+        return None

@@ -7,8 +7,10 @@ from .user_input import UserInputWidget, UserInput
 
 
 class CheckboxWidget(UserInputWidget[bool], ft.Checkbox):
+    can_handle_blur: bool = False
 
-    def to_value(self) -> Optional[bool]:
+    @property
+    def final_value(self) -> Optional[bool]:
         return self.value
 
     def _set_initial_value(self, value: bool) -> None:
@@ -21,3 +23,7 @@ class Checkbox(UserInput[CheckboxWidget]):
     @property
     def widget_type(self):
         return CheckboxWidget
+
+    @property
+    def default_initial(self) -> bool:
+        return False

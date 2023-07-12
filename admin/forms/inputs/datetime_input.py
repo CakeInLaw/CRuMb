@@ -1,8 +1,9 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
-
+import pytz
 from flet import KeyboardType
+from tortoise import timezone
 
 from admin.exceptions import InputValidationError
 from .input import InputWidget, Input
@@ -25,14 +26,14 @@ class DatetimeInputWidget(InputWidget[datetime]):
         self.min_dt = min_dt
         self.max_dt = max_dt
 
-    def _validate(self, v: str) -> None:
-        empty = v == ''
+    def _validate(self) -> None:
+        empty = self.value == ''
         if self.required and empty:
             raise InputValidationError('Обязательное поле')
         if empty:
             return None
         try:
-            datetime_v = self.to_datetime(v)
+            datetime_v = self.to_datetime(self.value)
         except ValueError:
             raise InputValidationError(f'Формат {self.dt_fmt}')
         if self.min_dt is not None and datetime_v < self.min_dt:
@@ -42,16 +43,19 @@ class DatetimeInputWidget(InputWidget[datetime]):
 
     @classmethod
     def to_datetime(cls, v) -> datetime:
-        return datetime.strptime(v, cls.dt_fmt)
+        return timezone.make_aware(datetime.strptime(v, cls.dt_fmt))
 
-    def to_value(self) -> Optional[datetime]:
+    @property
+    def final_value(self) -> Optional[datetime]:
         if self.value == '':
             return
         return self.to_datetime(self.value)
 
     def _set_initial_value(self, value: datetime) -> None:
-        value = datetime.now() if value is None else value
-        self.value = value.strftime(self.dt_fmt)
+        if value is None:
+            self.value = ''
+        else:
+            self.value = timezone.make_naive(value).strftime(self.dt_fmt)
 
 
 @dataclass
@@ -62,3 +66,8 @@ class DatetimeInput(Input[DatetimeInputWidget]):
     @property
     def widget_type(self):
         return DatetimeInputWidget
+
+    @property
+    def default_initial(self) -> Optional[datetime]:
+        if self.required:
+            return timezone.now()

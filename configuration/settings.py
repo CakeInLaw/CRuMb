@@ -38,6 +38,6 @@ DATABASE = {
             ]
         },
     },
-    'use_tz': False,
+    'use_tz': True,
     'timezone': 'Europe/Moscow'
 }

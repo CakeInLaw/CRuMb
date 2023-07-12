@@ -23,6 +23,9 @@ class RecipeCard(Directory):
     class Meta:
         table = "dir__recipe_cards"
 
+    def __str__(self) -> str:
+        return str(self.product)
+
 
 class RecipeCardIngredients(Directory):
     id: int = fields.BigIntField(pk=True)
@@ -37,4 +40,6 @@ class RecipeCardIngredients(Directory):
     class Meta:
         table = "dir__recipe_cards__ingredients"
         ordering = ('order',)
-        unique_together = ('product', 'recipe')
+
+    def __str__(self) -> str:
+        return str(self.product)

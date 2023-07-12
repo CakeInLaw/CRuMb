@@ -17,5 +17,11 @@ class CustomerRepository(DirectoryRepository):
         'fields': {
             'name': 'Наименование',
             'register_address': 'Адрес регистрации',
+            'price_group_id': 'Ценовая группа'
         },
     }
+
+    def qs_select_related(self) -> set[str]:
+        if self.by == 'admin' and self.extra['target'] == 'edit':
+            return {'price_group'}
+        return set()

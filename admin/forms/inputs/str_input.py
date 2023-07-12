@@ -26,19 +26,20 @@ class StrInputWidget(InputWidget[str]):
         self.empty_as_none = empty_as_none
         assert not (self.empty_as_none and self.required), 'empty_as_none и required не могут быть одновременно True'
 
-    def to_value(self) -> Optional[str]:
+    @property
+    def final_value(self) -> Optional[str]:
         if self.value == '' and self.empty_as_none:
             return None
         return self.value
 
-    def _validate(self, v: str) -> None:
-        if self._max_length is not None and len(v) > self._max_length:
+    def _validate(self) -> None:
+        if self._max_length is not None and len(self.value) > self._max_length:
             raise InputValidationError(msg=f'Максимум символов - {self._max_length}')
-        if self.min_length is not None and len(v) < self.min_length:
+        if self.min_length is not None and len(self.value) < self.min_length:
             raise InputValidationError(msg=f'Минимум символов - {self.min_length}')
 
     def _set_initial_value(self, value: str) -> None:
-        self.value = value or ''
+        self.value = value
 
 
 S = TypeVar('S', bound=StrInputWidget)
@@ -48,8 +49,13 @@ S = TypeVar('S', bound=StrInputWidget)
 class StrInput(Input[S]):
     max_length: Optional[int] = None
     min_length: Optional[int] = None
+    empty_as_none: bool = False
     keyboard_type: Optional[KeyboardType] = None
 
     @property
     def widget_type(self):
         return StrInputWidget
+
+    @property
+    def default_initial(self) -> str:
+        return ''

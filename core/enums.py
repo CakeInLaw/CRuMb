@@ -1,7 +1,7 @@
 from enum import StrEnum
 
 
-__all__ = ["FieldTypes"]
+__all__ = ["FieldTypes", "NotifyStatus"]
 
 
 class FieldTypes(StrEnum):
@@ -10,7 +10,6 @@ class FieldTypes(StrEnum):
     STR = 'str'
     TEXT = 'text'
     BOOL = 'bool'
-    SELECT = 'select'
     ENUM = 'enum'
     DATE = 'date'
     DATETIME = 'datetime'
@@ -21,3 +20,11 @@ class FieldTypes(StrEnum):
     BACK_O2O = 'back_o2o'
     BACK_FK = 'back_fk'
     M2M = 'm2m'
+    HIDDEN = 'hidden'
+
+
+class NotifyStatus(StrEnum):
+    INFO = 'info'
+    SUCCESS = 'success'
+    WARN = 'warn'
+    ERROR = 'error'

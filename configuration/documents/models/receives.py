@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Union
 
 from tortoise import fields
-from tortoise.validators import MinValueValidator
+from core.orm import fields as orm_fields
 
 from .nomenclature_move_documents import Document, DocumentValue
 
@@ -21,7 +21,7 @@ class Receive(Document):
     provider: Union["Provider", fields.ForeignKeyRelation["Provider"]] = fields.ForeignKeyField(
         'directories.Provider', related_name='receives', on_delete=fields.RESTRICT
     )
-    provider_doc_id: str = fields.CharField(max_length=20)
+    provider_doc_id: str = orm_fields.CharField(max_length=20)
     provider_doc_dt: datetime = fields.DatetimeField()
 
     values_list: list["ReceiveValue"] | fields.BackwardFKRelation["ReceiveValue"]
@@ -33,8 +33,8 @@ class Receive(Document):
 
 
 class ReceiveValue(DocumentValue):
-    count: float = fields.FloatField(validators=[MinValueValidator(0)])
-    price: float = fields.FloatField(validators=[MinValueValidator(0)])
+    count: float = orm_fields.FloatField(min_value=0)
+    price: float = orm_fields.FloatField(min_value=0)
     doc: Union["Receive", fields.ForeignKeyRelation["Receive"]] = fields.ForeignKeyField(
         'documents.Receive', related_name='values_list', on_delete=fields.CASCADE
     )

@@ -1,11 +1,13 @@
-from typing import Optional
+from typing import TYPE_CHECKING, Optional, Any
 
-from flet import Control, UserControl, Column, Row
+from flet import Control, UserControl, Column, Row, Container, padding
 
-from admin.widgets.inputs.user_input import UserInputWidget, UserInput
-from core.base_model import BaseModel
 from core.exceptions import ObjectErrors
 from .schema import FormSchema, InputGroup
+from .inputs import UserInputWidget, UserInput, UndefinedValue
+
+if TYPE_CHECKING:
+    from admin.app import CRuMbAdmin
 
 
 FIELDS_MAP = dict[str, UserInputWidget]
@@ -13,23 +15,22 @@ FIELDS_MAP = dict[str, UserInputWidget]
 
 class Form(UserControl):
 
-    form_schema: FormSchema = None
+    schema: FormSchema = None
     fields_map: FIELDS_MAP
     action_bar: Optional[Control]
     submit_bar: Optional[Control]
-    initial_data: Optional[BaseModel]
 
     def __init__(
             self,
-            action_bar: Optional[Control] = None,
-            submit_bar: Optional[Control] = None,
-            initial_data: Optional[BaseModel] = None
+            app: "CRuMbAdmin",
+            initial_data: Optional[dict] = None,
+            lang: str = 'RU',
     ):
         super().__init__()
+        self.app = app
         self.fields_map = {}
-        self.action_bar = action_bar
-        self.submit_bar = submit_bar
-        self.initial_data = initial_data
+        self.initial_data = initial_data or {}
+        self.LANG = lang
 
     def build(self):
         controls = []
@@ -41,7 +42,7 @@ class Form(UserControl):
         controls.append(body)
         if submit_bar:
             controls.append(submit_bar)
-        return Column(controls=controls)
+        return Container(Column(controls=controls), padding=padding.all(10))
 
     def build_form(self) -> Column:
         return Column(controls=self._build_form())
@@ -55,21 +56,44 @@ class Form(UserControl):
             if isinstance(subgroup_or_input, InputGroup):
                 controls.append(self._build_group(subgroup_or_input))
             elif isinstance(subgroup_or_input, UserInput):
-                widget = subgroup_or_input.widget()
+                widget = subgroup_or_input.widget(form=self, initial=self.initial_for(subgroup_or_input))
                 self.fields_map[subgroup_or_input.name] = widget
                 controls.append(widget)
+            else:
+                raise ValueError('что-то пошло не так')
         return group.to_control(controls)
 
-    def get_action_bar(self):
-        return self.action_bar
+    def get_action_bar(self) -> Control:
+        pass
 
-    def get_submit_bar(self):
-        return self.submit_bar
+    def get_submit_bar(self) -> Control:
+        pass
 
     def get_form_schema(self) -> FormSchema:
-        assert self.form_schema
-        return self.form_schema
+        assert self.schema
+        return self.schema
 
     async def set_object_errors(self, err: ObjectErrors):
-        for field, e in err.to_error().items():
-            await self.fields_map[field].set_error(e['msg'])
+        _err = err.to_error()
+        if '__root__' in _err:
+            root = _err.pop('__root__')
+            # TODO
+        for field, e in _err.items():
+            await self.fields_map[field].set_object_error(e)
+
+    async def form_is_valid(self):
+        is_valid = True
+        for widget in self.fields_map.values():
+            if not await widget.is_valid():
+                is_valid = False
+        return is_valid
+
+    @property
+    def dirty_data(self):
+        return {name: field.final_value for name, field in self.fields_map.items()}
+
+    def cleaned_data(self):
+        return self.dirty_data
+
+    def initial_for(self, item: UserInput) -> Any:
+        return self.initial_data.get(item.name, UndefinedValue)

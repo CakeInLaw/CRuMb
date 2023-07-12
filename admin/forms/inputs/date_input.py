@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Optional
 
@@ -25,14 +25,14 @@ class DateInputWidget(InputWidget[date]):
         self.min_date = min_date
         self.max_date = max_date
 
-    def _validate(self, v: str) -> None:
-        empty = v == ''
+    def _validate(self) -> None:
+        empty = self.value == ''
         if self.required and empty:
             raise InputValidationError('Обязательное поле')
         if empty:
             return None
         try:
-            date_v = self.to_date(v)
+            date_v = self.to_date(self.value)
         except ValueError:
             raise InputValidationError(f'Формат даты ({self.date_fmt})')
         if self.min_date is not None and date_v < self.min_date:
@@ -44,14 +44,17 @@ class DateInputWidget(InputWidget[date]):
     def to_date(cls, v) -> date:
         return datetime.strptime(v, cls.date_fmt).date()
 
-    def to_value(self) -> Optional[date]:
+    @property
+    def final_value(self) -> Optional[date]:
         if self.value == '':
             return
         return self.to_date(self.value)
 
     def _set_initial_value(self, value: date) -> None:
-        value = date.today() if value is None else value
-        self.value = value.strftime(self.date_fmt)
+        if value is None:
+            self.value = ''
+        else:
+            self.value = value.strftime(self.date_fmt)
 
 
 @dataclass
@@ -62,3 +65,8 @@ class DateInput(Input[DateInputWidget]):
     @property
     def widget_type(self):
         return DateInputWidget
+
+    @property
+    def default_initial(self) -> Optional[date]:
+        if self.required:
+            return date.today()

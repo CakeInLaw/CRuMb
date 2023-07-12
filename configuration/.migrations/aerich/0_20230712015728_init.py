@@ -12,12 +12,8 @@ async def upgrade(db: BaseDBAsyncClient) -> str:
 CREATE TABLE IF NOT EXISTS "dir__nomenclature" (
     "id" BIGSERIAL NOT NULL PRIMARY KEY,
     "name" VARCHAR(50) NOT NULL,
-    "child_name" VARCHAR(50) NOT NULL,
-    "full_name" VARCHAR(300) NOT NULL,
     "type" VARCHAR(1) NOT NULL,
-    "is_group" BOOL NOT NULL,
-    "units" VARCHAR(1) NOT NULL,
-    "parent_id" BIGINT REFERENCES "dir__nomenclature" ("id") ON DELETE RESTRICT
+    "units" VARCHAR(1) NOT NULL
 );
 COMMENT ON COLUMN "dir__nomenclature"."type" IS 'EQUIPMENT: E\nHOZ: H\nINVENTORY: I\nRAWS: R\nPROVISION: P\nDISHES: D';
 COMMENT ON COLUMN "dir__nomenclature"."units" IS 'UNITS: U\nKILOGRAMS: K\nLITERS: L\nCENTIMETERS: C\nMETERS: M';
@@ -69,15 +65,13 @@ CREATE TABLE IF NOT EXISTS "dir__recipe_cards__ingredients" (
     "id" BIGSERIAL NOT NULL PRIMARY KEY,
     "order" SMALLINT NOT NULL,
     "product_id" BIGINT NOT NULL REFERENCES "dir__nomenclature" ("id") ON DELETE RESTRICT,
-    "recipe_id" INT NOT NULL REFERENCES "dir__recipe_cards" ("id") ON DELETE CASCADE,
-    CONSTRAINT "uid_dir__recipe_product_36517b" UNIQUE ("product_id", "recipe_id")
+    "recipe_id" INT NOT NULL REFERENCES "dir__recipe_cards" ("id") ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS "dir__users" (
     "id" BIGSERIAL NOT NULL PRIMARY KEY,
     "username" VARCHAR(40)  UNIQUE,
-    "password_hash" VARCHAR(200) NOT NULL,
+    "password_hash" VARCHAR(100) NOT NULL,
     "password_change_dt" TIMESTAMPTZ NOT NULL,
-    "password_salt" VARCHAR(50) NOT NULL,
     "is_superuser" BOOL NOT NULL  DEFAULT False,
     "is_active" BOOL NOT NULL  DEFAULT True,
     "created_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP
@@ -85,6 +79,7 @@ CREATE TABLE IF NOT EXISTS "dir__users" (
 CREATE TABLE IF NOT EXISTS "dir__customer_locations" (
     "id" SERIAL NOT NULL PRIMARY KEY,
     "order" SMALLINT NOT NULL,
+    "name" VARCHAR(100) NOT NULL,
     "delivery_address" VARCHAR(200) NOT NULL,
     "customer_id" INT NOT NULL REFERENCES "dir__customers" ("id") ON DELETE RESTRICT,
     "user_id" BIGINT NOT NULL UNIQUE REFERENCES "dir__users" ("id") ON DELETE RESTRICT

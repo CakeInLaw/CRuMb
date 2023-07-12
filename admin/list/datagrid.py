@@ -1,20 +1,22 @@
 import math
 from typing import TYPE_CHECKING, Type
 
-from flet import UserControl, Column, Text, \
-    DataTable, DataColumn, DataRow, DataCell
+from flet import UserControl, Column, Text, DataTable, DataColumn, DataRow, DataCell, \
+    TextSpan, TextStyle, TextDecoration, MainAxisAlignment, BorderSide
 
-from admin.datagrid.pagination import Pagination
-from core.base_model import BaseModel
+
+from core.orm import BaseModel
 from core.enums import FieldTypes
 from core.repository import Repository
-from core.types import SORT, FILTERS
+from core.types import SORT, FILTERS, PK
+
+from .pagination import Pagination
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
 
 
-class DatagridView(UserControl):
+class Datagrid(UserControl):
 
     _max_items: int = 0
 
@@ -26,11 +28,13 @@ class DatagridView(UserControl):
             sort: dict[str, bool] = None,
             filters: FILTERS = None,
             pagination_per_page: int = 25,
-            pagination_count: int = 7
+            pagination_count: int = 7,
     ):
-        super().__init__()
+        super().__init__(expand=True)
         self.app = app
-        self.datagrid = DataTable()
+        self.datagrid = DataTable(
+            expand=True,
+        )
         self.pagination = Pagination(
             datagrid=self,
             per_page=pagination_per_page,
@@ -47,7 +51,7 @@ class DatagridView(UserControl):
         return Column([
             self.datagrid,
             self.pagination
-        ])
+        ], expand=True, alignment=MainAxisAlignment.SPACE_BETWEEN)
 
     async def update_items(self):
         self.items, self.max_items = await self.repository(
@@ -58,10 +62,10 @@ class DatagridView(UserControl):
             sort=self.get_sort(),
             filters=self.get_filters(),
         )
+        self.pagination.rebuild()
 
     async def update_datagrid(self):
         await self.update_items()
-        self.pagination.rebuild()
         await self.update_async()
 
     def get_filters(self) -> FILTERS:
@@ -79,15 +83,29 @@ class DatagridView(UserControl):
         self._items = v
         self.fill_items()
 
+    def open_edit_form(self, pk: PK):
+        async def wrapper(e):
+            await self.app.open(self.repository.entity(), 'edit', pk=pk)
+        return wrapper
+
     def fill_items(self):
         self.datagrid.rows = rows = []
         for item in self.items:
-            rows.append(
-                DataRow([
-                    DataCell(Text(self.get_value(item, field)))
-                    for field in self.columns
-                ])
-            )
+            fields = list(self.columns.keys())
+            cols = [
+                DataCell(Text(spans=[
+                    TextSpan(
+                        text=self.get_value(item, fields[0]),
+                        style=TextStyle(color='primary', decoration=TextDecoration.UNDERLINE),
+                        on_click=self.open_edit_form(item.pk)
+                    ),
+                ]))
+            ]
+            for field in fields[1:]:
+                cols.append(
+                    DataCell(Text(self.get_value(item, field)), data=item.pk)
+                )
+            rows.append(DataRow(cols))
 
     def get_value(self, item: BaseModel, field: str):
         value = getattr(item, field)
@@ -111,6 +129,7 @@ class DatagridView(UserControl):
 
     @columns.setter
     def columns(self, v: list[str]):
+        assert len(v) >= 1
         fields = self.repository.describe().all
         self._columns_map = {}
         for name in v:

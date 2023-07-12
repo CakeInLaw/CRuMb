@@ -23,11 +23,14 @@ class FloatInputWidget(InputWidget[float]):
         self.min_value = min_value
         self.max_value = max_value
 
-    def _validate(self, v: str) -> None:
-        if self.required and v == '':
+    def _validate(self) -> None:
+        empty = self.value == ''
+        if self.required and empty:
             raise InputValidationError('Обязательное поле')
+        if empty:
+            return None
         try:
-            num = float(v)
+            num = float(self.value)
         except ValueError:
             raise InputValidationError('Введите число (с точкой)')
         if self.min_value is not None and num < self.min_value:
@@ -35,11 +38,12 @@ class FloatInputWidget(InputWidget[float]):
         if self.max_value is not None and num > self.max_value:
             raise InputValidationError(f'Максимум {self.max_value}')
 
-    def to_value(self) -> float:
+    @property
+    def final_value(self) -> float:
         return float(self.value)
 
     def _set_initial_value(self, value: float) -> None:
-        self.value = '0.0' if value is None else str(value)
+        self.value = '' if value is None else str(value)
 
 
 @dataclass
@@ -50,3 +54,11 @@ class FloatInput(Input[FloatInputWidget]):
     @property
     def widget_type(self):
         return FloatInputWidget
+
+    @property
+    def default_initial(self) -> Optional[float]:
+        if self.required:
+            if self.min_value is not None:
+                return float(self.min_value)
+            return 0.0
+        return None
