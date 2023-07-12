@@ -5,9 +5,11 @@ from configuration.admin import CakeInLawAdmin
 from configuration.menu_groups import Sells
 
 
-@CakeInLawAdmin.register
+@CakeInLawAdmin.register(
+    present_in=(Sells, )
+)
 class CustomerResource(Resource):
     repository = CustomerRepository
     datagrid_columns = ['name', 'register_address', 'price_group_id']
-    present_in = (Sells,)
+
     form_primitive = Primitive('name', 'register_address', inputs.RelatedChoice(name='price_group', label='Ценовая группа', entity='directories.PriceGroup'))

@@ -6,11 +6,12 @@ from configuration.menu_groups import Sells
 from configuration.admin import CakeInLawAdmin
 
 
-@CakeInLawAdmin.register
+@CakeInLawAdmin.register(
+    present_in=(Sells,)
+)
 class CustomerLocationResource(Resource):
     repository = CustomerLocationRepository
     datagrid_columns = ['customer', 'name', 'delivery_address']
-    present_in = (Sells,)
     form_primitive = Primitive(
         'name',
         'delivery_address',

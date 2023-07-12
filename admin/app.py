@@ -1,5 +1,5 @@
 import asyncio
-from typing import Type, TypeVar
+from typing import Type, TypeVar, Union, Any
 
 from flet import (
     Page, UserControl, Control, Row, Text, RouteChangeEvent,
@@ -9,12 +9,12 @@ from flet import (
 
 from core.enums import NotifyStatus
 from .content import Content
-from .layout import Header, Sidebar, MenuGroup
+from .layout import Header, Sidebar, MenuGroup, MenuItemInfo
 
 from .resource import Resource
 
 
-RESOURCE = TypeVar("RESOURCE", bound="Resource")
+RESOURCE = TypeVar("RESOURCE", bound=Resource)
 
 
 class CRuMbAdmin(UserControl):
@@ -51,12 +51,35 @@ class CRuMbAdmin(UserControl):
         )
 
     @classmethod
-    def register(cls, resource: Type[RESOURCE]) -> Type[RESOURCE]:
-        cls.register_resource(resource)
-        return resource
+    def register(
+            cls,
+            present_in: tuple[Type["MenuGroup"] | tuple[Type["MenuGroup"], dict[str, Any]], ...] = ()
+    ):
+        def wrapper(resource: Type[RESOURCE]) -> Type[RESOURCE]:
+            cls.register_resource(resource, present_in=present_in)
+            return resource
+        return wrapper
 
     @classmethod
-    def register_resource(cls, resource: Type["Resource"]) -> None:
+    def register_resource(
+            cls,
+            resource: Type["Resource"],
+            present_in: tuple[Type["MenuGroup"] | tuple[Type["MenuGroup"], dict[str, Any]], ...] = ()
+    ) -> None:
+        for group in present_in:
+            if issubclass(group, MenuGroup):
+                group.add_item_info(MenuItemInfo(entity=resource.entity()))
+            elif isinstance(group, tuple) and len(group) == 2:
+                group, extra = group
+                if not issubclass(group, MenuGroup) or not isinstance(extra, dict):
+                    raise ValueError(f'Что-то не то передал: {group=}, {extra=}')
+                group.add_item_info(MenuItemInfo(
+                    entity=resource.entity(),
+                    **extra
+                ))
+            else:
+                raise TypeError(f'Что-то не то передал: {type(group)}, ({group})')
+
         entity = resource.entity()
         if entity in cls._resources:
             raise ValueError(f'Ресурс с такой сущностью уже существует ({entity})')

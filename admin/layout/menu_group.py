@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING, Type, Optional
 from math import pi
 
-from flet import ListTile, Icon, Text, Column, Container, padding, icons, Rotate
+from flet import ListTile, Icon, Text, Column, Container, padding, icons, Rotate, Scale
 
-from .menu_item import MenuItem
+from .menu_item import MenuItem, MenuItemInfo
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 class MenuGroup(Column):
     icon: str
     label: str
+    items_info: list[MenuItemInfo] = ()
     subgroups: Optional[tuple[Type["MenuGroup"]]] = ()
 
     def __init__(
@@ -37,15 +38,17 @@ class MenuGroup(Column):
             group = group_cls(app=self.app, parent=self)
             if group.children:
                 self.children.append(group)
-        for resource in self.app.all_resources().values():
-            if self.__class__ in resource.present_in:
-                self.children.append(MenuItem(
-                    icon=resource.ICON,
-                    label=resource.name_plural,
-                    entity=resource.entity(),
-                    app=self.app,
-                    parent=self
-                ))
+        for item_info in self.items_info:
+            resource = self.app.find_resource(item_info.entity)
+            self.children.append(MenuItem(
+                icon=resource.ICON,
+                label=resource.name,
+                entity=resource.entity(),
+                method=item_info.method,
+                query=item_info.query,
+                app=self.app,
+                parent=self
+            ))
 
         self.children_container = Container(
             Column(self.children, spacing=0),
@@ -64,6 +67,12 @@ class MenuGroup(Column):
         self.extended = not self.extended
         await self.update_async()
 
+    @classmethod
+    def add_item_info(cls, info: MenuItemInfo):
+        if isinstance(cls.items_info, tuple):
+            cls.items_info = []
+        cls.items_info.append(info)
+
     @property
     def extended(self) -> bool:
         return self._extended
@@ -78,16 +87,6 @@ class MenuGroup(Column):
             self.children_container.visible = False
             self.chevron.rotate.angle = 0
 
-    def activate(self):
-        self.root.selected = True
-        if self.parent:
-            self.parent.activate()
-
-    def deactivate(self):
-        self.root.selected = False
-        if self.parent:
-            self.parent.deactivate()
-
     def minimize(self):
         self.root.title.visible = False
         self.children_container.padding.left = 4
@@ -101,12 +100,3 @@ class MenuGroup(Column):
         self.root.trailing.visible = True
         for child in self.children:
             child.maximize()
-
-    def collect_menu_items(self) -> list[MenuItem]:
-        result = []
-        for group_or_item in self.children:
-            if isinstance(group_or_item, MenuItem):
-                result.append(group_or_item)
-            elif isinstance(group_or_item, MenuGroup):
-                result.extend(group_or_item.collect_menu_items())
-        return result

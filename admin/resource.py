@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Generic, Type, Callable, Coroutine, Optional, Any
+from typing import TYPE_CHECKING, Generic, Type, Callable, Coroutine, Optional, Any, Union
 
 from flet import Control, Text, icons
 
@@ -11,7 +11,6 @@ from admin.forms import Form, ModelForm, Primitive
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
-    from admin.layout import MenuGroup
 
 
 __all__ = ["Resource"]
@@ -21,8 +20,6 @@ class Resource(Generic[REPOSITORY]):
     repository: Type[REPOSITORY]
     app: "CRuMbAdmin"
     ICON = icons.SPORTS_GYMNASTICS
-    SELECTED_ICON = None
-    present_in: tuple["MenuGroup"] = ()
 
     datagrid_columns: list[str]
     form_primitive: Primitive = None
