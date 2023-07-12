@@ -1,7 +1,9 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
 
-from flet import Container, Row, IconButton, Text, ScrollMode, icons, border
+from flet import DragTarget, DragTargetAcceptEvent, Draggable, \
+    Container, Row, IconButton, Text, \
+    ScrollMode, icons, border
 
 from .loader import Loader
 
@@ -18,22 +20,34 @@ class TabInfo:
     has_close: bool = True
 
 
-class Tab(Container):
+class Tab(Draggable):
     def __init__(self, bar: "TabsBar", info: TabInfo):
-        super().__init__(border=border.symmetric(horizontal=border.BorderSide(1, 'black,0.5')))
+        super().__init__(group='tab')
+
         self.bar = bar
         self.info = info
+
         self.text = Text(self.info.entity)
-        self.content = self.row = Row([self.text])
-        self.on_click = self.handle_click
+        self.row = Row([self.text])
         if self.info.has_close:
             self.close_btn = IconButton(icon=icons.CLOSE_ROUNDED, on_click=self.handle_close)
-        self.row.controls.append(self.close_btn)
-        self.container = self.app.content_box.add_container()
-        self.container.content = Loader()
+            self.row.controls.append(self.close_btn)
+        self.container = Container(
+            border=border.symmetric(horizontal=border.BorderSide(1, 'black,0.5')),
+            content=self.row
+        )
+        self.content = DragTarget(
+            group='tab',
+            content=self.container,
+            on_accept=self.on_drag_accept
+        )
+
+        self.container.on_click = self.handle_click
+        self.box = self.app.content_box.add_container()
+        self.box.content = Loader()
 
     async def did_mount_async(self):
-        self.container.content = await self.resource.methods[self.info.method](**self.info.query)
+        self.box.content = await self.resource.methods[self.info.method](**self.info.query)
         await self.app.update_async()
 
     @property
@@ -58,15 +72,19 @@ class Tab(Container):
         await self.bar.rm_tab(self)
 
     def before_remove(self):
-        self.app.content_box.rm_container(self.container)
+        self.app.content_box.rm_container(self.box)
 
     def activate(self):
-        self.container.visible = True
-        self.bgcolor = 'black,0.5'
+        self.box.visible = True
+        self.container.bgcolor = 'black,0.5'
 
     def deactivate(self):
-        self.container.visible = False
-        self.bgcolor = 'white'
+        self.box.visible = False
+        self.container.bgcolor = 'white'
+
+    async def on_drag_accept(self, e: DragTargetAcceptEvent):
+        tab: Tab = self.page.get_control(e.src_id)
+        await self.bar.move_tab(tab.index, self.index)
 
 
 class TabsBar(Container):
@@ -132,3 +150,10 @@ class TabsBar(Container):
         tab = Tab(bar=self, info=info)
         self.tabs.append(tab)
         await self.set_current_tab(tab)
+
+    async def move_tab(self, idx_from: int, idx_to: int):
+        if idx_from == idx_to:
+            return
+        tab = self.tabs.pop(idx_from)
+        self.tabs.insert(idx_to, tab)
+        await self.update_async()
