@@ -23,3 +23,6 @@ class PriceGroup(Directory):
     class Meta:
         table = "dir__price_groups"
         ordering = ('id',)
+
+    def __str__(self) -> str:
+        return self.name

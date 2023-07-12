@@ -4,6 +4,7 @@ from tortoise import fields
 from core.orm import fields as orm_fields
 
 from core.entities.directories import Directory
+from core.utils import remove_extra_spaces
 
 if TYPE_CHECKING:
     from configuration.directories.models import Position, User
@@ -32,3 +33,6 @@ class Employee(Directory):
     class Meta:
         table = "dir__employees"
         ordering = ('id',)
+
+    def __str__(self) -> str:
+        return remove_extra_spaces(f'{self.last_name} {self.first_name} {self.fathers_name}')

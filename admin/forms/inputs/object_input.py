@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from flet import Container, Row, Column, Control, ControlEvent
+from flet import Container, Row, Column, Control
 
 from admin.exceptions import InputValidationError
 from core.orm import BaseModel
@@ -10,6 +10,7 @@ from .. import InputGroup
 
 
 class ObjectInputWidget(UserInputWidget[dict[str, Any]], Container):
+    can_handle_blur: bool = False
 
     def __init__(self, variant: str, fields: list[UserInput | InputGroup], **kwargs):
         super().__init__(**kwargs)
@@ -28,6 +29,11 @@ class ObjectInputWidget(UserInputWidget[dict[str, Any]], Container):
             case _:
                 raise ValueError(f'Варианта отображения "{self.variant}" не существует')
 
+    def _create_widget(self, item: UserInput) -> UserInputWidget | Control:
+        widget = item.widget(form=self.form, name_prefix=self.name, initial=self.initial_for(item))
+        self.fields_map[item.name] = widget
+        return widget
+
     def get_widgets(self) -> list[Control]:
         widgets = []
         for f in self.fields:
@@ -36,11 +42,6 @@ class ObjectInputWidget(UserInputWidget[dict[str, Any]], Container):
             else:
                 widgets.append(self._build_group(f))
         return widgets
-
-    def _create_widget(self, item: UserInput) -> UserInputWidget | Control:
-        widget = item.widget(self.initial_for(item))
-        self.fields_map[item.name] = widget
-        return widget
 
     def _build_group(self, group: InputGroup) -> Control:
         controls: list[Control] = []
@@ -52,6 +53,7 @@ class ObjectInputWidget(UserInputWidget[dict[str, Any]], Container):
         return group.to_control(controls)
 
     def initial_for(self, item: UserInput) -> Any:
+        print(self.initial_value)
         if self.initial_value is None:
             return UndefinedValue
         if isinstance(self.initial_value, dict):
@@ -59,7 +61,7 @@ class ObjectInputWidget(UserInputWidget[dict[str, Any]], Container):
         elif isinstance(self.initial_value, BaseModel):
             return getattr(self.initial_value, item.name, UndefinedValue)
         else:
-            raise TypeError(f'Почему {type(item)}, {item}?')
+            raise TypeError(f'Почему initial_value={type(self.initial_value)}, ({self.initial_value})?')
 
     @property
     def final_value(self) -> dict[str, Any]:
@@ -79,7 +81,7 @@ class ObjectInputWidget(UserInputWidget[dict[str, Any]], Container):
                 break
         return changed
 
-    async def validate(self, e: ControlEvent = None, reraise: bool = False) -> None:
+    async def validate(self, reraise: bool = False) -> None:
         has_error = False
         for widget in self.fields_map.values():
             try:

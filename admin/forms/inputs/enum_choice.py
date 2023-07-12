@@ -24,7 +24,7 @@ class EnumChoiceWidget(UserInputWidget[Enum], dropdown.Dropdown):
         self.enum_type = enum_type
         super().__init__(**kwargs)
         self.options = [
-            dropdown.Option(key=x.value, text=x.name.title()) for x in self.enum_type
+            dropdown.Option(key=x.value, text=x.name) for x in self.enum_type
         ]
         if not self.required:
             self.options.insert(0, dropdown.Option(key=EMPTY, text=EMPTY_TEXT))

@@ -20,3 +20,8 @@ class CustomerRepository(DirectoryRepository):
             'price_group_id': 'Ценовая группа'
         },
     }
+
+    def qs_select_related(self) -> set[str]:
+        if self.by == 'admin' and self.extra['target'] == 'edit':
+            return {'price_group'}
+        return set()

@@ -20,6 +20,7 @@ class FieldTypes(StrEnum):
     BACK_O2O = 'back_o2o'
     BACK_FK = 'back_fk'
     M2M = 'm2m'
+    HIDDEN = 'hidden'
 
 
 class NotifyStatus(StrEnum):

@@ -15,6 +15,7 @@ __all__ = ["CustomerLocation"]
 class CustomerLocation(Directory):
     id: int = fields.IntField(pk=True)
     order: int = fields.SmallIntField()
+    name: str = orm_fields.CharField(max_length=100)
     customer: Union["Customer", fields.ForeignKeyRelation["Customer"]] = fields.ForeignKeyField(
         'directories.Customer', related_name='customer_locations', on_delete=fields.RESTRICT
     )
@@ -26,3 +27,6 @@ class CustomerLocation(Directory):
     class Meta:
         table = "dir__customer_locations"
         ordering = ('id',)
+
+    def __str__(self) -> str:
+        return self.name

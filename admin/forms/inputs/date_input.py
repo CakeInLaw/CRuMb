@@ -25,14 +25,14 @@ class DateInputWidget(InputWidget[date]):
         self.min_date = min_date
         self.max_date = max_date
 
-    def _validate(self, v: str) -> None:
-        empty = v == ''
+    def _validate(self) -> None:
+        empty = self.value == ''
         if self.required and empty:
             raise InputValidationError('Обязательное поле')
         if empty:
             return None
         try:
-            date_v = self.to_date(v)
+            date_v = self.to_date(self.value)
         except ValueError:
             raise InputValidationError(f'Формат даты ({self.date_fmt})')
         if self.min_date is not None and date_v < self.min_date:

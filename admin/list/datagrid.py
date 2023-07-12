@@ -2,7 +2,7 @@ import math
 from typing import TYPE_CHECKING, Type
 
 from flet import UserControl, Column, Text, DataTable, DataColumn, DataRow, DataCell, \
-    TextSpan, TextStyle, TextDecoration
+    TextSpan, TextStyle, TextDecoration, MainAxisAlignment, BorderSide
 
 
 from core.orm import BaseModel
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
 
 
-class DatagridView(UserControl):
+class Datagrid(UserControl):
 
     _max_items: int = 0
 
@@ -28,11 +28,13 @@ class DatagridView(UserControl):
             sort: dict[str, bool] = None,
             filters: FILTERS = None,
             pagination_per_page: int = 25,
-            pagination_count: int = 7
+            pagination_count: int = 7,
     ):
-        super().__init__()
+        super().__init__(expand=True)
         self.app = app
-        self.datagrid = DataTable()
+        self.datagrid = DataTable(
+            expand=True,
+        )
         self.pagination = Pagination(
             datagrid=self,
             per_page=pagination_per_page,
@@ -49,7 +51,7 @@ class DatagridView(UserControl):
         return Column([
             self.datagrid,
             self.pagination
-        ])
+        ], expand=True, alignment=MainAxisAlignment.SPACE_BETWEEN)
 
     async def update_items(self):
         self.items, self.max_items = await self.repository(
@@ -60,10 +62,10 @@ class DatagridView(UserControl):
             sort=self.get_sort(),
             filters=self.get_filters(),
         )
+        self.pagination.rebuild()
 
     async def update_datagrid(self):
         await self.update_items()
-        self.pagination.rebuild()
         await self.update_async()
 
     def get_filters(self) -> FILTERS:

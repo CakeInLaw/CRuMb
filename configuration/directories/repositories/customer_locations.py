@@ -17,8 +17,11 @@ class CustomerLocationRepository(DirectoryRepository):
         'name': 'Точка покупателя',
         'name_plural': 'Точки покупателей',
         'fields': {
+            'name': 'Наименование',
             'order': 'Порядок',
             'delivery_address': 'Адрес доставки',
+            'customer': 'Покупатель',
+            'customer_id': 'Покупатель',
         }
     }
 

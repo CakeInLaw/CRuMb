@@ -23,14 +23,14 @@ class FloatInputWidget(InputWidget[float]):
         self.min_value = min_value
         self.max_value = max_value
 
-    def _validate(self, v: str) -> None:
-        empty = v == ''
+    def _validate(self) -> None:
+        empty = self.value == ''
         if self.required and empty:
             raise InputValidationError('Обязательное поле')
         if empty:
             return None
         try:
-            num = float(v)
+            num = float(self.value)
         except ValueError:
             raise InputValidationError('Введите число (с точкой)')
         if self.min_value is not None and num < self.min_value:

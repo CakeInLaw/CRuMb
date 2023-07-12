@@ -21,3 +21,6 @@ class Position(Directory):
     class Meta:
         table = "dir__positions"
         ordering = ('id',)
+
+    def __str__(self) -> str:
+        return self.name

@@ -26,14 +26,14 @@ class DatetimeInputWidget(InputWidget[datetime]):
         self.min_dt = min_dt
         self.max_dt = max_dt
 
-    def _validate(self, v: str) -> None:
-        empty = v == ''
+    def _validate(self) -> None:
+        empty = self.value == ''
         if self.required and empty:
             raise InputValidationError('Обязательное поле')
         if empty:
             return None
         try:
-            datetime_v = self.to_datetime(v)
+            datetime_v = self.to_datetime(self.value)
         except ValueError:
             raise InputValidationError(f'Формат {self.dt_fmt}')
         if self.min_dt is not None and datetime_v < self.min_dt:

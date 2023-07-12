@@ -32,10 +32,10 @@ class StrInputWidget(InputWidget[str]):
             return None
         return self.value
 
-    def _validate(self, v: str) -> None:
-        if self._max_length is not None and len(v) > self._max_length:
+    def _validate(self) -> None:
+        if self._max_length is not None and len(self.value) > self._max_length:
             raise InputValidationError(msg=f'Максимум символов - {self._max_length}')
-        if self.min_length is not None and len(v) < self.min_length:
+        if self.min_length is not None and len(self.value) < self.min_length:
             raise InputValidationError(msg=f'Минимум символов - {self.min_length}')
 
     def _set_initial_value(self, value: str) -> None:
@@ -49,6 +49,7 @@ S = TypeVar('S', bound=StrInputWidget)
 class StrInput(Input[S]):
     max_length: Optional[int] = None
     min_length: Optional[int] = None
+    empty_as_none: bool = False
     keyboard_type: Optional[KeyboardType] = None
 
     @property

@@ -7,11 +7,13 @@ from .user_input import UserInputWidget, UserInput, T, _I
 
 
 class InputWidget(UserInputWidget[T], TextField):
+
     def __init__(self, **kwargs):
         kwargs.setdefault('border', 2)
         kwargs.setdefault('border_radius', 12)
         kwargs.setdefault('text_size', 14)
         super().__init__(**kwargs)
+        self.on_blur = self.handle_blur
 
     async def on_success_validation(self):
         if self.error_text:

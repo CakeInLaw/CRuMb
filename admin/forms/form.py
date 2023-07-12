@@ -56,7 +56,7 @@ class Form(UserControl):
             if isinstance(subgroup_or_input, InputGroup):
                 controls.append(self._build_group(subgroup_or_input))
             elif isinstance(subgroup_or_input, UserInput):
-                widget = subgroup_or_input.widget(initial=self.initial_for(subgroup_or_input))
+                widget = subgroup_or_input.widget(form=self, initial=self.initial_for(subgroup_or_input))
                 self.fields_map[subgroup_or_input.name] = widget
                 controls.append(widget)
             else:

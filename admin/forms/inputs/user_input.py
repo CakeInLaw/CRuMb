@@ -1,19 +1,19 @@
 from dataclasses import dataclass
-from typing import TypeVar, Optional, Any, Generic, Type, Union
+from typing import TYPE_CHECKING, TypeVar, Optional, Any, Generic, Type, Union
 
 from flet import Control, ControlEvent
 
 from admin.exceptions import InputValidationError
 
+if TYPE_CHECKING:
+    from ..form import Form
+
 
 T = TypeVar('T')
-_I = TypeVar('_I', bound=Union[Control, "InputWidget"])
 
 
 class UserInputWidget(Generic[T]):
-    validate_on_blur: bool
-    required: bool
-    empty_as_none: bool
+    can_handle_blur: bool = True
 
     def __init__(
             self,
@@ -23,6 +23,7 @@ class UserInputWidget(Generic[T]):
             validate_on_blur: bool = True,
             required: bool = False,
             initial_value: T = None,
+            form: "Form" = None,
             **kwargs
     ):
         super().__init__(**kwargs)
@@ -30,11 +31,13 @@ class UserInputWidget(Generic[T]):
         self.label = label
         self.required = required
         self.validate_on_blur = validate_on_blur
-        if self.validate_on_blur:
-            self.on_blur = self.validate
 
         self.initial_value = initial_value
         self._set_initial_value(self.initial_value)
+
+        self.form = form
+        if self.can_handle_blur:
+            self.on_blur = self.handle_blur
 
     @property
     def final_value(self) -> T:
@@ -46,12 +49,12 @@ class UserInputWidget(Generic[T]):
     def has_changed(self) -> bool:
         return self.initial_value == self.final_value
 
-    def _validate(self, v: Any) -> None:
+    def _validate(self) -> None:
         pass
 
-    async def validate(self, e: ControlEvent = None, reraise: bool = False) -> None:
+    async def validate(self, reraise: bool = False) -> None:
         try:
-            self._validate(self.value)
+            self._validate()
             await self.on_success_validation()
         except InputValidationError as err:
             await self.on_error_validation(err)
@@ -77,9 +80,16 @@ class UserInputWidget(Generic[T]):
             return False
         return True
 
+    async def handle_blur(self, e: ControlEvent):
+        if self.validate_on_blur:
+            await self.validate()
+
 
 class UndefinedValue:
     pass
+
+
+_I = TypeVar('_I', bound=Union[Control, UserInputWidget])
 
 
 @dataclass
@@ -89,10 +99,13 @@ class UserInput(Generic[_I]):
     validate_on_blur: bool = True
     required: bool = False
 
-    def widget(self, initial: Any = UndefinedValue) -> _I:
+    def widget(self, form: "Form", name_prefix: str = None, initial: Any = UndefinedValue) -> _I:
         if initial is UndefinedValue:
             initial = self.default_initial
-        return self.widget_type(**self.__dict__, initial_value=initial)
+        kwargs = {**self.__dict__}
+        if name_prefix:
+            kwargs['name'] = f'{name_prefix}.{kwargs["name"]}'
+        return self.widget_type(**kwargs, form=form, initial_value=initial)
 
     @property
     def default_initial(self) -> Any:

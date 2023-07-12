@@ -7,6 +7,7 @@ from core.exceptions import ObjectErrors
 from core.orm import BaseModel, fields as orm_fields
 from core.enums import FieldTypes, NotifyStatus
 from core.repository import Repository
+from core.types import FK_TYPE
 from .inputs import UserInput, UndefinedValue
 
 from .schema import FormSchema, InputGroup
@@ -87,12 +88,12 @@ class ModelForm(Form):
             for name, field in describe.fk.items():
                 if field.required:
                     primitive.add(name)
-        # for name, field in describe.o2o_pk.items():
-        #     if self.subform or not field.required:
-        #         primitive.add(name)
-        # for name, field in describe.fk_pk.items():
-        #     if self.subform or not field.required:
-        #         primitive.add(name)
+        for name, field in describe.o2o_pk.items():
+            if self.is_subform or not field.required:
+                primitive.add(name)
+        for name, field in describe.fk_pk.items():
+            if self.is_subform or not field.required:
+                primitive.add(name)
         return primitive
 
     async def on_click_create(self, e: ControlEvent):
@@ -149,10 +150,10 @@ class ModelForm(Form):
             FieldTypes.DATE: self.date_input_creator,
             FieldTypes.DATETIME: self.datetime_input_creator,
             FieldTypes.O2O: self.object_input_creator,
-            # FieldTypes.O2O_PK: self.input_creator,
+            FieldTypes.O2O_PK: self.related_choice_creator,
             FieldTypes.FK: self.object_input_creator,
-            # FieldTypes.FK_PK: self.input_creator,
-            # FieldTypes.BACK_O2O: self.input_creator,
+            FieldTypes.FK_PK: self.related_choice_creator,
+            FieldTypes.BACK_O2O: self.related_choice_creator,
             # FieldTypes.BACK_FK: self.input_creator,
             # FieldTypes.M2M: self.input_creator,
         }
@@ -196,6 +197,7 @@ class ModelForm(Form):
         kwargs = self.input_creator_base_kwargs(field)
         kwargs['min_length'] = field.constraints['min_length']
         kwargs['max_length'] = field.constraints['max_length']
+        kwargs['empty_as_none'] = field.null
         kwargs.update(extra)
         return inputs.StrInput(**kwargs)
 
@@ -205,6 +207,7 @@ class ModelForm(Form):
             extra: dict[str, Any]
     ) -> inputs.TextInput:
         kwargs = self.input_creator_base_kwargs(field)
+        kwargs['empty_as_none'] = field.null
         kwargs.update(extra)
         return inputs.TextInput(**kwargs)
 
@@ -273,3 +276,14 @@ class ModelForm(Form):
         kwargs.update(extra)
         kwargs['fields'] = processed_fields
         return inputs.ObjectInput(**kwargs)
+
+    def related_choice_creator(
+            self,
+            field: FK_TYPE,
+            extra: dict[str, Any]
+    ) -> inputs.RelatedChoice:
+        kwargs = self.input_creator_base_kwargs(field)
+        kwargs['entity'] = self.repository.repository_of(field.model_field_name).entity()
+        kwargs['method'] = 'choice'
+        kwargs.update(extra)
+        return inputs.RelatedChoice(**kwargs)

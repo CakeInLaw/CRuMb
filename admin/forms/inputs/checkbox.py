@@ -7,6 +7,7 @@ from .user_input import UserInputWidget, UserInput
 
 
 class CheckboxWidget(UserInputWidget[bool], ft.Checkbox):
+    can_handle_blur: bool = False
 
     @property
     def final_value(self) -> Optional[bool]:

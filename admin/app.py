@@ -1,7 +1,11 @@
 import asyncio
 from typing import Type, TypeVar
 
-from flet import Page, UserControl, Control, Row, Text, SnackBar, RouteChangeEvent, app as flet_app
+from flet import (
+    Page, UserControl, Control, Row, Text, RouteChangeEvent,
+    SnackBar, AlertDialog,
+    app as flet_app
+)
 
 from core.enums import NotifyStatus
 from .content import Content
@@ -131,6 +135,15 @@ class CRuMbAdmin(UserControl):
         self.page.route = self.create_path(entity, method, **query)
         await self.page.update_async()
 
+    async def open_modal(self, entity: str, method: str, **query) -> None:
+        resource = self.find_resource(entity)
+        content = await resource.methods.get(method, '')(**query)
+        await self.page.show_dialog_async(AlertDialog(
+            modal=True,
+            content=content,
+            content_padding=10
+        ))
+
     async def notify(
             self,
             content: Control | str,
@@ -147,9 +160,7 @@ class CRuMbAdmin(UserControl):
                 bgcolor = 'orange'
             case _:
                 bgcolor = None
-        self.page.snack_bar = SnackBar(
+        await self.page.show_snack_bar_async(SnackBar(
             content=content,
             bgcolor=bgcolor,
-            open=True,
-        )
-        await self.page.update_async()
+        ))

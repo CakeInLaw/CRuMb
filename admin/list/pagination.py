@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING
 
-from flet import Row, ContainerTapEvent, Container, Text, Icon, icons
+from flet import Row, ContainerTapEvent, Container, Text, Icon, MainAxisAlignment, icons
 
 if TYPE_CHECKING:
-    from .view import DatagridView
+    from .datagrid import Datagrid
 
 
 class Pagination(Row):
@@ -20,7 +20,7 @@ class Pagination(Row):
 
     def __init__(
             self,
-            datagrid: "DatagridView",
+            datagrid: "Datagrid",
             *,
             count: int = 7,
             per_page: int = 25,
@@ -29,6 +29,7 @@ class Pagination(Row):
         self.datagrid = datagrid
         self.count = count
         self.per_page = per_page
+        self.alignment = MainAxisAlignment.END
 
     @property
     def total(self) -> int:
