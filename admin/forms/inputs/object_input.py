@@ -53,7 +53,6 @@ class ObjectInputWidget(UserInputWidget[dict[str, Any]], Container):
         return group.to_control(controls)
 
     def initial_for(self, item: UserInput) -> Any:
-        print(self.initial_value)
         if self.initial_value is None:
             return UndefinedValue
         if isinstance(self.initial_value, dict):

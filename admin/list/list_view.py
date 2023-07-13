@@ -21,13 +21,13 @@ class ListView(Container):
 
         self.datagrid = Datagrid(
             app=self.app,
-            repository=self.resource.repository,
+            resource=self.resource,
             columns=self.resource.datagrid_columns,
         )
         self.actions = Row([])
         if 'create' in self.resource.methods:
             self.actions.controls.append(ElevatedButton('Создать', on_click=self.open_create_form))
-        self.content = Column([self.actions, self.datagrid], expand=True)
+        self.content = Column([self.actions, self.datagrid])
 
     async def prepare(self):
         await self.datagrid.update_items()

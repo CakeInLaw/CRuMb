@@ -1,25 +1,24 @@
 import asyncio
-from typing import Type, TypeVar
+from typing import Type, TypeVar, Any
 
 from flet import (
-    Page, UserControl, Control, Row, Text, RouteChangeEvent,
+    Page, UserControl, Control, Column, Row, Text,
     SnackBar, AlertDialog,
     app as flet_app
 )
 
 from core.enums import NotifyStatus
-from .content import Content
-from .layout import Header, Sidebar, MenuGroup
+from admin.layout.contentbox import ContentBox
+from .layout import Header, TabsBar, TabInfo, Sidebar, MenuGroup, MenuItemInfo
 
 from .resource import Resource
 
 
-RESOURCE = TypeVar("RESOURCE", bound="Resource")
+RESOURCE = TypeVar("RESOURCE", bound=Resource)
 
 
 class CRuMbAdmin(UserControl):
     _resources: dict[str, Type["Resource"]] = {}
-    route_url_strategy: str = 'hash'
     BASE_URL = 'http://127.0.0.1'
     LANG: str = "RU"
     title: str = 'CRuMb Admin'
@@ -30,33 +29,66 @@ class CRuMbAdmin(UserControl):
 
         self._init_resources()
         self.page = page
-        self.page.on_route_change = self.on_route_change
 
         self.appbar = Header(app=self)
+        self.tabs_bar = TabsBar(app=self)
         self.sidebar = Sidebar(app=self)
-        self.content = Content(app=self)
+        self.content_box = ContentBox(app=self)
 
         self.page.appbar = self.appbar
 
     def _init_resources(self) -> None:
-        self._inited_resources = {route: res(self) for route, res in self._resources.items()}
+        self._inited_resources = {entity: res(self) for entity, res in self._resources.items()}
 
     def build(self):
-        return Row(
+        return Column(
             controls=[
-                self.sidebar,
-                self.content,
+                self.tabs_bar,
+                Row(
+                    controls=[
+                        self.sidebar,
+                        self.content_box,
+                    ],
+                    spacing=0,
+                    expand=True
+                )
             ],
             spacing=0,
         )
 
     @classmethod
-    def register(cls, resource: Type[RESOURCE]) -> Type[RESOURCE]:
-        cls.register_resource(resource)
-        return resource
+    def register(
+            cls,
+            present_in: tuple[Type["MenuGroup"] | tuple[Type["MenuGroup"], dict[str, Any]], ...] = ()
+    ):
+        def wrapper(resource: Type[RESOURCE]) -> Type[RESOURCE]:
+            cls.register_resource(resource, present_in=present_in)
+            return resource
+        return wrapper
 
     @classmethod
-    def register_resource(cls, resource: Type["Resource"]) -> None:
+    def register_resource(
+            cls,
+            resource: Type["Resource"],
+            present_in: tuple[Type["MenuGroup"] | tuple[Type["MenuGroup"], dict[str, Any]], ...] = ()
+    ) -> None:
+        for group in present_in:
+            if issubclass(group, MenuGroup):
+                group.add_item_info(MenuItemInfo(
+                    entity=resource.entity(),
+                    method=resource.default_method()
+                ))
+            elif isinstance(group, tuple) and len(group) == 2:
+                group, extra = group
+                if not issubclass(group, MenuGroup) or not isinstance(extra, dict):
+                    raise ValueError(f'Что-то не то передал: {group=}, {extra=}')
+                group.add_item_info(MenuItemInfo(
+                    entity=resource.entity(),
+                    **extra
+                ))
+            else:
+                raise TypeError(f'Что-то не то передал: {type(group)}, ({group})')
+
         entity = resource.entity()
         if entity in cls._resources:
             raise ValueError(f'Ресурс с такой сущностью уже существует ({entity})')
@@ -71,7 +103,6 @@ class CRuMbAdmin(UserControl):
     @classmethod
     def run_app(cls, **kwargs):
         kwargs.setdefault('target', cls.run_target)
-        kwargs['route_url_strategy'] = cls.route_url_strategy
         asyncio.get_event_loop().run_until_complete(cls.on_startup())
         flet_app(**kwargs)
         asyncio.get_event_loop().run_until_complete(cls.on_shutdown())
@@ -91,53 +122,20 @@ class CRuMbAdmin(UserControl):
     async def on_shutdown(cls):
         pass
 
-    @property
-    def base_url(self) -> str:
-        if self.route_url_strategy == 'hash':
-            return self.BASE_URL + '/#'
-        return self.BASE_URL
-
-    def create_url(self, entity: str, method: str = '', **query) -> str:
-        return self.base_url + self.create_path(entity, method, **query)
-
-    def create_path(self, entity: str, method: str = '', **query):
-        resource = self.find_resource(entity)
-        assert method in resource.methods
-        path = f'/{entity}{("/" + method) if method != "" else ""}'
-        qs = '?' + '&'.join([f'{k}={v}' for k, v in query.items()]) if query else ''
-        return path + qs
-
-    async def did_mount_async(self):
-        await self.sync_with_route()
-
-    async def on_route_change(self, e: RouteChangeEvent):
-        await self.sync_with_route()
-
-    async def sync_with_route(self) -> None:
-        q = self.page.query
-        q()
-        path = q.path[1:]
-        query = q.to_dict
-        if path == '':
-            return
-        if '/' in path:
-            entity, method, *_ = path.split('/')
-        else:
-            entity, method = path, ''
-        await self._open(entity, method, **query)
-
-    async def _open(self, entity: str, method: str, **query) -> None:
-        resource = self.find_resource(entity)
-        self.content.content = await resource.methods.get(method, '')(**query)
-        await self.update_async()
-
     async def open(self, entity: str, method: str, **query) -> None:
-        self.page.route = self.create_path(entity, method, **query)
-        await self.page.update_async()
+        tab_info = TabInfo(
+            entity=entity,
+            method=method,
+            query=query
+        )
+        if tab := self.tabs_bar.tab_by_info(info=tab_info):
+            await self.tabs_bar.set_current_tab(tab)
+        else:
+            await self.tabs_bar.create_tab(info=tab_info)
 
     async def open_modal(self, entity: str, method: str, **query) -> None:
         resource = self.find_resource(entity)
-        content = await resource.methods.get(method, '')(**query)
+        content = await resource.methods[method](**query)
         await self.page.show_dialog_async(AlertDialog(
             modal=True,
             content=content,
@@ -164,3 +162,6 @@ class CRuMbAdmin(UserControl):
             content=content,
             bgcolor=bgcolor,
         ))
+
+    async def dashboard(self):
+        return Text('Тут будет дэшборд')

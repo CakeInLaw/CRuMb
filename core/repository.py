@@ -12,6 +12,7 @@ from .exceptions import ItemNotFound, ObjectErrors, UnexpectedDataKey, FieldErro
     FieldRequired, NotFoundFK, RequiredMissed, InvalidType, AnyFieldError, NoDefaultRepository, ListFieldError
 from .enums import FieldTypes
 from .maps import field_instance_to_type
+from .translations import Translation
 
 from .types import MODEL, PK, SORT, FILTERS, DATA, SortedData, RepositoryDescription, BackFKData, M2MData
 
@@ -27,7 +28,7 @@ class Repository(Generic[MODEL]):
     hidden_fields: set[str] = set()
     extra_allowed: set[str] = set()
 
-    _TRANSLATION_DEFAULT: dict[str, Any]
+    _TRANSLATION_DEFAULT: Translation
 
     def __init__(
             self,
@@ -367,14 +368,11 @@ class Repository(Generic[MODEL]):
         raise NotImplementedError('Для этой модели не определено удаление')
 
     async def check_fk_exists(self, field_name: str, item_pk: PK) -> None:
-        field_type = self.get_field_type(field_name)
-        field = self.get_field_instance(field_name)
+        field_type, field = self.get_field_type_and_instance(field_name)
 
-        if field_type in (FieldTypes.O2O, FieldTypes.FK):
-            related_field = cast(fields.relational.ForeignKeyFieldInstance, field)
-        elif field_type in (FieldTypes.BACK_O2O, FieldTypes.BACK_FK):
-            related_field = cast(fields.relational.BackwardFKRelation, field)
-        elif field_type in (FieldTypes.O2O_PK, FieldTypes.FK_PK):
+        if field_type in FieldTypes.no_pk_relation():
+            related_field = cast(fields.relational.RelationalField, field)
+        elif field_type in FieldTypes.pk_relation():
             related_field = cast(fields.relational.ForeignKeyFieldInstance, field.reference)
         else:
             raise Exception(f'{self.model}.{field_name} не относится к o2o, o2o_pk, fk, fk_pk, back_o2o, back_fk')
@@ -879,16 +877,16 @@ class Repository(Generic[MODEL]):
 
     @classmethod
     def repository_of(cls, field_name, *, raise_if_none: bool = True) -> Optional[Type["Repository"]]:
-        field = cls.get_field_instance(field_name)
-        if isinstance(field, fields.relational.RelationalField):
-            related_model = field.related_model
-        elif cls.get_field_type(field_name) in (FieldTypes.O2O_PK, FieldTypes.FK_PK):
+        field_type, field = cls.get_field_type_and_instance(field_name)
+        if field_type in FieldTypes.no_pk_relation():
+            reference = cast(fields.relational.RelationalField, field)
+        elif field_type in FieldTypes.pk_relation():
             reference = cast(fields.relational.RelationalField, field.reference)
-            related_model = reference.related_model
         else:
             raise NoDefaultRepository(
                 f'Поле {cls.model}.{field_name} с типом {cls.get_field_type(field_name)} не может иметь репозиторий'
             )
+        related_model = reference.related_model
         default_repo: Type["Repository"] = getattr(related_model, 'DEFAULT_REPOSITORY', None)
         if default_repo is None and raise_if_none:
             raise NoDefaultRepository(
@@ -901,20 +899,8 @@ class Repository(Generic[MODEL]):
         return cls.opts().full_name
 
     @classmethod
-    def get_translation(cls, lang: str) -> dict[str, Any]:
-        return getattr(cls, f'_TRANSLATION_{lang.upper()}', {})
-
-    @classmethod
-    def translate_name(cls, lang: str) -> str:
-        return cls.get_translation(lang=lang).get('name', cls.model.__name__)
-
-    @classmethod
-    def translate_name_plural(cls, lang: str) -> str:
-        return cls.get_translation(lang=lang).get('name_plural', cls.model.__name__ + 's')
-
-    @classmethod
-    def translate_field(cls, field_name: str, lang: str) -> str:
-        return cls.get_translation(lang=lang).get('fields', {}).get(field_name, field_name)
+    def get_translation(cls, lang: str) -> Translation:
+        return getattr(cls, f'_TRANSLATION_{lang.upper()}', getattr(cls, f'_TRANSLATION_DEFAULT'))
 
 
 REPOSITORY = TypeVar('REPOSITORY', bound=Type[Repository])

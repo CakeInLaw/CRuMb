@@ -22,6 +22,7 @@ class Sidebar(Container):
     def __init__(self, app: "CRuMbAdmin"):
 
         super().__init__(
+            bgcolor='white',
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
             animate=100,
         )
@@ -46,10 +47,6 @@ class Sidebar(Container):
 
         self.active = None
         self.expanded = False
-        self.menu_items = self.collect_menu_items()
-
-    async def did_mount_async(self):
-        await self.set_suitable_active()
 
     async def toggle_size(self, e: ft.ControlEvent):
         if not self.btn_pin.pinned:
@@ -78,25 +75,3 @@ class Sidebar(Container):
             return
         self._expanded = v
         self.maximize() if self.expanded else self.minimize()
-
-    async def set_active(self, item: Optional[MenuItem]):
-        if self.active:
-            self.active.deactivate()
-        self.active = item
-        if self.active:
-            self.active.activate()
-        await self.update_async()
-
-    async def set_suitable_active(self):
-        q = self.app.page.query
-        q()
-        route = q.path[1:]
-        find = route if '/' in route else route[:route.find('/', 1)]
-        suitable_items = list(filter(lambda x: x.entity == find, self.menu_items))
-        await self.set_active(suitable_items[0] if suitable_items else None)
-
-    def collect_menu_items(self) -> list[MenuItem]:
-        result = []
-        for group in self.children:
-            result.extend(group.collect_menu_items())
-        return result

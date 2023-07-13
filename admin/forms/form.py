@@ -24,13 +24,11 @@ class Form(UserControl):
             self,
             app: "CRuMbAdmin",
             initial_data: Optional[dict] = None,
-            lang: str = 'RU',
     ):
         super().__init__()
         self.app = app
         self.fields_map = {}
         self.initial_data = initial_data or {}
-        self.LANG = lang
 
     def build(self):
         controls = []

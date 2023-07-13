@@ -1,5 +1,6 @@
 from core.repository import default_repository
 from core.entities.directories import DirectoryRepository
+from core.translations import TranslationRu, TranslationEn
 
 from ..models import Customer
 
@@ -11,15 +12,20 @@ __all__ = ["CustomerRepository"]
 class CustomerRepository(DirectoryRepository):
     model = Customer
 
-    _TRANSLATION_RU = {
-        'name': 'Покупатель',
-        'name_plural': 'Покупатели',
-        'fields': {
-            'name': 'Наименование',
+    _TRANSLATION_DEFAULT = _TRANSLATION_RU = TranslationRu(
+        name='Покупатель',
+        name_plural='Покупатели',
+        fields={
             'register_address': 'Адрес регистрации',
-            'price_group_id': 'Ценовая группа'
         },
-    }
+    )
+    _TRANSLATION_EN = TranslationEn(
+        name='Customer',
+        name_plural='Customers',
+        fields={
+            'register_address': 'Register address',
+        },
+    )
 
     def qs_select_related(self) -> set[str]:
         if self.by == 'admin' and self.extra['target'] == 'edit':
