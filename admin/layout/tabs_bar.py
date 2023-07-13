@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
 
 from flet import DragTarget, DragTargetAcceptEvent, Draggable, \
-    Container, Row, IconButton, Text, \
+    Container, Stack, Row, IconButton, Text, \
     ScrollMode, icons, border
 
 from .loader import Loader
@@ -30,8 +30,7 @@ class Tab(Draggable):
         self.text = Text(self.resource.name_plural)
         self.row = Row([self.text])
         if self.info.has_close:
-            self.close_btn = IconButton(icon=icons.CLOSE_ROUNDED, on_click=self.handle_close)
-            self.row.controls.append(self.close_btn)
+            self.row.controls.append(self.create_close_btn())
         self.container = Container(
             border=border.symmetric(horizontal=border.BorderSide(1, 'black,0.2')),
             content=self.row
@@ -84,6 +83,15 @@ class Tab(Draggable):
         self.box.visible = False
         self.container.bgcolor = 'white'
 
+    def create_close_btn(self):
+        return IconButton(
+            icon=icons.CLOSE_ROUNDED,
+            icon_size=15,
+            height=30,
+            aspect_ratio=1,
+            on_click=self.handle_close
+        )
+
     async def on_drag_accept(self, e: DragTargetAcceptEvent):
         tab: Tab = self.page.get_control(e.src_id)
         await self.bar.move_tab(tab.index, self.index)
@@ -93,13 +101,16 @@ class TabsBar(Container):
     _selected: Optional[Tab] = None
 
     def __init__(self, app: "CRuMbAdmin"):
-        super().__init__(bgcolor='white', border=border.only(bottom=border.BorderSide(1, 'black,0.5')))
+        super().__init__(
+            bgcolor='white',
+            border=border.only(bottom=border.BorderSide(1, 'black,0.5')),
+        )
         self.app = app
         self.tabs = []
-        # строка в строке, потому что первая заполняет всё пространство, чтобы покрасилось в белый, а вторая скорллится
-        self.content = Row([Row(
+        # первый row для того, чтобы контейнер заполнился на всю ширину контейнер, а второй для самих вкладок
+        self.content = Stack([Row(), Row(
             controls=self.tabs,
-            height=40,
+            height=30,
             scroll=ScrollMode.ADAPTIVE,
             spacing=0,
         )])

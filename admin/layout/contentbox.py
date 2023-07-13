@@ -17,7 +17,7 @@ class ContentBox(Container):
             bgcolor='white',
             shadow=BoxShadow(
                 blur_radius=15,
-                offset=(0, 14),
+                offset=(0, 15),
                 color='#1C1B1F,0.2'
             ),
         )
