@@ -2,18 +2,19 @@ import math
 from typing import TYPE_CHECKING, Type
 
 from flet import UserControl, Column, Text, DataTable, DataColumn, DataRow, DataCell, \
-    TextSpan, TextStyle, TextDecoration, MainAxisAlignment, BorderSide
+    TextSpan, TextStyle, TextDecoration, MainAxisAlignment
 
 
 from core.orm import BaseModel
 from core.enums import FieldTypes
-from core.repository import Repository
 from core.types import SORT, FILTERS, PK
 
 from .pagination import Pagination
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
+    from admin.resource import Resource
+    from core.repository import Repository
 
 
 class Datagrid(UserControl):
@@ -23,7 +24,7 @@ class Datagrid(UserControl):
     def __init__(
             self,
             app: "CRuMbAdmin",
-            repository: Type[Repository],
+            resource: "Resource",
             columns: list[str],
             sort: dict[str, bool] = None,
             filters: FILTERS = None,
@@ -40,12 +41,16 @@ class Datagrid(UserControl):
             per_page=pagination_per_page,
             count=pagination_count
         )
-        self.repository = repository
+        self.resource = resource
         self.max_items = 0
         self.items = []
         self.columns = columns
         self.sort = sort or {}
         self.filters = filters or []
+
+    @property
+    def repository(self) -> Type["Repository"]:
+        return self.resource.repository
 
     def build(self):
         return Column([
@@ -85,7 +90,7 @@ class Datagrid(UserControl):
 
     def open_edit_form(self, pk: PK):
         async def wrapper(e):
-            await self.app.open(self.repository.entity(), 'edit', pk=pk)
+            await self.app.open(self.resource.entity(), 'edit', pk=pk)
         return wrapper
 
     def fill_items(self):
@@ -134,10 +139,10 @@ class Datagrid(UserControl):
         self._columns_map = {}
         for name in v:
             numeric = False
-            if fields[name] in (FieldTypes.INT, FieldTypes.FLOAT):
+            if fields[name] in FieldTypes.numeric_types():
                 numeric = True
             self._columns_map[name] = DataColumn(
-                label=Text(self.repository.translate_field(name, "RU")),
+                label=Text(self.resource.translate_field(name)),
                 numeric=numeric
             )
         self.datagrid.columns = list(self._columns_map.values())

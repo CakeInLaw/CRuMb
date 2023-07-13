@@ -1,7 +1,8 @@
-from typing import TYPE_CHECKING, Generic, Type, Callable, Coroutine, Optional, Any, Union
+from typing import TYPE_CHECKING, Generic, Type, Callable, Coroutine, Optional, Any, TypeVar
 
 from flet import Control, Text, icons
 
+from core.enums import FieldTypes
 from core.types import PK
 from core.orm.base_model import BaseModel
 from core.exceptions import ItemNotFound
@@ -14,6 +15,8 @@ if TYPE_CHECKING:
 
 
 __all__ = ["Resource"]
+
+C = TypeVar('C', bound=Control)
 
 
 class Resource(Generic[REPOSITORY]):
@@ -28,31 +31,21 @@ class Resource(Generic[REPOSITORY]):
 
     def __init__(self, app: "CRuMbAdmin") -> None:
         self.app = app
+        self.translation = self.repository.get_translation(self.app.LANG)
 
-    @property
-    def name(self) -> str:
-        return self.repository.translate_name(lang=self.app.LANG)
+    def relative_resource(self, field_name: str) -> "Resource":
+        return self.app.find_resource(self.repository.repository_of(field_name).entity())
 
-    @property
-    def name_plural(self) -> str:
-        return self.repository.translate_name_plural(lang=self.app.LANG)
-
-    def translate_field(self, field_name: str) -> str:
-        return self.repository.translate_field(field_name, lang=self.app.LANG)
-
-    async def get_list_view(
-            self,
-
-    ) -> ListView:
+    async def get_list_view(self) -> ListView:
         view = ListView(app=self.app, resource=self)
         await view.prepare()
-        return view
+        return self.with_tab_title(view, 'list')
 
     async def get_choice_view(
             self,
             current_chosen: Optional[BaseModel],
             handle_confirm: Callable[[Optional[BaseModel]], Coroutine[Any, Any, None]]
-    ):
+    ) -> ChoiceView:
         view = ChoiceView(
             app=self.app,
             resource=self,
@@ -60,34 +53,31 @@ class Resource(Generic[REPOSITORY]):
             handle_confirm=handle_confirm,
         )
         await view.prepare()
-        return view
+        return self.with_tab_title(view, 'choice')
 
     def _get_form(self, *, obj: BaseModel = None, primitive: Primitive = None) -> Form:
         return ModelForm(
-            app=self.app,
-            repository=self.repository,
-            lang=self.app.LANG,
+            resource=self,
             primitive=primitive,
             instance=obj
         )
 
-    async def get_create_form(self) -> Control | Form:
+    async def get_create_form(self) -> Form | Control:
         primitive = self.create_form_primitive or self.form_primitive
-        return self._get_form(primitive=primitive)
+        return self.with_tab_title(self._get_form(primitive=primitive), 'create')
 
-    async def get_edit_form(self, pk: PK) -> Control | Form:
+    async def get_edit_form(self, pk: PK) -> Form | Control:
         try:
             obj = await self.repository(
                 by='admin',
                 extra={'target': 'edit'}
             ).get_one(pk)
         except ItemNotFound:
-            return Text('Объект не найден')
+            error = Text('Объект не найден')
+            error.__tab_title__ = 'Ошибка'
+            return error
         primitive = self.edit_form_primitive or self.form_primitive
-        return self._get_form(obj=obj, primitive=primitive)
-
-    async def delete(self):
-        pass
+        return self.with_tab_title(self._get_form(obj=obj, primitive=primitive), 'edit', obj=obj)
 
     @classmethod
     def entity(cls) -> str:
@@ -97,7 +87,7 @@ class Resource(Generic[REPOSITORY]):
     def default_method(cls) -> str:
         return 'list'
 
-    def _methods(self):
+    def _methods(self) -> dict[str, Callable[[...], Coroutine[Any, Any, Control]]]:
         return {
             'list': self.get_list_view,
             'choice': self.get_choice_view,
@@ -111,7 +101,45 @@ class Resource(Generic[REPOSITORY]):
             setattr(self, '_cached_methods', self._methods())
         return getattr(self, '_cached_methods')
 
-    # функции для сравнения параметров вкладок.
+    # Частые переводы
+    @property
+    def name(self) -> str:
+        return self.translation.name
+
+    @property
+    def name_plural(self) -> str:
+        return self.translation.name_plural
+
+    def translate_field(self, field_name: str) -> str:
+        translation = self.translation.field(field_name)
+        if translation is None:
+            field_type = self.repository.get_field_type(field_name)
+            if field_type in FieldTypes.single_relation():
+                translation = self.relative_resource(field_name).name
+            elif field_type in FieldTypes.multiple_relation():
+                translation = self.relative_resource(field_name).name_plural
+            else:
+                translation = field_name
+        return translation
+
+    # Функции для установки названия вкладок с мультиязычность и параметрами.
+    def with_tab_title(self, control: C, method: str, **kwargs) -> C:
+        control.__tab_title__ = getattr(self, f'_tab_title_{method}')(**kwargs)
+        return control
+
+    def _tab_title_list(self) -> str:
+        return self.name_plural
+
+    def _tab_title_choice(self) -> str:
+        return self.name_plural
+
+    def _tab_title_create(self) -> str:
+        return self.translation.create()
+
+    def _tab_title_edit(self, obj: BaseModel) -> str:
+        return self.translation.edit(obj=obj)
+
+    # Функции для сравнения параметров вкладок.
     # Если True, то вкладка создаваться не будет и откроется существующая
     # Если False, то создастся новая вкладка
     def compare_tab(self, method: str, query1: dict[str, Any], query2: dict[str, Any]) -> bool:

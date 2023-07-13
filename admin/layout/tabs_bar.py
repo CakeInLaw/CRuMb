@@ -27,13 +27,13 @@ class Tab(Draggable):
         self.bar = bar
         self.info = info
 
-        self.text = Text(self.info.entity)
+        self.text = Text(self.resource.name_plural)
         self.row = Row([self.text])
         if self.info.has_close:
             self.close_btn = IconButton(icon=icons.CLOSE_ROUNDED, on_click=self.handle_close)
             self.row.controls.append(self.close_btn)
         self.container = Container(
-            border=border.symmetric(horizontal=border.BorderSide(1, 'black,0.5')),
+            border=border.symmetric(horizontal=border.BorderSide(1, 'black,0.2')),
             content=self.row
         )
         self.content = DragTarget(
@@ -47,7 +47,9 @@ class Tab(Draggable):
         self.box.content = Loader()
 
     async def did_mount_async(self):
-        self.box.content = await self.resource.methods[self.info.method](**self.info.query)
+        self.box.content = content = await self.resource.methods[self.info.method](**self.info.query)
+        if hasattr(content, '__tab_title__'):
+            self.text.value = content.__tab_title__
         await self.app.update_async()
 
     @property
@@ -76,7 +78,7 @@ class Tab(Draggable):
 
     def activate(self):
         self.box.visible = True
-        self.container.bgcolor = 'black,0.5'
+        self.container.bgcolor = 'black,0.2'
 
     def deactivate(self):
         self.box.visible = False

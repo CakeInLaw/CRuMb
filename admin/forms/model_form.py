@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Type, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional, Type
 
 from flet import ElevatedButton, Row, Control, MainAxisAlignment, ControlEvent
 from tortoise import fields
@@ -6,7 +6,6 @@ from tortoise import fields
 from core.exceptions import ObjectErrors
 from core.orm import BaseModel, fields as orm_fields
 from core.enums import FieldTypes, NotifyStatus
-from core.repository import Repository
 from core.types import FK_TYPE
 from .inputs import UserInput, UndefinedValue
 
@@ -14,26 +13,30 @@ from .schema import FormSchema, InputGroup
 from . import Form, Primitive, inputs
 
 if TYPE_CHECKING:
-    from admin.app import CRuMbAdmin
+    from admin.resource import Resource
+    from core.repository import Repository
 
 
 class ModelForm(Form):
 
     def __init__(
             self,
-            app: "CRuMbAdmin",
-            repository: Type[Repository],
+            resource: "Resource",
             *,
             instance: Optional[BaseModel] = None,
             primitive: Primitive = None,
             is_subform: bool = False,
             **kwargs
     ):
-        super().__init__(app, **kwargs)
-        self.repository = repository
+        super().__init__(resource.app, **kwargs)
+        self.resource = resource
         self.instance = instance
         self.is_subform = is_subform
         self.primitive = primitive
+
+    @property
+    def repository(self) -> Type["Repository"]:
+        return self.resource.repository
 
     @property
     def create(self) -> bool:
@@ -105,7 +108,7 @@ class ModelForm(Form):
                 extra={'target': 'create'}
             ).create(self.cleaned_data())
             await self.app.notify('Создан 1 элемент', NotifyStatus.SUCCESS)
-            await self.app.open(self.repository.entity(), 'edit', pk=instance.pk)
+            await self.app.open(self.resource.entity(), 'edit', pk=instance.pk)
         except ObjectErrors as err:
             await self.set_object_errors(err)
             await self.app.notify('Исправьте ошибки', NotifyStatus.ERROR)
@@ -122,7 +125,7 @@ class ModelForm(Form):
                 extra={'target': 'create'}
             ).edit(self.instance, self.cleaned_data())
             await self.app.notify('Элемент изменен', NotifyStatus.SUCCESS)
-            await self.app.open(self.repository.entity(), 'edit', pk=instance.pk)
+            await self.app.open(self.resource.entity(), 'edit', pk=instance.pk)
         except ObjectErrors as err:
             await self.set_object_errors(err)
             await self.app.notify('Исправьте ошибки', NotifyStatus.ERROR)
@@ -159,10 +162,9 @@ class ModelForm(Form):
         }
 
     def input_creator_base_kwargs(self, field: fields.Field) -> dict[str, Any]:
-
         return {
             'name': field.model_field_name,
-            'label': self.repository.translate_field(field.model_field_name, lang=self.LANG),
+            'label': self.resource.translate_field(field.model_field_name),
             'validate_on_blur': True,
             'required': self.repository.field_is_required(field),
         }
@@ -262,9 +264,7 @@ class ModelForm(Form):
         if 'primitive' in extra:
             primitive = extra.pop('primitive')
         relative_model_form = self.__class__(
-            app=self.app,
-            repository=self.repository.repository_of(kwargs['name']),
-            lang=self.LANG,
+            resource=self.resource.relative_resource(kwargs['name']),
             primitive=primitive,
             is_subform=True,
         )
@@ -283,7 +283,6 @@ class ModelForm(Form):
             extra: dict[str, Any]
     ) -> inputs.RelatedChoice:
         kwargs = self.input_creator_base_kwargs(field)
-        kwargs['entity'] = self.repository.repository_of(field.model_field_name).entity()
-        kwargs['method'] = 'choice'
+        kwargs['entity'] = self.resource.relative_resource(field.model_field_name).entity()
         kwargs.update(extra)
         return inputs.RelatedChoice(**kwargs)

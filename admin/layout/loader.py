@@ -1,7 +1,7 @@
-from flet import Container, Text
+from flet import Container, Column, Text
 
 
 class Loader(Container):
     def __init__(self):
         super().__init__()
-        self.content = Text('Загрузка...')
+        self.content = Column([Text('Загрузка...', size=40)])

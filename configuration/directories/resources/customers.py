@@ -12,4 +12,8 @@ class CustomerResource(Resource):
     repository = CustomerRepository
     datagrid_columns = ['name', 'register_address', 'price_group_id']
 
-    form_primitive = Primitive('name', 'register_address', inputs.RelatedChoice(name='price_group', label='Ценовая группа', entity='directories.PriceGroup'))
+    form_primitive = Primitive(
+        'name',
+        'register_address',
+        'price_group_id'
+    )
