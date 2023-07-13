@@ -2,8 +2,8 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
 
 from flet import DragTarget, DragTargetAcceptEvent, Draggable, \
-    Container, Stack, Row, IconButton, Text, \
-    ScrollMode, icons, border
+    Container, Stack, Row, IconButton, Text, TextSpan, \
+    ScrollMode, icons, border, padding
 
 from .loader import Loader
 
@@ -27,29 +27,43 @@ class Tab(Draggable):
         self.bar = bar
         self.info = info
 
-        self.text = Text(self.resource.name_plural)
-        self.row = Row([self.text])
+        self._title = TextSpan()
+        row = [
+            Text(spans=[self._title], color='black')
+        ]
         if self.info.has_close:
-            self.row.controls.append(self.create_close_btn())
+            row.append(self.create_close_btn())
         self.container = Container(
+            padding=padding.only(left=10),
             border=border.symmetric(horizontal=border.BorderSide(1, 'black,0.2')),
-            content=self.row
+            content=Row(row, spacing=0)
         )
+
+        self.container.on_click = self.handle_click
+        self.title = self.resource.name_plural
+
         self.content = DragTarget(
             group='tab',
             content=self.container,
             on_accept=self.on_drag_accept
         )
 
-        self.container.on_click = self.handle_click
         self.box = self.app.content_box.add_container()
         self.box.content = Loader()
 
     async def did_mount_async(self):
         self.box.content = content = await self.resource.methods[self.info.method](**self.info.query)
         if hasattr(content, '__tab_title__'):
-            self.text.value = content.__tab_title__
+            self.title = content.__tab_title__
         await self.app.update_async()
+
+    @property
+    def title(self) -> str:
+        return self._title.text
+
+    @title.setter
+    def title(self, v: str):
+        self._title.text = v
 
     @property
     def app(self) -> "CRuMbAdmin":
@@ -88,7 +102,6 @@ class Tab(Draggable):
             icon=icons.CLOSE_ROUNDED,
             icon_size=15,
             height=30,
-            aspect_ratio=1,
             on_click=self.handle_close
         )
 
