@@ -28,6 +28,4 @@ class CustomerRepository(DirectoryRepository):
     )
 
     def qs_select_related(self) -> set[str]:
-        if self.by == 'admin' and self.extra['target'] == 'edit':
-            return {'price_group'}
-        return set()
+        return {'price_group'}

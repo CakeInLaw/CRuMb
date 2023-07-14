@@ -1,6 +1,12 @@
 from .header import Header
-from .menu_item import MenuItem, MenuItemInfo
+from .menu_item import MenuItem
 from .menu_group import MenuGroup
 from .sidebar import Sidebar
-from .tabs_bar import TabsBar, Tab, TabInfo
+from .payload import PayloadInfo, Box
+from .tabs_bar import TabsBar, Tab
 from .loader import Loader
+from .modal_box import ModalBox
+from .content_box import ContentsBoxContainer, ContentBox
+
+
+BOX = ContentBox | ModalBox

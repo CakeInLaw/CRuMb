@@ -1,20 +1,21 @@
 from typing import TYPE_CHECKING, Any, Callable, Optional, Type
 
-from flet import ElevatedButton, Row, Control, MainAxisAlignment, ControlEvent
+from flet import ElevatedButton, Row, Control, MainAxisAlignment
 from tortoise import fields
 
 from core.exceptions import ObjectErrors
 from core.orm import BaseModel, fields as orm_fields
 from core.enums import FieldTypes, NotifyStatus
 from core.types import FK_TYPE
-from .inputs import UserInput, UndefinedValue
 
-from .schema import FormSchema, InputGroup
-from . import Form, Primitive, inputs
+from admin.layout import PayloadInfo
+from .inputs import UserInput, UndefinedValue
+from . import Form, Primitive, inputs, FormSchema, InputGroup
 
 if TYPE_CHECKING:
-    from admin.resource import Resource
     from core.repository import Repository
+    from admin.resource import Resource
+    from admin.layout import BOX
 
 
 class ModelForm(Form):
@@ -22,13 +23,14 @@ class ModelForm(Form):
     def __init__(
             self,
             resource: "Resource",
+            box: "BOX",
             *,
             instance: Optional[BaseModel] = None,
             primitive: Primitive = None,
             is_subform: bool = False,
             **kwargs
     ):
-        super().__init__(resource.app, **kwargs)
+        super().__init__(app=resource.app, box=box, **kwargs)
         self.resource = resource
         self.instance = instance
         self.is_subform = is_subform
@@ -46,7 +48,8 @@ class ModelForm(Form):
         if self.create:
             return super().initial_for(item=item)
         else:
-            return getattr(self.instance, item.name, UndefinedValue)
+            field_name = self.repository.get_field_name_for_value(item.name)
+            return getattr(self.instance, field_name, UndefinedValue)
 
     def get_form_schema(self) -> FormSchema:
         return self.schema or self._generate_form_schema()
@@ -99,7 +102,7 @@ class ModelForm(Form):
                 primitive.add(name)
         return primitive
 
-    async def on_click_create(self, e: ControlEvent):
+    async def on_click_create(self, e):
         if not await self.form_is_valid():
             return
         try:
@@ -108,7 +111,12 @@ class ModelForm(Form):
                 extra={'target': 'create'}
             ).create(self.cleaned_data())
             await self.app.notify('Создан 1 элемент', NotifyStatus.SUCCESS)
-            await self.app.open(self.resource.entity(), 'edit', pk=instance.pk)
+            await self.box.close()
+            await self.app.open(PayloadInfo(
+                entity=self.resource.entity(),
+                method='edit',
+                query={'pk': instance.pk}
+            ))
         except ObjectErrors as err:
             await self.set_object_errors(err)
             await self.app.notify('Исправьте ошибки', NotifyStatus.ERROR)
@@ -116,7 +124,7 @@ class ModelForm(Form):
     def create_btn(self) -> ElevatedButton:
         return ElevatedButton('Создать', on_click=self.on_click_create)
 
-    async def on_click_edit(self, e: ControlEvent):
+    async def on_click_edit(self, e):
         if not await self.form_is_valid():
             return
         try:
@@ -125,7 +133,7 @@ class ModelForm(Form):
                 extra={'target': 'create'}
             ).edit(self.instance, self.cleaned_data())
             await self.app.notify('Элемент изменен', NotifyStatus.SUCCESS)
-            await self.app.open(self.resource.entity(), 'edit', pk=instance.pk)
+            await self.box.reload_content()
         except ObjectErrors as err:
             await self.set_object_errors(err)
             await self.app.notify('Исправьте ошибки', NotifyStatus.ERROR)

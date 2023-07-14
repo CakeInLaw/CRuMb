@@ -8,6 +8,7 @@ from .inputs import UserInputWidget, UserInput, UndefinedValue
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
+    from admin.layout import BOX
 
 
 FIELDS_MAP = dict[str, UserInputWidget]
@@ -23,10 +24,13 @@ class Form(UserControl):
     def __init__(
             self,
             app: "CRuMbAdmin",
+            box: "BOX",
+            *,
             initial_data: Optional[dict] = None,
     ):
         super().__init__()
         self.app = app
+        self.box = box
         self.fields_map = {}
         self.initial_data = initial_data or {}
 

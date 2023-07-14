@@ -569,8 +569,10 @@ class Repository(Generic[MODEL]):
     ) -> None:
         field = self.get_field_instance(field_name)
 
-        if value is None and not field.null:
-            raise FieldRequired
+        if value is None:
+            if not field.null:
+                raise FieldRequired
+            return
 
         if not isinstance(value, field.field_type):  # передали правильный тип pk
             raise InvalidType(
@@ -901,6 +903,14 @@ class Repository(Generic[MODEL]):
     @classmethod
     def get_translation(cls, lang: str) -> Translation:
         return getattr(cls, f'_TRANSLATION_{lang.upper()}', getattr(cls, f'_TRANSLATION_DEFAULT'))
+
+    @classmethod
+    def get_field_name_for_value(cls, name: str) -> str:
+        field_type = cls.get_field_type(name)
+        if field_type in FieldTypes.pk_relation():
+            field = cls.get_field_instance(name)
+            name = field.reference.model_field_name
+        return name
 
 
 REPOSITORY = TypeVar('REPOSITORY', bound=Type[Repository])

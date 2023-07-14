@@ -1,10 +1,9 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from flet import TextField
-
 from core.orm import BaseModel
 from core.types import PK
+from admin.layout import PayloadInfo
 from admin.forms.inputs import InputWidget, Input
 from admin.exceptions import InputValidationError
 
@@ -19,7 +18,10 @@ class RelatedChoiceWidget(InputWidget):
 
         self.entity = entity
         self.method = method
-        # self.on_click = self.open_choice
+
+    async def clean_value(self, e):
+        self.real_value = None
+        await self.update_async()
 
     @property
     def real_value(self) -> Optional[BaseModel]:
@@ -41,17 +43,19 @@ class RelatedChoiceWidget(InputWidget):
     def _set_initial_value(self, value: Optional[BaseModel]) -> None:
         self.real_value = value
 
-    async def _validate(self) -> None:
+    def _validate(self) -> None:
         if self.required and self.value is None:
             raise InputValidationError('Обязательное поле')
 
     async def open_choice(self, e):
-        await self.form.app.open_modal(
+        await self.form.box.add_modal(info=PayloadInfo(
             entity=self.entity,
             method=self.method,
-            current_chosen=self.real_value,
-            handle_confirm=self.update_real_value,
-        )
+            query={
+                'current_chosen': self.real_value,
+                'handle_confirm': self.update_real_value,
+            }
+        ))
 
 
 @dataclass
