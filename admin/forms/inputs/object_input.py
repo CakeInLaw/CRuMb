@@ -10,7 +10,6 @@ from .. import InputGroup
 
 
 class ObjectInputWidget(UserInputWidget[dict[str, Any]], Container):
-    can_handle_blur: bool = False
 
     @property
     def final_value(self) -> dict[str, Any]:
@@ -19,7 +18,12 @@ class ObjectInputWidget(UserInputWidget[dict[str, Any]], Container):
             for field_name, widget in self.fields_map.items()
         }
 
-    def __init__(self, variant: str, fields: list[UserInput | InputGroup], **kwargs):
+    def __init__(
+            self,
+            fields: list[UserInput | InputGroup],
+            variant: str = 'row',
+            **kwargs
+    ):
         super().__init__(**kwargs)
         self.variant = variant
         self.fields = fields
@@ -73,12 +77,7 @@ class ObjectInputWidget(UserInputWidget[dict[str, Any]], Container):
         pass
 
     def has_changed(self) -> bool:
-        changed = False
-        for widget in self.fields_map.values():
-            if widget.has_changed():
-                changed = True
-                break
-        return changed
+        return any([widget.has_changed() for widget in self.fields_map.values()])
 
     def is_valid(self) -> bool:
         has_error = False

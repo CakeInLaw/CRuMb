@@ -11,3 +11,4 @@ from .checkbox import CheckboxWidget, Checkbox
 from .enum_choice import EnumChoiceWidget, EnumChoice
 from .object_input import ObjectInputWidget, ObjectInput
 from .related_choice import RelatedChoiceWidget, RelatedChoice
+from .objects_array_input import ObjectsArrayInputWidget, ObjectsArrayInput

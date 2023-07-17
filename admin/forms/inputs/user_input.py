@@ -26,11 +26,16 @@ class UserInputWidget(Generic[T]):
         else:
             return self.parent
 
+    @property
+    def full_name(self):
+        if isinstance(self.parent, UserInputWidget):
+            return f'{self.parent.full_name}.{self.name}'
+        return self.name
+
     def __init__(
             self,
             *,
             name: str,
-            full_name: str = None,
             label: str = None,
             required: bool = False,
             initial_value: T = None,
@@ -40,7 +45,6 @@ class UserInputWidget(Generic[T]):
     ):
         super().__init__(**kwargs)
         self.name = name
-        self.full_name = full_name or name
         self.label = label or name
         self.required = required
 
@@ -125,8 +129,6 @@ class UserInput(Generic[_I]):
         if initial is UndefinedValue:
             initial = self.default_initial
         kwargs = {**self.__dict__}
-        if isinstance(parent, UserInputWidget):
-            kwargs['full_name'] = f'{parent.full_name}.{kwargs["name"]}'
         return self.widget_type(parent=parent, initial_value=initial, **kwargs)
 
     @property

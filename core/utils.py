@@ -1,8 +1,8 @@
 import re
 
 
-spaces_pattern = re.compile('\s+')
-
-
 def remove_extra_spaces(string: str) -> str:
-    return spaces_pattern.sub(' ', string)
+    return remove_extra_spaces.pattern.sub(' ', string)
+
+
+remove_extra_spaces.pattern = re.compile('\s+')

@@ -475,23 +475,27 @@ class Repository(Generic[MODEL]):
             return validator(value, data, instance)
         return default_validator(field_name, value, data, instance)
 
-    async def get_relational(self, instance: MODEL, field_name: str) -> Optional[BaseModel]:
+    @classmethod
+    async def get_relational(cls, instance: MODEL, field_name: str) -> Optional[BaseModel]:
         rel_instance = getattr(instance, field_name)
         if isinstance(rel_instance, QuerySet):
             await instance.fetch_related(field_name)
             rel_instance = getattr(instance, field_name)
         return rel_instance
 
+    @classmethod
     @overload
-    async def get_relational_list(self, instance: MODEL, field_name: str, in_map: bool) -> dict[PK, BaseModel]:
+    async def get_relational_list(cls, instance: MODEL, field_name: str, in_map: bool) -> dict[PK, BaseModel]:
         ...
 
+    @classmethod
     @overload
-    async def get_relational_list(self, instance: MODEL, field_name: str) -> list[BaseModel]:
+    async def get_relational_list(cls, instance: MODEL, field_name: str) -> list[BaseModel]:
         ...
 
+    @classmethod
     async def get_relational_list(
-            self,
+            cls,
             instance: MODEL,
             field_name: str,
             in_map: bool = False
