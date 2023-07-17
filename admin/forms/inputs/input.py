@@ -13,9 +13,9 @@ class InputWidget(UserInputWidget[T], TextField):
         kwargs.setdefault('border_radius', 12)
         kwargs.setdefault('text_size', 14)
         super().__init__(**kwargs)
-        self.on_blur = self.handle_blur
+        self.on_blur = self.handle_value_change
 
-    async def on_success_validation(self):
+    async def _on_success_validation(self):
         if self.error_text:
             await self.set_error_text(None)
 
@@ -26,7 +26,7 @@ class InputWidget(UserInputWidget[T], TextField):
     async def is_valid(self) -> bool:
         if self.error_text:
             return False
-        return await super().is_valid()
+        return super().is_valid()
 
 
 @dataclass

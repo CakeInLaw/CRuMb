@@ -103,7 +103,7 @@ class ModelForm(Form):
         return primitive
 
     async def on_click_create(self, e):
-        if not await self.form_is_valid():
+        if not self.form_is_valid():
             return
         try:
             instance = await self.repository(
@@ -125,10 +125,10 @@ class ModelForm(Form):
         return ElevatedButton('Создать', on_click=self.on_click_create)
 
     async def on_click_edit(self, e):
-        if not await self.form_is_valid():
+        if not self.form_is_valid():
             return
         try:
-            instance = await self.repository(
+            await self.repository(
                 by='admin',
                 extra={'target': 'create'}
             ).edit(self.instance, self.cleaned_data())
@@ -173,7 +173,6 @@ class ModelForm(Form):
         return {
             'name': field.model_field_name,
             'label': self.resource.translate_field(field.model_field_name),
-            'validate_on_blur': True,
             'required': self.repository.field_is_required(field),
         }
 
@@ -273,6 +272,7 @@ class ModelForm(Form):
             primitive = extra.pop('primitive')
         relative_model_form = self.__class__(
             resource=self.resource.relative_resource(kwargs['name']),
+            box=self.box,
             primitive=primitive,
             is_subform=True,
         )

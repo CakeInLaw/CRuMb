@@ -12,6 +12,12 @@ class StrInputWidget(InputWidget[str]):
     min_length: Optional[int]
     empty_as_none: bool
 
+    @property
+    def final_value(self) -> Optional[str]:
+        if self.value == '' and self.empty_as_none:
+            return None
+        return self.value
+
     def __init__(
             self,
             *,
@@ -25,12 +31,6 @@ class StrInputWidget(InputWidget[str]):
         self.min_length = min_length
         self.empty_as_none = empty_as_none
         assert not (self.empty_as_none and self.required), 'empty_as_none и required не могут быть одновременно True'
-
-    @property
-    def final_value(self) -> Optional[str]:
-        if self.value == '' and self.empty_as_none:
-            return None
-        return self.value
 
     def _validate(self) -> None:
         if self._max_length is not None and len(self.value) > self._max_length:

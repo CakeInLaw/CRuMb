@@ -7,7 +7,10 @@ from .user_input import UserInputWidget, UserInput
 
 
 class CheckboxWidget(UserInputWidget[bool], ft.Checkbox):
-    can_handle_blur: bool = False
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.on_change = self.handle_value_change
 
     @property
     def final_value(self) -> Optional[bool]:

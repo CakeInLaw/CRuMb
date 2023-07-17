@@ -12,6 +12,13 @@ from .. import InputGroup
 class ObjectInputWidget(UserInputWidget[dict[str, Any]], Container):
     can_handle_blur: bool = False
 
+    @property
+    def final_value(self) -> dict[str, Any]:
+        return {
+            field_name: widget.final_value
+            for field_name, widget in self.fields_map.items()
+        }
+
     def __init__(self, variant: str, fields: list[UserInput | InputGroup], **kwargs):
         super().__init__(**kwargs)
         self.variant = variant
@@ -30,7 +37,7 @@ class ObjectInputWidget(UserInputWidget[dict[str, Any]], Container):
                 raise ValueError(f'Варианта отображения "{self.variant}" не существует')
 
     def _create_widget(self, item: UserInput) -> UserInputWidget | Control:
-        widget = item.widget(form=self.form, name_prefix=self.name, initial=self.initial_for(item))
+        widget = item.widget(parent=self, initial=self.initial_for(item))
         self.fields_map[item.name] = widget
         return widget
 
@@ -62,13 +69,6 @@ class ObjectInputWidget(UserInputWidget[dict[str, Any]], Container):
         else:
             raise TypeError(f'Почему initial_value={type(self.initial_value)}, ({self.initial_value})?')
 
-    @property
-    def final_value(self) -> dict[str, Any]:
-        return {
-            field_name: widget.final_value
-            for field_name, widget in self.fields_map.items()
-        }
-
     def _set_initial_value(self, value: dict[str, Any]) -> None:
         pass
 
@@ -80,15 +80,14 @@ class ObjectInputWidget(UserInputWidget[dict[str, Any]], Container):
                 break
         return changed
 
-    async def validate(self, reraise: bool = False) -> None:
+    def is_valid(self) -> bool:
         has_error = False
         for widget in self.fields_map.values():
             try:
-                await widget.validate(reraise=True)
+                widget._validate()
             except InputValidationError:
                 has_error = True
-        if reraise and has_error:
-            raise InputValidationError('Исправьте ошибки')
+        return has_error
 
     async def set_object_error(self, err: dict[str, Any]):
         if '__root__' in err:

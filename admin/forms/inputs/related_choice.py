@@ -9,19 +9,10 @@ from admin.exceptions import InputValidationError
 
 
 class RelatedChoiceWidget(InputWidget):
-    can_handle_blur: bool = False
 
-    def __init__(self, entity: str, method: str, **kwargs):
-        kwargs['validate_on_blur'] = False
-        kwargs['read_only'] = True
-        super().__init__(**kwargs, on_focus=self.open_choice)
-
-        self.entity = entity
-        self.method = method
-
-    async def clean_value(self, e):
-        self.real_value = None
-        await self.update_async()
+    @property
+    def final_value(self) -> Optional[PK]:
+        return self.real_value.pk if self.real_value else None
 
     @property
     def real_value(self) -> Optional[BaseModel]:
@@ -32,20 +23,25 @@ class RelatedChoiceWidget(InputWidget):
         self._real_value = v
         self.value = str(v) if v else ''
 
-    async def update_real_value(self, new_value: Optional[BaseModel]) -> None:
-        self.real_value = new_value
-        await self.update_async()
+    def __init__(self, entity: str, method: str, **kwargs):
+        kwargs['read_only'] = True
+        kwargs['on_focus'] = self.open_choice
+        super().__init__(**kwargs)
 
-    @property
-    def final_value(self) -> Optional[PK]:
-        return self.real_value.pk if self.real_value else None
+        self.entity = entity
+        self.method = method
 
     def _set_initial_value(self, value: Optional[BaseModel]) -> None:
+        assert value is None or isinstance(value, BaseModel)
         self.real_value = value
 
     def _validate(self) -> None:
         if self.required and self.value is None:
             raise InputValidationError('Обязательное поле')
+
+    async def update_real_value(self, new_value: Optional[BaseModel]) -> None:
+        self.real_value = new_value
+        await self.handle_value_change(self)
 
     async def open_choice(self, e):
         await self.form.box.add_modal(info=PayloadInfo(

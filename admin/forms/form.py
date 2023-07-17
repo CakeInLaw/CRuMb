@@ -58,7 +58,7 @@ class Form(UserControl):
             if isinstance(subgroup_or_input, InputGroup):
                 controls.append(self._build_group(subgroup_or_input))
             elif isinstance(subgroup_or_input, UserInput):
-                widget = subgroup_or_input.widget(form=self, initial=self.initial_for(subgroup_or_input))
+                widget = subgroup_or_input.widget(parent=self, initial=self.initial_for(subgroup_or_input))
                 self.fields_map[subgroup_or_input.name] = widget
                 controls.append(widget)
             else:
@@ -83,10 +83,10 @@ class Form(UserControl):
         for field, e in _err.items():
             await self.fields_map[field].set_object_error(e)
 
-    async def form_is_valid(self):
+    def form_is_valid(self):
         is_valid = True
         for widget in self.fields_map.values():
-            if not await widget.is_valid():
+            if not widget.is_valid():
                 is_valid = False
         return is_valid
 
@@ -99,3 +99,6 @@ class Form(UserControl):
 
     def initial_for(self, item: UserInput) -> Any:
         return self.initial_data.get(item.name, UndefinedValue)
+
+    async def handle_value_change(self, widget: UserInputWidget):
+        pass

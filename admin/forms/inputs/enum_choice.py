@@ -14,6 +14,10 @@ EMPTY_TEXT = "---"
 class EnumChoiceWidget(UserInputWidget[Enum], dropdown.Dropdown):
     enum_type: Type[Enum]
 
+    @property
+    def final_value(self) -> Optional[Enum]:
+        return None if self.value == EMPTY else self.enum_type(self.value)
+
     def __init__(
             self,
             *,
@@ -28,16 +32,13 @@ class EnumChoiceWidget(UserInputWidget[Enum], dropdown.Dropdown):
         ]
         if not self.required:
             self.options.insert(0, dropdown.Option(key=EMPTY, text=EMPTY_TEXT))
+        self.on_change = self.handle_value_change
 
     def _set_initial_value(self, value: Enum | str) -> None:
         if isinstance(value, Enum):
             self.value = value.value
         else:
             self.value = EMPTY
-
-    @property
-    def final_value(self) -> Optional[Enum]:
-        return None if self.value == EMPTY else self.enum_type(self.value)
 
 
 @dataclass
