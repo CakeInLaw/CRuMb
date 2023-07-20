@@ -27,21 +27,15 @@ class InputGroup:
 
 
 class FormSchema:
-    groups: list[InputGroup]
+    items: list[Union["UserInput", "InputGroup"]]
 
-    def __init__(self, *groups: Union["UserInput", "InputGroup"]):
-        self.groups = []
-        for group in groups:
-            if isinstance(group, UserInput):
-                self.groups.append(InputGroup([group]))
-            elif isinstance(group, InputGroup):
-                self.groups.append(group)
+    def __init__(self, *items: Union["UserInput", "InputGroup"]):
+        self.items = []
+        for item in items:
+            self.add_item(item)
 
-    def add_row(self, row: Union["UserInput", "InputGroup"]):
-        if isinstance(row, InputGroup):
-            self.groups.append(row)
-        else:
-            self.groups.append(InputGroup([row]))
+    def add_item(self, item: Union["UserInput", "InputGroup"]):
+        self.items.append(item)
 
     def __iter__(self):
-        return self.groups.__iter__()
+        return self.items.__iter__()

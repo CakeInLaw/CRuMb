@@ -52,7 +52,8 @@ class DateInputWidget(InputWidget[date]):
         if self.max_date is not None and date_v > self.max_date:
             raise InputValidationError(f'Максимум {self.max_date.strftime(self.date_fmt)}')
 
-    def _set_initial_value(self, value: date) -> None:
+    def set_value(self, value: Optional[date], initial: bool = False):
+        assert value is None or isinstance(value, date)
         if value is None:
             self.value = ''
         else:

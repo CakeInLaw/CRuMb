@@ -14,6 +14,7 @@ T = TypeVar('T')
 
 
 class UserInputWidget(Generic[T]):
+    can_be_placed_in_table: bool = True
 
     @property
     def final_value(self) -> T:
@@ -37,24 +38,33 @@ class UserInputWidget(Generic[T]):
             *,
             name: str,
             label: str = None,
+            null: bool = False,
             required: bool = False,
             initial_value: T = None,
+            in_table: bool = False,
             parent: Union["Form", "UserInputWidget"] = None,
             on_value_change: Callable[["UserInputWidget"], Coroutine[Any, Any, None] | None] = None,
             **kwargs
     ):
         super().__init__(**kwargs)
         self.name = name
-        self.label = label or name
+        self.label = label
+        self.null = null
         self.required = required
 
-        self.initial_value = initial_value
-        self._set_initial_value(self.initial_value)
+        self._set_initial_value(initial_value)
 
+        if in_table and not self.can_be_placed_in_table:
+            raise ValueError('Так нельзя:(')
+        self.in_table = in_table
         self.parent = parent
         self.on_value_change = on_value_change
 
-    def _set_initial_value(self, value: T) -> None:
+    def _set_initial_value(self, initial_value: T) -> None:
+        self.initial_value = initial_value
+        self.set_value(self.initial_value, initial=True)
+
+    def set_value(self, value: T, initial: bool = False):
         raise NotImplementedError
 
     def has_changed(self) -> bool:
@@ -72,7 +82,7 @@ class UserInputWidget(Generic[T]):
             raise err
 
     def _on_success_validation(self):
-        pass
+        self.set_error_text(None)
 
     def _on_error_validation(self, err: InputValidationError):
         self.set_error_text(err.msg)
@@ -84,27 +94,29 @@ class UserInputWidget(Generic[T]):
         self.set_error_text(err.get('msg', 'Какая-то ошибка'))
 
     def is_valid(self) -> bool:
+        valid = True
         try:
             self.validate()
         except InputValidationError:
-            return False
-        return True
+            valid = False
+        return valid
 
     def _transform_value(self):
         pass
 
-    async def handle_value_change(self, event_or_control: ControlEvent | Control):
+    async def handle_value_change_and_update(self, event_or_control: ControlEvent | Control):
+        self.handle_value_change(event_or_control=event_or_control)
+        await self.form.update_async()
+
+    def handle_value_change(self, event_or_control: ControlEvent | Control):
         control = event_or_control if isinstance(event_or_control, Control) else event_or_control.control
         if self is control:
             if not self.is_valid():
                 return
             self._transform_value()
         if self.on_value_change:
-            if asyncio.iscoroutinefunction(self.on_value_change):
-                await self.on_value_change(control)
-            else:
-                self.on_value_change(control)
-        await self.parent.handle_value_change(control)
+            self.on_value_change(control)
+        self.parent.handle_value_change(control)
 
 
 class UndefinedValue:
@@ -117,18 +129,20 @@ _I = TypeVar('_I', bound=Union[Control, UserInputWidget])
 @dataclass
 class UserInput(Generic[_I]):
     name: str
-    label: str
+    label: str = None
+    null: bool = False
     required: bool = False
     on_value_change:  Callable[[UserInputWidget], Coroutine[Any, Any, None]] = None
 
     def widget(
             self,
             parent: Union["Form", UserInputWidget],
-            initial: Any = UndefinedValue
+            initial: Any = UndefinedValue,
+            **extra
     ) -> _I:
         if initial is UndefinedValue:
             initial = self.default_initial
-        kwargs = {**self.__dict__}
+        kwargs = {**self.__dict__, **extra}
         return self.widget_type(parent=parent, initial_value=initial, **kwargs)
 
     @property
@@ -138,3 +152,7 @@ class UserInput(Generic[_I]):
     @property
     def widget_type(self) -> Type[_I]:
         raise NotImplementedError
+
+    @property
+    def is_numeric(self):
+        return False

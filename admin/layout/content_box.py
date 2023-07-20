@@ -1,10 +1,11 @@
 from typing import TYPE_CHECKING
 
-from flet import Control, Container, Stack, BoxShadow
+from flet import Control, Column, Container, Stack, BoxShadow, ClipBehavior, ScrollMode
 
 from .loader import Loader
 from .payload import Box
 from .modal_box import ModalBox
+from .size_aware_container import SizeAwareContainer
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
@@ -16,24 +17,43 @@ __all__ = ["ContentsBoxContainer", "ContentBox"]
 class ContentBox(Container, Box):
     def __init__(
             self,
-            box: "ContentsBoxContainer",
+            container: "ContentsBoxContainer",
             tab: "Tab"
     ):
-        super().__init__(padding=20)
-        self.box = box
+        super().__init__(
+            padding=10,
+            clip_behavior=ClipBehavior.ANTI_ALIAS_WITH_SAVE_LAYER,
+            # это чтобы растягивался на весь ContentBoxContainer
+            top=0,
+            right=0,
+            left=0,
+            bottom=0,
+        )
+        self.container = container
         self.tab = tab
-        self.app = self.box.app
+        self.app = self.container.app
         self.resource = self.tab.resource
-        self._stack_controls: list[Control] = [Loader()]
-        self.content = Stack(self._stack_controls)
+        self._root = Column(
+            controls=[Loader()],
+            scroll=ScrollMode.ALWAYS,
+            # это чтобы растягивался на весь ContentBox
+            top=0,
+            right=0,
+            left=0,
+            bottom=0,
+        )
+        self._stack_controls: list[Control] = [self._root]
+        self.content = Stack(
+            self._stack_controls,
+        )
 
     @property
     def payload(self):
-        return self._stack_controls[0]
+        return self._root.controls[0]
 
     @payload.setter
     def payload(self, v: Control):
-        self._stack_controls[0] = v
+        self._root.controls[0] = v
 
     async def did_mount_async(self):
         await self.load_content()
@@ -84,13 +104,13 @@ class ContentsBoxContainer(Container):
             ),
         )
         self.app = app
-        self.contents = []
-        self.content = Stack(self.contents)
+        self.boxes = []
+        self.content = Stack(self.boxes)
 
     def add_content_box(self, tab: "Tab") -> ContentBox:
-        content_box = ContentBox(box=self, tab=tab)
-        self.contents.append(content_box)
+        content_box = ContentBox(container=self, tab=tab)
+        self.boxes.append(content_box)
         return content_box
 
     def rm_content_box(self, content: ContentBox):
-        self.contents.remove(content)
+        self.boxes.remove(content)

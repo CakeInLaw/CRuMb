@@ -44,7 +44,8 @@ class FloatInputWidget(InputWidget[float]):
         if self.max_value is not None and num > self.max_value:
             raise InputValidationError(f'Максимум {self.max_value}')
 
-    def _set_initial_value(self, value: float) -> None:
+    def set_value(self, value: float, initial: bool = False):
+        assert value is None or isinstance(value, float)
         self.value = '' if value is None else str(value)
 
     def _transform_value(self):
@@ -68,7 +69,8 @@ class FloatInput(Input[FloatInputWidget]):
     @property
     def default_initial(self) -> Optional[float]:
         if self.required:
-            if self.min_value is not None:
-                return float(self.min_value)
             return 0.0
-        return None
+
+    @property
+    def is_numeric(self):
+        return True

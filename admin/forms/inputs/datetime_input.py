@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
-import pytz
 from flet import KeyboardType
 from tortoise import timezone
 
@@ -53,7 +52,8 @@ class DatetimeInputWidget(InputWidget[datetime]):
         if self.max_dt is not None and datetime_v > self.max_dt:
             raise InputValidationError(f'Максимум {self.max_dt.strftime(self.dt_fmt)}')
 
-    def _set_initial_value(self, value: datetime) -> None:
+    def set_value(self, value: Optional[datetime], initial: bool = False) -> None:
+        assert value is None or isinstance(value, datetime)
         if value is None:
             self.value = ''
         else:

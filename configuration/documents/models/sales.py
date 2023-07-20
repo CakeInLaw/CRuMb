@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Union
 from tortoise import fields
 from core.orm import fields as orm_fields
 
-from .nomenclature_move_documents import Document, DocumentValue
+from .nomenclature_move_documents import MoveDocument, MoveDocumentValue
 
 if TYPE_CHECKING:
     from configuration.directories.models import Customer
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 __all__ = ["Sale", "SaleValue"]
 
 
-class Sale(Document):
+class Sale(MoveDocument):
     """Документ продажи товаров (ПР)"""
     PREFIX: str = 'ПР'
 
@@ -29,7 +29,7 @@ class Sale(Document):
         ordering = ('dt',)
 
 
-class SaleValue(DocumentValue):
+class SaleValue(MoveDocumentValue):
     count: float = orm_fields.FloatField(min_value=0)
     price: float = orm_fields.FloatField(min_value=0)
     doc: Union["Sale", fields.ForeignKeyRelation["Sale"]] = fields.ForeignKeyField(
@@ -38,4 +38,4 @@ class SaleValue(DocumentValue):
 
     class Meta:
         table = 'doc__sales__values'
-        ordering = ('order', )
+        ordering = 'ordering',

@@ -15,5 +15,6 @@ class CustomerResource(Resource):
     form_primitive = Primitive(
         'name',
         'register_address',
-        'price_group_id'
+        'price_group_id',
+        'customer_locations'
     )

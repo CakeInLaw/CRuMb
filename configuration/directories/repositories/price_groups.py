@@ -15,11 +15,9 @@ class PriceGroupRepository(DirectoryRepository):
     _TRANSLATION_DEFAULT = _TRANSLATION_RU = TranslationRu(
         name='Ценовая группа',
         name_plural='Ценовые группы',
-        fields={},
     )
 
     _TRANSLATION_EN = TranslationEn(
         name='Price group',
         name_plural='Price groups',
-        fields={},
     )

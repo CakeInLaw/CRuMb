@@ -10,14 +10,15 @@ class CheckboxWidget(UserInputWidget[bool], ft.Checkbox):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.on_change = self.handle_value_change
+        self.on_change = self.handle_value_change_and_update
 
     @property
     def final_value(self) -> Optional[bool]:
         return self.value
 
-    def _set_initial_value(self, value: bool) -> None:
-        self.value = bool(value)
+    def set_value(self, value: bool, initial: bool = False):
+        assert isinstance(value, bool)
+        self.value = value
 
 
 @dataclass

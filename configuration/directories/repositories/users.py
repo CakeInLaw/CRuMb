@@ -9,6 +9,7 @@ from passlib.context import CryptContext
 from core.exceptions import AnyFieldError
 from core.repository import default_repository
 from core.entities.directories import DirectoryRepository
+from core.translations import TranslationRu, TranslationEn
 from core.types import DATA, MODEL
 
 from ..models import User
@@ -32,6 +33,32 @@ class UserRepository(DirectoryRepository):
     # обязательны 1 буква и цифра; допустимы буквы (латиница), цифры и !@#$%^&*-_=+
     password_pattern = re.compile('^(?=.*[A-Za-z])(?=.*[1-9])[A-Za-z1-9!@#$%^&*-_=+]{8,30}$')
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+    _TRANSLATION_DEFAULT = _TRANSLATION_RU = TranslationRu(
+        name='Пользователь',
+        name_plural='Пользователи',
+        fields={
+            'username': 'Логин',
+            'is_superuser': 'Суперпользователь',
+            'is_active': 'Активный',
+            'created_at': 'Дата и время создания',
+            'password': 'Пароль',
+            're_password': 'Повторите пароль',
+        },
+    )
+
+    _TRANSLATION_EN = TranslationEn(
+        name='User',
+        name_plural='Users',
+        fields={
+            'username': 'Username',
+            'is_superuser': 'Is superuser',
+            'is_active': 'Is active',
+            'created_at': 'Created at',
+            'password': 'Password',
+            're_password': 'Repeat password',
+        },
+    )
 
     async def _validate_password(
             self,

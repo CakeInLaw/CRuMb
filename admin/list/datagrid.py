@@ -146,11 +146,6 @@ class Datagrid(UserControl):
                     )
                 )
 
-            async def xx(e):
-                e.control.selected = not e.control.selected
-                self.active = e.control
-                await self.datagrid.update_async()
-
             row = DataRow(cells)
             if self.use_handling_select:
                 row.on_select_changed = self.handle_select
@@ -198,12 +193,9 @@ class Datagrid(UserControl):
         fields = self.repository.describe().all
         self._columns_map = {}
         for name in v:
-            numeric = False
-            if fields[name] in FieldTypes.numeric_types():
-                numeric = True
             self._columns_map[name] = DataColumn(
                 label=Text(self.resource.translate_field(name)),
-                numeric=numeric
+                numeric=fields[name] in FieldTypes.numeric_types()
             )
         self.datagrid.columns = list(self._columns_map.values())
         self.fill_items()

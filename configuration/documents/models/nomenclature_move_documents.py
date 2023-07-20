@@ -1,16 +1,16 @@
 from typing import TYPE_CHECKING, Union
 
 from tortoise import fields
-from core.entities.documents.model import Document as BaseDocument, DocumentValue as BaseDocumentValue
+from core.entities.documents.model import Document, DocumentValue
 
 if TYPE_CHECKING:
     from configuration.directories.models import Employee, Nomenclature
 
 
-__all__ = ["Document", "DocumentValue"]
+__all__ = ["MoveDocument", "MoveDocumentValue"]
 
 
-class Document(BaseDocument):
+class MoveDocument(Document):
     """Базовая модель для всех документов движения"""
 
     owner: Union["Employee", fields.ForeignKeyRelation["Employee"]] = fields.ForeignKeyField(
@@ -21,7 +21,7 @@ class Document(BaseDocument):
         abstract = True
 
 
-class DocumentValue(BaseDocumentValue):
+class MoveDocumentValue(DocumentValue):
     """Базовая модель списка для документов движения номенклатуры"""
 
     nomenclature: Union["Nomenclature", fields.ForeignKeyRelation["Nomenclature"]] = fields.ForeignKeyField(

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Callable, Optional, Type
+from typing import TYPE_CHECKING, Any, Callable, Optional, Type, Union
 
 from flet import ElevatedButton, Row, Control, MainAxisAlignment
 from tortoise import fields
@@ -59,7 +59,7 @@ class ModelForm(Form):
 
         schema = FormSchema()
         for item in primitive:
-            schema.add_row(self._from_primitive_item(item))
+            schema.add_item(self._from_primitive_item(item))
         return schema
 
     def _from_primitive_item(self, item: Any) -> inputs.UserInput | InputGroup:
@@ -118,7 +118,8 @@ class ModelForm(Form):
                 query={'pk': instance.pk}
             ))
         except ObjectErrors as err:
-            await self.set_object_errors(err)
+            self.set_object_errors(err)
+            await self.update_async()
             await self.app.notify('Исправьте ошибки', NotifyStatus.ERROR)
 
     def create_btn(self) -> ElevatedButton:
@@ -135,16 +136,16 @@ class ModelForm(Form):
             await self.app.notify('Элемент изменен', NotifyStatus.SUCCESS)
             await self.box.reload_content()
         except ObjectErrors as err:
-            await self.set_object_errors(err)
+            self.set_object_errors(err)
+            await self.update_async()
             await self.app.notify('Исправьте ошибки', NotifyStatus.ERROR)
 
     def edit_btn(self) -> ElevatedButton:
         return ElevatedButton('Изменить', on_click=self.on_click_edit)
 
-    def get_submit_bar(self) -> Control:
+    def get_action_bar(self) -> Control:
         return Row(
             controls=[self.create_btn() if self.create else self.edit_btn()],
-            alignment=MainAxisAlignment.END
         )
 
     @property
@@ -165,7 +166,7 @@ class ModelForm(Form):
             FieldTypes.FK: self.object_input_creator,
             FieldTypes.FK_PK: self.related_choice_creator,
             FieldTypes.BACK_O2O: self.related_choice_creator,
-            # FieldTypes.BACK_FK: self.input_creator,
+            FieldTypes.BACK_FK: self.objects_array_input_creator,
             # FieldTypes.M2M: self.input_creator,
         }
 
@@ -173,6 +174,7 @@ class ModelForm(Form):
         return {
             'name': field.model_field_name,
             'label': self.resource.translate_field(field.model_field_name),
+            'null': field.null,
             'required': self.repository.field_is_required(field),
         }
 
@@ -258,14 +260,24 @@ class ModelForm(Form):
 
     def object_input_creator(
             self,
-            field: fields.relational.ForeignKeyFieldInstance | fields.relational.OneToOneFieldInstance,
-            extra: dict[str, Any]
-    ) -> inputs.ObjectInput:
+            field: Union[
+                fields.relational.ForeignKeyFieldInstance,
+                fields.relational.OneToOneFieldInstance,
+                fields.relational.BackwardFKRelation,
+                fields.relational.BackwardOneToOneRelation,
+            ],
+            extra: dict[str, Any],
+            data_row: bool = False
+    ) -> inputs.ObjectInputBase:
+        if data_row:
+            object_input_class = inputs.ObjectInputTableRow
+        else:
+            object_input_class = inputs.ObjectInput
         kwargs = self.input_creator_base_kwargs(field)
 
         if 'fields' in extra:
             kwargs.update(extra)
-            return inputs.ObjectInput(**kwargs)
+            return object_input_class(**kwargs)
 
         primitive = None
         if 'primitive' in extra:
@@ -283,7 +295,7 @@ class ModelForm(Form):
 
         kwargs.update(extra)
         kwargs['fields'] = processed_fields
-        return inputs.ObjectInput(**kwargs)
+        return object_input_class(**kwargs)
 
     def related_choice_creator(
             self,
@@ -294,3 +306,15 @@ class ModelForm(Form):
         kwargs['entity'] = self.resource.relative_resource(field.model_field_name).entity()
         kwargs.update(extra)
         return inputs.RelatedChoice(**kwargs)
+
+    def objects_array_input_creator(
+            self,
+            field: fields.relational.BackwardFKRelation,
+            extra: dict[str, Any]
+    ) -> inputs.ObjectsArrayInput:
+        kwargs = self.input_creator_base_kwargs(field)
+        object_schema_info = extra.get('object_schema', {})
+        if not isinstance(object_schema_info, inputs.ObjectInputTableRowWidget):
+            extra['object_schema'] = self.object_input_creator(field, extra=object_schema_info, data_row=True)
+        kwargs.update(extra)
+        return inputs.ObjectsArrayInput(**kwargs)

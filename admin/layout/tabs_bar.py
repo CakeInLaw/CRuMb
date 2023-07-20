@@ -78,6 +78,7 @@ class Tab(Draggable):
             icon=icons.CLOSE_ROUNDED,
             icon_size=15,
             height=30,
+            width=30,
             on_click=self.handle_close
         )
 
