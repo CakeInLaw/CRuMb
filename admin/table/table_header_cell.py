@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from flet import (
     Container, Row, Stack, Text,
-    GestureDetector, MouseCursor, ClipBehavior, TextOverflow, DragUpdateEvent, DragStartEvent,
+    ClipBehavior, TextOverflow, padding,
     border, BorderSide,
 )
 
@@ -17,7 +17,7 @@ class TableHeaderCell(Container):
     header: "TableHeader"
 
     BORDER_SIDE = BorderSide(1, 'black')
-    MIN_WIDTH = 10
+    MIN_WIDTH = 12
 
     global_x_on_width_change_start: float
     width_on_width_change_start: float | int
@@ -30,7 +30,11 @@ class TableHeaderCell(Container):
         self.position = HorizontalPosition.MIDDLE
 
         self.width = 150
-        self.real_content = Row([Text(label, overflow=TextOverflow.ELLIPSIS)])
+        self.real_content = Container(
+            Text(label, overflow=TextOverflow.ELLIPSIS),
+            padding=padding.symmetric(horizontal=5),
+            clip_behavior=ClipBehavior.ANTI_ALIAS_WITH_SAVE_LAYER,
+        )
         self.content = Stack([self.real_content, WidthChanger(self, side='left'), WidthChanger(self, side='right')])
 
     def set_header(self, header: "TableHeader"):

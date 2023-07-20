@@ -18,7 +18,7 @@ class ChoiceView(Container):
             current_chosen: Optional[BaseModel],
             handle_confirm: Callable[[Optional[BaseModel]], Coroutine[Any, Any, None]]
     ):
-        super().__init__(expand=True)
+        super().__init__()
         self.resource = resource
         self.app = self.resource.app
         self.box = box

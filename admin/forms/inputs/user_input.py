@@ -104,6 +104,9 @@ class UserInputWidget(Generic[T]):
     def _transform_value(self):
         pass
 
+    def apply_in_table_params(self):
+        pass
+
     async def handle_value_change_and_update(self, event_or_control: ControlEvent | Control):
         self.handle_value_change(event_or_control=event_or_control)
         await self.form.update_async()

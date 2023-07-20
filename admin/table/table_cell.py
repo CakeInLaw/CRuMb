@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from flet import Container, Control, border
+from flet import Container, Control, border, alignment, padding
 
 from .cell_position import HorizontalPosition, VerticalPosition
 
@@ -13,11 +13,15 @@ class TableCell(Container):
     position: tuple[HorizontalPosition, VerticalPosition]
 
     def __init__(self, content: Control):
-        super().__init__(border=border.all(1, 'black'))
+        super().__init__(
+            alignment=alignment.center_left,
+            padding=padding.symmetric(horizontal=5)
+        )
         self.content = content
 
     def set_row(self, row: "TableRow"):
         self.row = row
+        self.height = self.body.row_height
 
     @property
     def table(self) -> "Table":

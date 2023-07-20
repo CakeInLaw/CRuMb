@@ -1,4 +1,4 @@
-from flet import Container, Stack, Row, Column, OptionalNumber, ScrollMode, ClipBehavior
+from flet import Container, Row, Column, OptionalNumber, ScrollMode
 
 from .table_header import TableHeader
 from .table_body import TableBody
@@ -10,18 +10,13 @@ class Table(Container):
             self,
             header: TableHeader,
             body: TableBody,
-            height: int | float = 400,
     ):
-        super().__init__(bgcolor='blue', clip_behavior=ClipBehavior.ANTI_ALIAS)
+        super().__init__()
         self.header = header
         self.header.set_table(self)
         self.body = body
         self.body.set_table(self)
-        self.body.height = height - self.header.height
-        self.content = Row(
-            controls=[Column([self.header, self.body], spacing=0)],
-            scroll=ScrollMode.ALWAYS
-        )
+        self.content = Row([Column([self.header, self.body], spacing=0)], scroll=ScrollMode.AUTO, width=1500)
 
     async def update_column_width(self, index: int, width: OptionalNumber):
         self.header.cells[index].width = width

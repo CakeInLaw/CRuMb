@@ -34,7 +34,7 @@ class Datagrid(UserControl):
             on_active_change: Callable[[DataRow], Coroutine[Any, Any, None]] = None,
             on_select: Callable[[DataRow], Coroutine[Any, Any, None]] = None,
     ):
-        super().__init__(expand=True)
+        super().__init__()
         self.box = box
         self.resource = resource
         self.app = self.resource.app
@@ -42,7 +42,6 @@ class Datagrid(UserControl):
         self.on_select = on_select
         self.active = None
         self.datagrid = DataTable(
-            expand=True,
             show_checkbox_column=self.on_select is not None,
         )
         self.pagination = Pagination(

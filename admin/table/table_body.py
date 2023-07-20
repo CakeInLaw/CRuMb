@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from flet import Container, ListView as FletListView, ClipBehavior
+from flet import Container, ListView as FletListView
 
 from core.utils import default_if_none
 from .table_row import TableRow
@@ -12,16 +12,22 @@ if TYPE_CHECKING:
 class TableBody(Container):
     table: "Table"
     rows: list[TableRow]
+    row_height = 30
 
     def __init__(
             self,
             rows: list[TableRow] = None,
+            rows_count: int = 12,
     ):
-        super().__init__(clip_behavior=ClipBehavior.ANTI_ALIAS)
+        super().__init__()
         self.rows = default_if_none(rows, [])
         self.content = FletListView(
             controls=self.rows,
+            item_extent=self.row_height,
+            height=self.row_height * rows_count,
             spacing=0,
+            divider_thickness=1,
+            auto_scroll=True
         )
 
     def set_table(self, table: "Table"):

@@ -16,7 +16,7 @@ class ListView(Container):
             resource: "Resource",
             box: "BOX"
     ):
-        super().__init__(expand=True)
+        super().__init__()
         self.resource = resource
         self.app = self.resource.app
         self.box = box

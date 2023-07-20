@@ -1,11 +1,10 @@
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from flet import Container, Column, Row, ElevatedButton, Text
+from flet import Column, Row, ElevatedButton, Text
 
 from core.orm import BaseModel
 from core.types import BackFKData
-from admin.exceptions import InputValidationError
 from admin.table import Table, TableHeader, TableHeaderCell, TableBody
 from .object_input import ObjectInputTableRow, ObjectInputTableRowWidget
 from .user_input import UserInput, UserInputWidget

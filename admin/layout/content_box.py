@@ -36,11 +36,6 @@ class ContentBox(Container, Box):
         self._root = Column(
             controls=[Loader()],
             scroll=ScrollMode.ALWAYS,
-            # это чтобы растягивался на весь ContentBox
-            top=0,
-            right=0,
-            left=0,
-            bottom=0,
         )
         self._stack_controls: list[Control] = [self._root]
         self.content = Stack(
@@ -102,6 +97,7 @@ class ContentsBoxContainer(Container):
                 offset=(0, 15),
                 color='#1C1B1F,0.2'
             ),
+            clip_behavior=ClipBehavior.ANTI_ALIAS_WITH_SAVE_LAYER
         )
         self.app = app
         self.boxes = []
