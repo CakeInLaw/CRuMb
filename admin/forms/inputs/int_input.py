@@ -11,6 +11,10 @@ class IntInputWidget(InputWidget[int]):
     min_value: Optional[int]
     max_value: Optional[int]
 
+    @property
+    def final_value(self) -> int:
+        return int(self.value)
+
     def __init__(
             self,
             *,
@@ -38,11 +42,8 @@ class IntInputWidget(InputWidget[int]):
         if self.max_value is not None and num > self.max_value:
             raise InputValidationError(f'Максимум {self.max_value}')
 
-    @property
-    def final_value(self) -> int:
-        return int(self.value)
-
-    def _set_initial_value(self, value: int) -> None:
+    def set_value(self, value: int, initial: bool = False):
+        assert value is None or isinstance(value, int)
         self.value = '' if value is None else str(value)
 
 
@@ -58,7 +59,8 @@ class IntInput(Input[IntInputWidget]):
     @property
     def default_initial(self) -> Optional[int]:
         if self.required:
-            if self.min_value is not None:
-                return self.min_value
             return 0
-        return None
+
+    @property
+    def is_numeric(self):
+        return True

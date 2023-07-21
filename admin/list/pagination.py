@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from flet import Row, ContainerTapEvent, Container, Text, Icon, MainAxisAlignment, icons
 
 if TYPE_CHECKING:
-    from .datagrid import Datagrid
+    from admin.list.datagrid import Datagrid
 
 
 class Pagination(Row):

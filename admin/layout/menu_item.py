@@ -1,31 +1,20 @@
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Optional, Any
+from typing import TYPE_CHECKING, Optional
 
 from flet import ListTile, Text, Icon, ControlEvent
 
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
+    from .payload import PayloadInfo
     from .menu_group import MenuGroup
-
-
-@dataclass
-class MenuItemInfo:
-    entity: str
-    method: str = ''
-    query: dict[str, Any] = field(default_factory=dict)
 
 
 class MenuItem(ListTile):
 
     def __init__(
             self,
-            icon: str,
-            label: str,
             app: "CRuMbAdmin",
-            entity: str,
-            method: str,
-            query: dict[str, Any] = None,
+            info: "PayloadInfo",
             parent: Optional["MenuGroup"] = None,
     ):
         super().__init__(
@@ -34,14 +23,18 @@ class MenuItem(ListTile):
         )
         self.app = app
         self.parent = parent
-        self.entity = entity
-        self.method = method
-        self.query = query or {}
+        self.info = info
+        resource = self.app.find_resource(self.info.entity)
+        extra = self.info.extra or {}
+        icon = extra.get('icon', resource.ICON)
+        label = extra.get('label', resource.name_plural)
+        if isinstance(label, dict):
+            label = label.get(self.app.LANG, label['DEFAULT'])
         self.leading = Icon(icon, size=24)
         self.title = Text(label, no_wrap=True, size=14)
 
     async def handle_click(self, e: ControlEvent):
-        await self.app.open(self.entity, self.method, **self.query)
+        await self.app.open(self.info)
 
     def minimize(self):
         self.title.visible = False

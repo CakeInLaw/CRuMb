@@ -61,12 +61,6 @@ CREATE TABLE IF NOT EXISTS "dir__recipe_cards" (
     "text" TEXT NOT NULL,
     "product_id" BIGINT NOT NULL UNIQUE REFERENCES "dir__nomenclature" ("id") ON DELETE CASCADE
 );
-CREATE TABLE IF NOT EXISTS "dir__recipe_cards__ingredients" (
-    "id" BIGSERIAL NOT NULL PRIMARY KEY,
-    "order" SMALLINT NOT NULL,
-    "product_id" BIGINT NOT NULL REFERENCES "dir__nomenclature" ("id") ON DELETE RESTRICT,
-    "recipe_id" INT NOT NULL REFERENCES "dir__recipe_cards" ("id") ON DELETE CASCADE
-);
 CREATE TABLE IF NOT EXISTS "dir__users" (
     "id" BIGSERIAL NOT NULL PRIMARY KEY,
     "username" VARCHAR(40)  UNIQUE,
@@ -78,7 +72,7 @@ CREATE TABLE IF NOT EXISTS "dir__users" (
 );
 CREATE TABLE IF NOT EXISTS "dir__customer_locations" (
     "id" SERIAL NOT NULL PRIMARY KEY,
-    "order" SMALLINT NOT NULL,
+    "ordering" SMALLINT NOT NULL,
     "name" VARCHAR(100) NOT NULL,
     "delivery_address" VARCHAR(200) NOT NULL,
     "customer_id" INT NOT NULL REFERENCES "dir__customers" ("id") ON DELETE RESTRICT,
@@ -104,7 +98,7 @@ CREATE TABLE IF NOT EXISTS "doc__nomenclature_write_offs" (
 COMMENT ON TABLE "doc__nomenclature_write_offs" IS 'Документ списания номенклатуры (СП)';
 CREATE TABLE IF NOT EXISTS "doc__nomenclature_write_offs__values" (
     "id" BIGSERIAL NOT NULL PRIMARY KEY,
-    "order" SMALLINT NOT NULL,
+    "ordering" SMALLINT NOT NULL,
     "count" DOUBLE PRECISION NOT NULL,
     "price" DOUBLE PRECISION NOT NULL,
     "doc_id" BIGINT NOT NULL REFERENCES "doc__nomenclature_write_offs" ("id") ON DELETE CASCADE,
@@ -122,7 +116,7 @@ CREATE TABLE IF NOT EXISTS "doc__product_assemblies" (
 COMMENT ON TABLE "doc__product_assemblies" IS 'Документ сборки номенклатуры (СБ). Может быть собран по техкартам, а может и вручную';
 CREATE TABLE IF NOT EXISTS "doc__product_assemblies__values" (
     "id" BIGSERIAL NOT NULL PRIMARY KEY,
-    "order" SMALLINT NOT NULL,
+    "ordering" SMALLINT NOT NULL,
     "count" DOUBLE PRECISION NOT NULL,
     "doc_id" BIGINT NOT NULL REFERENCES "doc__product_assemblies" ("id") ON DELETE CASCADE,
     "nomenclature_id" BIGINT NOT NULL REFERENCES "dir__nomenclature" ("id") ON DELETE RESTRICT
@@ -149,7 +143,7 @@ CREATE TABLE IF NOT EXISTS "doc__provider_returns" (
 COMMENT ON TABLE "doc__provider_returns" IS 'Документ возврата приобретения товаров (ВПТ) поставщику';
 CREATE TABLE IF NOT EXISTS "doc__provider_returns__values" (
     "id" BIGSERIAL NOT NULL PRIMARY KEY,
-    "order" SMALLINT NOT NULL,
+    "ordering" SMALLINT NOT NULL,
     "count" DOUBLE PRECISION NOT NULL,
     "price" DOUBLE PRECISION NOT NULL,
     "doc_id" BIGINT NOT NULL REFERENCES "doc__provider_returns" ("id") ON DELETE CASCADE,
@@ -157,7 +151,7 @@ CREATE TABLE IF NOT EXISTS "doc__provider_returns__values" (
 );
 CREATE TABLE IF NOT EXISTS "doc__receives__values" (
     "id" BIGSERIAL NOT NULL PRIMARY KEY,
-    "order" SMALLINT NOT NULL,
+    "ordering" SMALLINT NOT NULL,
     "count" DOUBLE PRECISION NOT NULL,
     "price" DOUBLE PRECISION NOT NULL,
     "doc_id" BIGINT NOT NULL REFERENCES "doc__receives" ("id") ON DELETE CASCADE,
@@ -183,7 +177,7 @@ CREATE TABLE IF NOT EXISTS "doc__customer_returns" (
 COMMENT ON TABLE "doc__customer_returns" IS 'Документ возврата продажи товаров (ВПР) от покупателя';
 CREATE TABLE IF NOT EXISTS "doc__customer_returns__values" (
     "id" BIGSERIAL NOT NULL PRIMARY KEY,
-    "order" SMALLINT NOT NULL,
+    "ordering" SMALLINT NOT NULL,
     "count" DOUBLE PRECISION NOT NULL,
     "price" DOUBLE PRECISION NOT NULL,
     "doc_id" BIGINT NOT NULL REFERENCES "doc__customer_returns" ("id") ON DELETE CASCADE,
@@ -191,7 +185,7 @@ CREATE TABLE IF NOT EXISTS "doc__customer_returns__values" (
 );
 CREATE TABLE IF NOT EXISTS "doc__sales__values" (
     "id" BIGSERIAL NOT NULL PRIMARY KEY,
-    "order" SMALLINT NOT NULL,
+    "ordering" SMALLINT NOT NULL,
     "count" DOUBLE PRECISION NOT NULL,
     "price" DOUBLE PRECISION NOT NULL,
     "doc_id" BIGINT NOT NULL REFERENCES "doc__sales" ("id") ON DELETE CASCADE,
@@ -207,7 +201,7 @@ CREATE TABLE IF NOT EXISTS "doc__stocktakes" (
 COMMENT ON TABLE "doc__stocktakes" IS 'Документ инвентаризации (ИН).';
 CREATE TABLE IF NOT EXISTS "doc__stocktakes__values" (
     "id" BIGSERIAL NOT NULL PRIMARY KEY,
-    "order" SMALLINT NOT NULL,
+    "ordering" SMALLINT NOT NULL,
     "count" DOUBLE PRECISION NOT NULL,
     "doc_id" BIGINT NOT NULL REFERENCES "doc__stocktakes" ("id") ON DELETE CASCADE,
     "nomenclature_id" BIGINT NOT NULL REFERENCES "dir__nomenclature" ("id") ON DELETE RESTRICT

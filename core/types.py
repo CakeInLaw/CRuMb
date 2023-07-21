@@ -19,10 +19,7 @@ FK_TYPE = fields.IntField | fields.SmallIntField | fields.BigIntField |\
           fields.UUIDField | orm_fields.CharField | fields.Field
 
 
-class BackFKData(TypedDict, total=False):
-    add: list[DATA]
-    edit: list[DATA]
-    remove: list[PK]
+BackFKData = list[DATA]
 
 
 class M2MData(TypedDict, total=False):

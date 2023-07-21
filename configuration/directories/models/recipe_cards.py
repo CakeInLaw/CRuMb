@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Union
 
 from tortoise import fields
 
-from core.entities.directories import Directory
+from core.entities.directories import Directory, DirectoryValueRepository
 
 if TYPE_CHECKING:
     from configuration.directories.models import Nomenclature
@@ -27,9 +27,7 @@ class RecipeCard(Directory):
         return str(self.product)
 
 
-class RecipeCardIngredients(Directory):
-    id: int = fields.BigIntField(pk=True)
-    order: int = fields.SmallIntField()
+class RecipeCardIngredients(DirectoryValueRepository):
     product: Union["Nomenclature", fields.ForeignKeyRelation["Nomenclature"]] = fields.ForeignKeyField(
         "directories.Nomenclature", related_name='ingredient_of', on_delete=fields.RESTRICT
     )
@@ -39,7 +37,7 @@ class RecipeCardIngredients(Directory):
 
     class Meta:
         table = "dir__recipe_cards__ingredients"
-        ordering = ('order',)
+        ordering = 'ordering',
 
     def __str__(self) -> str:
         return str(self.product)

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Union
 from tortoise import fields
 from core.orm import fields as orm_fields
 
-from .nomenclature_move_documents import Document, DocumentValue
+from .nomenclature_move_documents import MoveDocument, MoveDocumentValue
 
 if TYPE_CHECKING:
     from configuration.directories.models import Employee, OperationReason
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 __all__ = ["NomenclatureWriteOff", "NomenclatureWriteOffValue"]
 
 
-class NomenclatureWriteOff(Document):
+class NomenclatureWriteOff(MoveDocument):
     """Документ списания номенклатуры (СП)"""
 
     PREFIX: str = 'СП'
@@ -29,7 +29,7 @@ class NomenclatureWriteOff(Document):
         ordering = ("dt",)
 
 
-class NomenclatureWriteOffValue(DocumentValue):
+class NomenclatureWriteOffValue(MoveDocumentValue):
     count: float = orm_fields.FloatField(min_value=0)
     price: float = orm_fields.FloatField(min_value=0)
     doc: Union["NomenclatureWriteOff", fields.ForeignKeyRelation["NomenclatureWriteOff"]] = fields.ForeignKeyField(

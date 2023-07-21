@@ -3,13 +3,12 @@ from typing import Type, TypeVar, Any
 
 from flet import (
     Page, UserControl, Control, Column, Row, Text,
-    SnackBar, AlertDialog,
+    SnackBar,
     app as flet_app
 )
 
 from core.enums import NotifyStatus
-from admin.layout.contentbox import ContentBox
-from .layout import Header, TabsBar, TabInfo, Sidebar, MenuGroup, MenuItemInfo
+from admin.layout import Header, TabsBar, PayloadInfo, Sidebar, MenuGroup, ContentsBoxContainer
 
 from .resource import Resource
 
@@ -33,7 +32,7 @@ class CRuMbAdmin(UserControl):
         self.appbar = Header(app=self)
         self.tabs_bar = TabsBar(app=self)
         self.sidebar = Sidebar(app=self)
-        self.content_box = ContentBox(app=self)
+        self.content_box_container = ContentsBoxContainer(app=self)
 
         self.page.appbar = self.appbar
 
@@ -47,7 +46,7 @@ class CRuMbAdmin(UserControl):
                 Row(
                     controls=[
                         self.sidebar,
-                        self.content_box,
+                        self.content_box_container,
                     ],
                     spacing=0,
                     expand=True
@@ -73,18 +72,22 @@ class CRuMbAdmin(UserControl):
             present_in: tuple[Type["MenuGroup"] | tuple[Type["MenuGroup"], dict[str, Any]], ...] = ()
     ) -> None:
         for group in present_in:
-            if issubclass(group, MenuGroup):
-                group.add_item_info(MenuItemInfo(
-                    entity=resource.entity(),
-                    method=resource.default_method()
-                ))
-            elif isinstance(group, tuple) and len(group) == 2:
+            if isinstance(group, tuple) and len(group) == 2:
                 group, extra = group
                 if not issubclass(group, MenuGroup) or not isinstance(extra, dict):
                     raise ValueError(f'Что-то не то передал: {group=}, {extra=}')
-                group.add_item_info(MenuItemInfo(
+                method = extra.pop('method') if 'method' in extra else resource.default_method()
+                query = extra.pop('query') if 'query' in extra else {}
+                group.add_item_info(PayloadInfo(
                     entity=resource.entity(),
-                    **extra
+                    method=method,
+                    query=query,
+                    extra=extra,
+                ))
+            elif issubclass(group, MenuGroup):
+                group.add_item_info(PayloadInfo(
+                    entity=resource.entity(),
+                    method=resource.default_method()
                 ))
             else:
                 raise TypeError(f'Что-то не то передал: {type(group)}, ({group})')
@@ -122,25 +125,11 @@ class CRuMbAdmin(UserControl):
     async def on_shutdown(cls):
         pass
 
-    async def open(self, entity: str, method: str, **query) -> None:
-        tab_info = TabInfo(
-            entity=entity,
-            method=method,
-            query=query
-        )
-        if tab := self.tabs_bar.tab_by_info(info=tab_info):
+    async def open(self, info: PayloadInfo) -> None:
+        if tab := self.tabs_bar.tab_by_info(info=info):
             await self.tabs_bar.set_current_tab(tab)
         else:
-            await self.tabs_bar.create_tab(info=tab_info)
-
-    async def open_modal(self, entity: str, method: str, **query) -> None:
-        resource = self.find_resource(entity)
-        content = await resource.methods[method](**query)
-        await self.page.show_dialog_async(AlertDialog(
-            modal=True,
-            content=content,
-            content_padding=10
-        ))
+            await self.tabs_bar.create_tab(info=info)
 
     async def notify(
             self,

@@ -13,6 +13,10 @@ class DateInputWidget(InputWidget[date]):
     max_date: Optional[date]
     date_fmt = '%d.%m.%Y'
 
+    @property
+    def final_value(self) -> Optional[date]:
+        return self.to_date()
+
     def __init__(
             self,
             *,
@@ -25,6 +29,14 @@ class DateInputWidget(InputWidget[date]):
         self.min_date = min_date
         self.max_date = max_date
 
+    def to_date(self) -> Optional[date]:
+        if self.value == '':
+            return
+        return datetime.strptime(self.value, self.date_fmt).date()
+
+    def has_changed(self) -> bool:
+        return self.to_date() == self.initial_value
+
     def _validate(self) -> None:
         empty = self.value == ''
         if self.required and empty:
@@ -32,7 +44,7 @@ class DateInputWidget(InputWidget[date]):
         if empty:
             return None
         try:
-            date_v = self.to_date(self.value)
+            date_v = self.to_date()
         except ValueError:
             raise InputValidationError(f'Формат даты ({self.date_fmt})')
         if self.min_date is not None and date_v < self.min_date:
@@ -40,17 +52,8 @@ class DateInputWidget(InputWidget[date]):
         if self.max_date is not None and date_v > self.max_date:
             raise InputValidationError(f'Максимум {self.max_date.strftime(self.date_fmt)}')
 
-    @classmethod
-    def to_date(cls, v) -> date:
-        return datetime.strptime(v, cls.date_fmt).date()
-
-    @property
-    def final_value(self) -> Optional[date]:
-        if self.value == '':
-            return
-        return self.to_date(self.value)
-
-    def _set_initial_value(self, value: date) -> None:
+    def set_value(self, value: Optional[date], initial: bool = False):
+        assert value is None or isinstance(value, date)
         if value is None:
             self.value = ''
         else:

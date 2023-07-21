@@ -1,5 +1,5 @@
 import math
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, Type, Callable, Coroutine, Any, Optional
 
 from flet import UserControl, Column, Text, DataTable, DataColumn, DataRow, DataCell, \
     TextSpan, TextStyle, TextDecoration, MainAxisAlignment
@@ -9,12 +9,13 @@ from core.orm import BaseModel
 from core.enums import FieldTypes
 from core.types import SORT, FILTERS, PK
 
+from admin.layout import PayloadInfo
 from .pagination import Pagination
 
 if TYPE_CHECKING:
-    from admin.app import CRuMbAdmin
-    from admin.resource import Resource
     from core.repository import Repository
+    from admin.resource import Resource
+    from admin.layout import BOX
 
 
 class Datagrid(UserControl):
@@ -23,25 +24,31 @@ class Datagrid(UserControl):
 
     def __init__(
             self,
-            app: "CRuMbAdmin",
+            box: "BOX",
             resource: "Resource",
             columns: list[str],
             sort: dict[str, bool] = None,
             filters: FILTERS = None,
             pagination_per_page: int = 25,
             pagination_count: int = 7,
+            on_active_change: Callable[[DataRow], Coroutine[Any, Any, None]] = None,
+            on_select: Callable[[DataRow], Coroutine[Any, Any, None]] = None,
     ):
-        super().__init__(expand=True)
-        self.app = app
+        super().__init__()
+        self.box = box
+        self.resource = resource
+        self.app = self.resource.app
+        self.on_active_change = on_active_change
+        self.on_select = on_select
+        self.active = None
         self.datagrid = DataTable(
-            expand=True,
+            show_checkbox_column=self.on_select is not None,
         )
         self.pagination = Pagination(
             datagrid=self,
             per_page=pagination_per_page,
             count=pagination_count
         )
-        self.resource = resource
         self.max_items = 0
         self.items = []
         self.columns = columns
@@ -51,6 +58,26 @@ class Datagrid(UserControl):
     @property
     def repository(self) -> Type["Repository"]:
         return self.resource.repository
+
+    @property
+    def selected(self) -> list[DataRow]:
+        return list(filter(lambda r: r.selected, self.datagrid.rows))
+
+    @property
+    def selected_items(self) -> list["BaseModel"]:
+        return list(r.item for r in filter(lambda r: r.selected, self.datagrid.rows))
+
+    @property
+    def active(self) -> Optional[DataRow]:
+        return getattr(self, '_active', None)
+
+    @active.setter
+    def active(self, v: DataRow):
+        if self.active:
+            self.active.color = 'white'
+        self._active = v
+        if self.active:
+            self.active.color = 'primary,0.3'
 
     def build(self):
         return Column([
@@ -90,30 +117,57 @@ class Datagrid(UserControl):
 
     def open_edit_form(self, pk: PK):
         async def wrapper(e):
-            await self.app.open(self.resource.entity(), 'edit', pk=pk)
+            await self.app.open(PayloadInfo(
+                entity=self.resource.entity(),
+                method='edit',
+                query={'pk': pk}
+            ))
         return wrapper
 
     def fill_items(self):
         self.datagrid.rows = rows = []
         for item in self.items:
             fields = list(self.columns.keys())
-            cols = [
-                DataCell(Text(spans=[
-                    TextSpan(
-                        text=self.get_value(item, fields[0]),
+            cells = []
+            if 'edit' in self.resource.methods:
+                cells.append(
+                    DataCell(Text(spans=[TextSpan(
+                        text=self.get_value(item, fields.pop(0)),
                         style=TextStyle(color='primary', decoration=TextDecoration.UNDERLINE),
                         on_click=self.open_edit_form(item.pk)
-                    ),
-                ]))
-            ]
-            for field in fields[1:]:
-                cols.append(
-                    DataCell(Text(self.get_value(item, field)), data=item.pk)
+                    )]))
                 )
-            rows.append(DataRow(cols))
+            for field in fields:
+                cells.append(
+                    DataCell(
+                        Text(self.get_value(item, field)),
+                        data=item.pk,
+                    )
+                )
 
-    def get_value(self, item: BaseModel, field: str):
-        value = getattr(item, field)
+            row = DataRow(cells)
+            if self.use_handling_select:
+                row.on_select_changed = self.handle_select
+            row.item = item
+            rows.append(row)
+        if self.on_active_change:
+            self.active = rows[0] if len(rows) > 0 else None
+
+    @property
+    def use_handling_select(self) -> bool:
+        return bool(self.on_select or self.on_active_change)
+
+    async def handle_select(self, e):
+        if self.on_select:
+            e.control.selected = not e.control.selected
+        if self.on_active_change:
+            self.active = e.control
+            await self.on_active_change(self.active)
+        await self.update_async()
+
+    def get_value(self, item: BaseModel, field: str) -> str:
+        field_name = self.repository.get_field_name_for_value(field)
+        value = getattr(item, field_name)
         if value is None:
             return ''
         return str(value)
@@ -138,12 +192,9 @@ class Datagrid(UserControl):
         fields = self.repository.describe().all
         self._columns_map = {}
         for name in v:
-            numeric = False
-            if fields[name] in FieldTypes.numeric_types():
-                numeric = True
             self._columns_map[name] = DataColumn(
                 label=Text(self.resource.translate_field(name)),
-                numeric=numeric
+                numeric=fields[name] in FieldTypes.numeric_types()
             )
         self.datagrid.columns = list(self._columns_map.values())
         self.fill_items()

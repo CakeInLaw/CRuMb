@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
-import pytz
 from flet import KeyboardType
 from tortoise import timezone
 
@@ -13,6 +12,10 @@ class DatetimeInputWidget(InputWidget[datetime]):
     min_dt: Optional[datetime]
     max_dt: Optional[datetime]
     dt_fmt = '%d.%m.%Y %H:%M:%S'
+
+    @property
+    def final_value(self) -> Optional[datetime]:
+        return self.to_datetime()
 
     def __init__(
             self,
@@ -26,6 +29,14 @@ class DatetimeInputWidget(InputWidget[datetime]):
         self.min_dt = min_dt
         self.max_dt = max_dt
 
+    def to_datetime(self) -> Optional[datetime]:
+        if self.value == '':
+            return
+        return timezone.make_aware(datetime.strptime(self.value, self.dt_fmt))
+
+    def has_changed(self) -> bool:
+        return self.to_datetime() == self.initial_value
+
     def _validate(self) -> None:
         empty = self.value == ''
         if self.required and empty:
@@ -33,7 +44,7 @@ class DatetimeInputWidget(InputWidget[datetime]):
         if empty:
             return None
         try:
-            datetime_v = self.to_datetime(self.value)
+            datetime_v = self.to_datetime()
         except ValueError:
             raise InputValidationError(f'Формат {self.dt_fmt}')
         if self.min_dt is not None and datetime_v < self.min_dt:
@@ -41,17 +52,8 @@ class DatetimeInputWidget(InputWidget[datetime]):
         if self.max_dt is not None and datetime_v > self.max_dt:
             raise InputValidationError(f'Максимум {self.max_dt.strftime(self.dt_fmt)}')
 
-    @classmethod
-    def to_datetime(cls, v) -> datetime:
-        return timezone.make_aware(datetime.strptime(v, cls.dt_fmt))
-
-    @property
-    def final_value(self) -> Optional[datetime]:
-        if self.value == '':
-            return
-        return self.to_datetime(self.value)
-
-    def _set_initial_value(self, value: datetime) -> None:
+    def set_value(self, value: Optional[datetime], initial: bool = False) -> None:
+        assert value is None or isinstance(value, datetime)
         if value is None:
             self.value = ''
         else:

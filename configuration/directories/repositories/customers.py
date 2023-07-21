@@ -28,6 +28,9 @@ class CustomerRepository(DirectoryRepository):
     )
 
     def qs_select_related(self) -> set[str]:
-        if self.by == 'admin' and self.extra['target'] == 'edit':
-            return {'price_group'}
+        return {'price_group'}
+
+    def qs_prefetch_related(self) -> set[str]:
+        if self.extra.get('target') == 'edit':
+            return {'customer_locations'}
         return set()

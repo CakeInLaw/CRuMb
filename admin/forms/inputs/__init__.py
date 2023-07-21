@@ -9,5 +9,10 @@ from .date_input import DateInputWidget, DateInput
 from .datetime_input import DatetimeInputWidget, DatetimeInput
 from .checkbox import CheckboxWidget, Checkbox
 from .enum_choice import EnumChoiceWidget, EnumChoice
-from .object_input import ObjectInputWidget, ObjectInput
+from .object_input import (
+    ObjectInputBaseWidget, ObjectInputBase,
+    ObjectInputWidget, ObjectInput,
+    ObjectInputTableRowWidget, ObjectInputTableRow
+)
 from .related_choice import RelatedChoiceWidget, RelatedChoice
+from .objects_array_input import ObjectsArrayInputWidget, ObjectsArrayInput

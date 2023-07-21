@@ -1,3 +1,4 @@
+import inspect
 from typing import TYPE_CHECKING, Generic, Type, Callable, Coroutine, Optional, Any, TypeVar
 
 from flet import Control, Text, icons
@@ -12,6 +13,7 @@ from admin.forms import Form, ModelForm, Primitive
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
+    from admin.layout import BOX
 
 
 __all__ = ["Resource"]
@@ -36,37 +38,39 @@ class Resource(Generic[REPOSITORY]):
     def relative_resource(self, field_name: str) -> "Resource":
         return self.app.find_resource(self.repository.repository_of(field_name).entity())
 
-    async def get_list_view(self) -> ListView:
-        view = ListView(app=self.app, resource=self)
+    async def get_list_view(self, box: "BOX") -> ListView:
+        view = ListView(resource=self, box=box)
         await view.prepare()
         return self.with_tab_title(view, 'list')
 
     async def get_choice_view(
             self,
+            box: "BOX",
             current_chosen: Optional[BaseModel],
             handle_confirm: Callable[[Optional[BaseModel]], Coroutine[Any, Any, None]]
     ) -> ChoiceView:
         view = ChoiceView(
-            app=self.app,
             resource=self,
+            box=box,
             current_chosen=current_chosen,
             handle_confirm=handle_confirm,
         )
         await view.prepare()
         return self.with_tab_title(view, 'choice')
 
-    def _get_form(self, *, obj: BaseModel = None, primitive: Primitive = None) -> Form:
+    def _get_form(self, *, box: "BOX", obj: BaseModel = None, primitive: Primitive = None) -> Form:
         return ModelForm(
             resource=self,
+            box=box,
             primitive=primitive,
             instance=obj
         )
 
-    async def get_create_form(self) -> Form | Control:
+    async def get_create_form(self, box: "BOX") -> Form | Control:
         primitive = self.create_form_primitive or self.form_primitive
-        return self.with_tab_title(self._get_form(primitive=primitive), 'create')
+        return self.with_tab_title(self._get_form(box=box, primitive=primitive), 'create')
 
-    async def get_edit_form(self, pk: PK) -> Form | Control:
+    async def get_edit_form(self, box: "BOX", pk: PK) -> Form | Control:
         try:
             obj = await self.repository(
                 by='admin',
@@ -77,7 +81,7 @@ class Resource(Generic[REPOSITORY]):
             error.__tab_title__ = 'Ошибка'
             return error
         primitive = self.edit_form_primitive or self.form_primitive
-        return self.with_tab_title(self._get_form(obj=obj, primitive=primitive), 'edit', obj=obj)
+        return self.with_tab_title(self._get_form(box=box, obj=obj, primitive=primitive), 'edit', obj=obj)
 
     @classmethod
     def entity(cls) -> str:
@@ -87,7 +91,7 @@ class Resource(Generic[REPOSITORY]):
     def default_method(cls) -> str:
         return 'list'
 
-    def _methods(self) -> dict[str, Callable[[...], Coroutine[Any, Any, Control]]]:
+    def _methods(self) -> dict[str, Callable[["BOX", ...], Control | Coroutine[Any, Any, Control]]]:
         return {
             'list': self.get_list_view,
             'choice': self.get_choice_view,
@@ -96,10 +100,18 @@ class Resource(Generic[REPOSITORY]):
         }
 
     @property
-    def methods(self) -> dict[str, Callable[[...], Coroutine]]:
+    def methods(self) -> dict[str, Callable[["BOX", ...], Control | Coroutine[Any, Any, Control]]]:
         if not hasattr(self, '_cached_methods'):
             setattr(self, '_cached_methods', self._methods())
         return getattr(self, '_cached_methods')
+
+    async def get_payload(self, box: "BOX", method: str, **query) -> Control:
+        callback = self.methods[method]
+        if inspect.iscoroutinefunction(callback):
+            payload = await callback(box, **query)
+        else:
+            payload = callback(box, **query)
+        return payload
 
     # Частые переводы
     @property

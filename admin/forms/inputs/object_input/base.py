@@ -1,36 +1,37 @@
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, TypeVar
 
 from flet import Container, Row, Column, Control
 
-from admin.exceptions import InputValidationError
 from core.orm import BaseModel
-from .user_input import UserInputWidget, UserInput, UndefinedValue
-from .. import InputGroup
+from admin.exceptions import InputValidationError
+from admin.table import TableRow, TableCell
+from ..user_input import UserInputWidget, UserInput, UndefinedValue
+from ... import InputGroup
 
 
-class ObjectInputWidget(UserInputWidget[dict[str, Any]], Container):
-    can_handle_blur: bool = False
+class ObjectInputBaseWidget(UserInputWidget[dict[str, Any]]):
+    can_be_placed_in_table: bool = False
+    children_in_table: bool
 
-    def __init__(self, variant: str, fields: list[UserInput | InputGroup], **kwargs):
+    @property
+    def final_value(self) -> dict[str, Any]:
+        return {
+            field_name: widget.final_value
+            for field_name, widget in self.fields_map.items()
+        }
+
+    def __init__(
+            self,
+            fields: list[UserInput | InputGroup],
+            **kwargs
+    ):
         super().__init__(**kwargs)
-        self.variant = variant
         self.fields = fields
         self.fields_map: dict[str, UserInputWidget] = {}
-        self.content = self.create_content()
-
-    def create_content(self) -> Control:
-        widgets = self.get_widgets()
-        match self.variant:
-            case 'row':
-                return Row(widgets, wrap=True)
-            case 'column':
-                return Column(widgets)
-            case _:
-                raise ValueError(f'Варианта отображения "{self.variant}" не существует')
 
     def _create_widget(self, item: UserInput) -> UserInputWidget | Control:
-        widget = item.widget(form=self.form, name_prefix=self.name, initial=self.initial_for(item))
+        widget = item.widget(parent=self, initial=self.initial_for(item), in_table=self.children_in_table)
         self.fields_map[item.name] = widget
         return widget
 
@@ -62,50 +63,37 @@ class ObjectInputWidget(UserInputWidget[dict[str, Any]], Container):
         else:
             raise TypeError(f'Почему initial_value={type(self.initial_value)}, ({self.initial_value})?')
 
-    @property
-    def final_value(self) -> dict[str, Any]:
-        return {
-            field_name: widget.final_value
-            for field_name, widget in self.fields_map.items()
-        }
-
-    def _set_initial_value(self, value: dict[str, Any]) -> None:
-        pass
+    def set_value(self, value: dict[str, Any], initial: bool = False):
+        if initial:
+            return
+        assert isinstance(value, dict) and all(n in self.fields_map for n in value)
+        for n, v in value.items():
+            self.fields_map[n].set_value(v)
 
     def has_changed(self) -> bool:
-        changed = False
-        for widget in self.fields_map.values():
-            if widget.has_changed():
-                changed = True
-                break
-        return changed
+        return any(widget.has_changed() for widget in self.fields_map.values())
 
-    async def validate(self, reraise: bool = False) -> None:
-        has_error = False
+    def is_valid(self) -> bool:
+        valid = True
         for widget in self.fields_map.values():
-            try:
-                await widget.validate(reraise=True)
-            except InputValidationError:
-                has_error = True
-        if reraise and has_error:
-            raise InputValidationError('Исправьте ошибки')
+            if not widget.is_valid():
+                valid = False
+        return valid
 
-    async def set_object_error(self, err: dict[str, Any]):
+    def set_object_error(self, err: dict[str, Any]):
         if '__root__' in err:
             root = err.pop('__root__')
             # TODO
         for name, e in err.items():
-            await self.fields_map[name].set_object_error(e)
+            self.fields_map[name].set_object_error(e)
+
+
+_OI = TypeVar('_OI', bound=ObjectInputBaseWidget)
 
 
 @dataclass
-class ObjectInput(UserInput[ObjectInputWidget]):
+class ObjectInputBase(UserInput[_OI]):
     fields: list[UserInput] = field(default_factory=list)
-    variant: str = field(default='row')
-
-    @property
-    def widget_type(self):
-        return ObjectInputWidget
 
     def add_field(self, item: UserInput | InputGroup) -> None:
         self.fields.append(item)

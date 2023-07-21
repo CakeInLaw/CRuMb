@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Union
 from tortoise import fields
 from core.orm import fields as orm_fields
 
-from .nomenclature_move_documents import Document, DocumentValue
+from .nomenclature_move_documents import MoveDocument, MoveDocumentValue
 
 if TYPE_CHECKING:
     from configuration.directories.models import Provider
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 __all__ = ["Receive", "ReceiveValue"]
 
 
-class Receive(Document):
+class Receive(MoveDocument):
     """Документ приобретения товаров (ПТ)"""
     PREFIX: str = 'ПТ'
 
@@ -32,7 +32,7 @@ class Receive(Document):
         ordering = ('dt',)
 
 
-class ReceiveValue(DocumentValue):
+class ReceiveValue(MoveDocumentValue):
     count: float = orm_fields.FloatField(min_value=0)
     price: float = orm_fields.FloatField(min_value=0)
     doc: Union["Receive", fields.ForeignKeyRelation["Receive"]] = fields.ForeignKeyField(
@@ -41,4 +41,4 @@ class ReceiveValue(DocumentValue):
 
     class Meta:
         table = 'doc__receives__values'
-        ordering = ('order', )
+        ordering = 'ordering',

@@ -1,5 +1,6 @@
+import asyncio
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, TypeVar, Optional, Any, Generic, Type, Union
+from typing import TYPE_CHECKING, TypeVar, Optional, Any, Generic, Type, Union, Callable, Coroutine
 
 from flet import Control, ControlEvent
 
@@ -13,37 +14,58 @@ T = TypeVar('T')
 
 
 class UserInputWidget(Generic[T]):
-    can_handle_blur: bool = True
-
-    def __init__(
-            self,
-            *,
-            name: str = None,
-            label: Optional[str] = None,
-            validate_on_blur: bool = True,
-            required: bool = False,
-            initial_value: T = None,
-            form: "Form" = None,
-            **kwargs
-    ):
-        super().__init__(**kwargs)
-        self.name = name
-        self.label = label
-        self.required = required
-        self.validate_on_blur = validate_on_blur
-
-        self.initial_value = initial_value
-        self._set_initial_value(self.initial_value)
-
-        self.form = form
-        if self.can_handle_blur:
-            self.on_blur = self.handle_blur
+    can_be_placed_in_table: bool = True
 
     @property
     def final_value(self) -> T:
         raise NotImplementedError
 
-    def _set_initial_value(self, value: T) -> None:
+    @property
+    def form(self) -> Optional["Form"]:
+        if isinstance(self.parent, UserInputWidget):
+            return self.parent.form
+        else:
+            return self.parent
+
+    @property
+    def full_name(self):
+        if isinstance(self.parent, UserInputWidget):
+            return f'{self.parent.full_name}.{self.name}'
+        return self.name
+
+    def __init__(
+            self,
+            *,
+            name: str,
+            label: str = None,
+            null: bool = False,
+            required: bool = False,
+            initial_value: T = None,
+            in_table: bool = False,
+            parent: Union["Form", "UserInputWidget"] = None,
+            on_value_change: Callable[["UserInputWidget"], Coroutine[Any, Any, None] | None] = None,
+            default_width: int | float = 250,
+            **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.name = name
+        self.label = label
+        self.null = null
+        self.required = required
+        self.default_width = default_width
+        self._set_initial_value(initial_value)
+
+        if in_table and not self.can_be_placed_in_table:
+            raise ValueError('Так нельзя:(')
+        self.in_table = in_table
+        self.parent = parent
+        self.on_value_change = on_value_change
+
+    def _set_initial_value(self, initial_value: T) -> None:
+        self.initial_value = initial_value
+        self.set_value(self.initial_value, initial=True)
+
+    def set_value(self, value: T, initial: bool = False):
         raise NotImplementedError
 
     def has_changed(self) -> bool:
@@ -52,37 +74,53 @@ class UserInputWidget(Generic[T]):
     def _validate(self) -> None:
         pass
 
-    async def validate(self, reraise: bool = False) -> None:
+    def validate(self) -> None:
         try:
             self._validate()
-            await self.on_success_validation()
+            self._on_success_validation()
         except InputValidationError as err:
-            await self.on_error_validation(err)
-            if reraise:
-                raise err
+            self._on_error_validation(err)
+            raise err
 
-    async def on_success_validation(self):
+    def _on_success_validation(self):
+        self.set_error_text(None)
+
+    def _on_error_validation(self, err: InputValidationError):
+        self.set_error_text(err.msg)
+
+    def set_error_text(self, text: Optional[str]):
         pass
 
-    async def on_error_validation(self, err: InputValidationError):
-        await self.set_error_text(err.msg)
+    def set_object_error(self, err: dict[str, Any]):
+        self.set_error_text(err.get('msg', 'Какая-то ошибка'))
 
-    async def set_error_text(self, text: Optional[str]):
-        pass
-
-    async def set_object_error(self, err: dict[str, Any]):
-        await self.set_error_text(err.get('msg', 'Какая-то ошибка'))
-
-    async def is_valid(self) -> bool:
+    def is_valid(self) -> bool:
+        valid = True
         try:
-            await self.validate(reraise=True)
+            self.validate()
         except InputValidationError:
-            return False
-        return True
+            valid = False
+        return valid
 
-    async def handle_blur(self, e: ControlEvent):
-        if self.validate_on_blur:
-            await self.validate()
+    def _transform_value(self):
+        pass
+
+    def apply_in_table_params(self):
+        pass
+
+    async def handle_value_change_and_update(self, event_or_control: ControlEvent | Control):
+        self.handle_value_change(event_or_control=event_or_control)
+        await self.form.update_async()
+
+    def handle_value_change(self, event_or_control: ControlEvent | Control):
+        control = event_or_control if isinstance(event_or_control, Control) else event_or_control.control
+        if self is control:
+            if not self.is_valid():
+                return
+            self._transform_value()
+        if self.on_value_change:
+            self.on_value_change(control)
+        self.parent.handle_value_change(control)
 
 
 class UndefinedValue:
@@ -95,17 +133,22 @@ _I = TypeVar('_I', bound=Union[Control, UserInputWidget])
 @dataclass
 class UserInput(Generic[_I]):
     name: str
-    label: str
-    validate_on_blur: bool = True
+    label: str = None
+    null: bool = False
     required: bool = False
+    on_value_change:  Callable[[UserInputWidget], Coroutine[Any, Any, None]] = None
+    default_width: int | float = 250,
 
-    def widget(self, form: "Form", name_prefix: str = None, initial: Any = UndefinedValue) -> _I:
+    def widget(
+            self,
+            parent: Union["Form", UserInputWidget],
+            initial: Any = UndefinedValue,
+            **extra
+    ) -> _I:
         if initial is UndefinedValue:
             initial = self.default_initial
-        kwargs = {**self.__dict__}
-        if name_prefix:
-            kwargs['name'] = f'{name_prefix}.{kwargs["name"]}'
-        return self.widget_type(**kwargs, form=form, initial_value=initial)
+        kwargs = {**self.__dict__, **extra}
+        return self.widget_type(parent=parent, initial_value=initial, **kwargs)
 
     @property
     def default_initial(self) -> Any:
@@ -114,3 +157,7 @@ class UserInput(Generic[_I]):
     @property
     def widget_type(self) -> Type[_I]:
         raise NotImplementedError
+
+    @property
+    def is_numeric(self):
+        return False

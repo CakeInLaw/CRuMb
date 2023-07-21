@@ -1,65 +1,52 @@
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 from flet import DragTarget, DragTargetAcceptEvent, Draggable, \
-    Container, Stack, Row, IconButton, Text, \
-    ScrollMode, icons, border
-
-from .loader import Loader
+    Container, Stack, Row, IconButton, Text, TextSpan, \
+    ScrollMode, icons, border, padding
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
-    from admin.resource import Resource
-
-
-@dataclass
-class TabInfo:
-    entity: str
-    method: str
-    query: dict[str, Any] = field(default_factory=dict)
-    has_close: bool = True
+    from admin.layout import PayloadInfo
 
 
 class Tab(Draggable):
-    def __init__(self, bar: "TabsBar", info: TabInfo):
+    def __init__(self, bar: "TabsBar", info: "PayloadInfo", has_close: bool = True):
         super().__init__(group='tab')
 
         self.bar = bar
         self.info = info
+        self.app = self.bar.app
+        self.resource = self.app.find_resource(self.info.entity)
 
-        self.text = Text(self.resource.name_plural)
-        self.row = Row([self.text])
-        if self.info.has_close:
-            self.row.controls.append(self.create_close_btn())
+        self._title = TextSpan()
+        row = [
+            Text(spans=[self._title], color='black')
+        ]
+        if has_close:
+            row.append(self.create_close_btn())
         self.container = Container(
+            padding=padding.only(left=10),
             border=border.symmetric(horizontal=border.BorderSide(1, 'black,0.2')),
-            content=self.row
+            content=Row(row, spacing=0),
+            on_click=self.handle_click
         )
+        self.title = self.resource.name_plural
+
         self.content = DragTarget(
             group='tab',
             content=self.container,
             on_accept=self.on_drag_accept
         )
 
-        self.container.on_click = self.handle_click
-        self.box = self.app.content_box.add_container()
-        self.box.content = Loader()
-
-    async def did_mount_async(self):
-        self.box.content = content = await self.resource.methods[self.info.method](**self.info.query)
-        if hasattr(content, '__tab_title__'):
-            self.text.value = content.__tab_title__
-        await self.app.update_async()
+        self.content_box = self.app.content_box_container.add_content_box(tab=self)
 
     @property
-    def app(self) -> "CRuMbAdmin":
-        return self.bar.app
+    def title(self) -> str:
+        return self._title.text
 
-    @property
-    def resource(self) -> "Resource":
-        if not hasattr(self, '_resource'):
-            setattr(self, '_resource', self.app.find_resource(self.info.entity))
-        return getattr(self, '_resource')
+    @title.setter
+    def title(self, v: str):
+        self._title.text = v
 
     @property
     def index(self):
@@ -70,17 +57,20 @@ class Tab(Draggable):
             await self.bar.set_current_tab(self)
 
     async def handle_close(self, e):
+        await self.close()
+
+    async def close(self):
         await self.bar.rm_tab(self)
 
     def before_remove(self):
-        self.app.content_box.rm_container(self.box)
+        self.app.content_box_container.rm_content_box(self.content_box)
 
     def activate(self):
-        self.box.visible = True
+        self.content_box.visible = True
         self.container.bgcolor = 'black,0.2'
 
     def deactivate(self):
-        self.box.visible = False
+        self.content_box.visible = False
         self.container.bgcolor = 'white'
 
     def create_close_btn(self):
@@ -88,7 +78,7 @@ class Tab(Draggable):
             icon=icons.CLOSE_ROUNDED,
             icon_size=15,
             height=30,
-            aspect_ratio=1,
+            width=30,
             on_click=self.handle_close
         )
 
@@ -137,7 +127,7 @@ class TabsBar(Container):
     def tab_index(self, tab: Tab) -> int:
         return self.tabs.index(tab)
 
-    def tab_by_info(self, info: TabInfo) -> Optional[Tab]:
+    def tab_by_info(self, info: "PayloadInfo") -> Optional[Tab]:
         resource = self.app.find_resource(info.entity)
         for i, tab in enumerate(self.tabs):
             if (
@@ -159,7 +149,7 @@ class TabsBar(Container):
         self.tabs.remove(tab)
         await self.app.update_async()
 
-    async def create_tab(self, info: TabInfo):
+    async def create_tab(self, info: "PayloadInfo"):
         tab = Tab(bar=self, info=info)
         self.tabs.append(tab)
         await self.set_current_tab(tab)

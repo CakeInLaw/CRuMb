@@ -84,8 +84,8 @@ class FieldTypes(StrEnum):
     @classmethod
     def multiple_relation(cls):
         return (
-            cls.O2O_PK,
-            cls.FK_PK,
+            cls.BACK_FK,
+            cls.M2M,
         )
 
 

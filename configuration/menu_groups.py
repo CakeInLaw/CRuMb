@@ -23,9 +23,15 @@ class Prices(MenuGroup):
     label = 'Цены'
 
 
+class System(MenuGroup):
+    icon = icons.SETTINGS_SYSTEM_DAYDREAM_OUTLINED
+    label = 'Система'
+
+
 roots = [
     Sells,
     Receives,
     Storage,
     Prices,
+    System
 ]

@@ -1,20 +1,21 @@
-from typing import TYPE_CHECKING, Any, Callable, Optional, Type
+from typing import TYPE_CHECKING, Any, Callable, Optional, Type, Union
 
-from flet import ElevatedButton, Row, Control, MainAxisAlignment, ControlEvent
+from flet import ElevatedButton, Row, Control, MainAxisAlignment
 from tortoise import fields
 
 from core.exceptions import ObjectErrors
 from core.orm import BaseModel, fields as orm_fields
 from core.enums import FieldTypes, NotifyStatus
 from core.types import FK_TYPE
-from .inputs import UserInput, UndefinedValue
 
-from .schema import FormSchema, InputGroup
-from . import Form, Primitive, inputs
+from admin.layout import PayloadInfo
+from .inputs import UserInput, UndefinedValue
+from . import Form, Primitive, inputs, FormSchema, InputGroup
 
 if TYPE_CHECKING:
-    from admin.resource import Resource
     from core.repository import Repository
+    from admin.resource import Resource
+    from admin.layout import BOX
 
 
 class ModelForm(Form):
@@ -22,13 +23,14 @@ class ModelForm(Form):
     def __init__(
             self,
             resource: "Resource",
+            box: "BOX",
             *,
             instance: Optional[BaseModel] = None,
             primitive: Primitive = None,
             is_subform: bool = False,
             **kwargs
     ):
-        super().__init__(resource.app, **kwargs)
+        super().__init__(app=resource.app, box=box, **kwargs)
         self.resource = resource
         self.instance = instance
         self.is_subform = is_subform
@@ -46,7 +48,8 @@ class ModelForm(Form):
         if self.create:
             return super().initial_for(item=item)
         else:
-            return getattr(self.instance, item.name, UndefinedValue)
+            field_name = self.repository.get_field_name_for_value(item.name)
+            return getattr(self.instance, field_name, UndefinedValue)
 
     def get_form_schema(self) -> FormSchema:
         return self.schema or self._generate_form_schema()
@@ -56,7 +59,7 @@ class ModelForm(Form):
 
         schema = FormSchema()
         for item in primitive:
-            schema.add_row(self._from_primitive_item(item))
+            schema.add_item(self._from_primitive_item(item))
         return schema
 
     def _from_primitive_item(self, item: Any) -> inputs.UserInput | InputGroup:
@@ -99,8 +102,8 @@ class ModelForm(Form):
                 primitive.add(name)
         return primitive
 
-    async def on_click_create(self, e: ControlEvent):
-        if not await self.form_is_valid():
+    async def on_click_create(self, e):
+        if not self.form_is_valid():
             return
         try:
             instance = await self.repository(
@@ -108,35 +111,41 @@ class ModelForm(Form):
                 extra={'target': 'create'}
             ).create(self.cleaned_data())
             await self.app.notify('Создан 1 элемент', NotifyStatus.SUCCESS)
-            await self.app.open(self.resource.entity(), 'edit', pk=instance.pk)
+            await self.box.close()
+            await self.app.open(PayloadInfo(
+                entity=self.resource.entity(),
+                method='edit',
+                query={'pk': instance.pk}
+            ))
         except ObjectErrors as err:
-            await self.set_object_errors(err)
+            self.set_object_errors(err)
+            await self.update_async()
             await self.app.notify('Исправьте ошибки', NotifyStatus.ERROR)
 
     def create_btn(self) -> ElevatedButton:
         return ElevatedButton('Создать', on_click=self.on_click_create)
 
-    async def on_click_edit(self, e: ControlEvent):
-        if not await self.form_is_valid():
+    async def on_click_edit(self, e):
+        if not self.form_is_valid():
             return
         try:
-            instance = await self.repository(
+            await self.repository(
                 by='admin',
                 extra={'target': 'create'}
             ).edit(self.instance, self.cleaned_data())
             await self.app.notify('Элемент изменен', NotifyStatus.SUCCESS)
-            await self.app.open(self.resource.entity(), 'edit', pk=instance.pk)
+            await self.box.reload_content()
         except ObjectErrors as err:
-            await self.set_object_errors(err)
+            self.set_object_errors(err)
+            await self.update_async()
             await self.app.notify('Исправьте ошибки', NotifyStatus.ERROR)
 
     def edit_btn(self) -> ElevatedButton:
         return ElevatedButton('Изменить', on_click=self.on_click_edit)
 
-    def get_submit_bar(self) -> Control:
+    def get_action_bar(self) -> Control:
         return Row(
             controls=[self.create_btn() if self.create else self.edit_btn()],
-            alignment=MainAxisAlignment.END
         )
 
     @property
@@ -157,7 +166,7 @@ class ModelForm(Form):
             FieldTypes.FK: self.object_input_creator,
             FieldTypes.FK_PK: self.related_choice_creator,
             FieldTypes.BACK_O2O: self.related_choice_creator,
-            # FieldTypes.BACK_FK: self.input_creator,
+            FieldTypes.BACK_FK: self.objects_array_input_creator,
             # FieldTypes.M2M: self.input_creator,
         }
 
@@ -165,7 +174,7 @@ class ModelForm(Form):
         return {
             'name': field.model_field_name,
             'label': self.resource.translate_field(field.model_field_name),
-            'validate_on_blur': True,
+            'null': field.null,
             'required': self.repository.field_is_required(field),
         }
 
@@ -251,20 +260,31 @@ class ModelForm(Form):
 
     def object_input_creator(
             self,
-            field: fields.relational.ForeignKeyFieldInstance | fields.relational.OneToOneFieldInstance,
-            extra: dict[str, Any]
-    ) -> inputs.ObjectInput:
+            field: Union[
+                fields.relational.ForeignKeyFieldInstance,
+                fields.relational.OneToOneFieldInstance,
+                fields.relational.BackwardFKRelation,
+                fields.relational.BackwardOneToOneRelation,
+            ],
+            extra: dict[str, Any],
+            data_row: bool = False
+    ) -> inputs.ObjectInputBase:
+        if data_row:
+            object_input_class = inputs.ObjectInputTableRow
+        else:
+            object_input_class = inputs.ObjectInput
         kwargs = self.input_creator_base_kwargs(field)
 
         if 'fields' in extra:
             kwargs.update(extra)
-            return inputs.ObjectInput(**kwargs)
+            return object_input_class(**kwargs)
 
         primitive = None
         if 'primitive' in extra:
             primitive = extra.pop('primitive')
         relative_model_form = self.__class__(
             resource=self.resource.relative_resource(kwargs['name']),
+            box=self.box,
             primitive=primitive,
             is_subform=True,
         )
@@ -275,7 +295,7 @@ class ModelForm(Form):
 
         kwargs.update(extra)
         kwargs['fields'] = processed_fields
-        return inputs.ObjectInput(**kwargs)
+        return object_input_class(**kwargs)
 
     def related_choice_creator(
             self,
@@ -286,3 +306,15 @@ class ModelForm(Form):
         kwargs['entity'] = self.resource.relative_resource(field.model_field_name).entity()
         kwargs.update(extra)
         return inputs.RelatedChoice(**kwargs)
+
+    def objects_array_input_creator(
+            self,
+            field: fields.relational.BackwardFKRelation,
+            extra: dict[str, Any]
+    ) -> inputs.ObjectsArrayInput:
+        kwargs = self.input_creator_base_kwargs(field)
+        object_schema_info = extra.get('object_schema', {})
+        if not isinstance(object_schema_info, inputs.ObjectInputTableRowWidget):
+            extra['object_schema'] = self.object_input_creator(field, extra=object_schema_info, data_row=True)
+        kwargs.update(extra)
+        return inputs.ObjectsArrayInput(**kwargs)

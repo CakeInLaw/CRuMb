@@ -189,10 +189,8 @@ class Repository(Generic[MODEL]):
                 ).create(value, defaults={relation_field: instance.pk}, is_root=False)
 
             for field_name, bfk_data in sorted_data.back_fk.items():
-                bfk_data: BackFKData
-                values_to_add = bfk_data['add']
                 relation_field = self.get_field_instance(field_name).relation_source_field  # type: ignore
-                for value in values_to_add:
+                for value in bfk_data:
                     await self.repository_of(field_name)(
                         by=f'{self.by}__{self.model.__name__}',
                         extra=self.extra
@@ -266,7 +264,7 @@ class Repository(Generic[MODEL]):
 
             for t in ('o2o', 'fk'):
                 for field_name, value in getattr(sorted_data, t).items():
-                    rel_instance = await self.get_relational(instance, field_name)
+                    rel_instance = await self.get_relational(field_name, instance=instance)
                     remote_repository = self.repository_of(field_name)(
                         by=f'{self.by}__{self.model.__name__}',
                         extra=self.extra
@@ -291,7 +289,7 @@ class Repository(Generic[MODEL]):
                     by=f'{self.by}__{self.model.__name__}',
                     extra=self.extra
                 )
-                rel_instance = await self.get_relational(instance, field_name)
+                rel_instance = await self.get_relational(field_name, instance=instance)
                 if rel_instance:
                     await remote_repository.edit(rel_instance, value, is_root=False)
                 else:
@@ -299,25 +297,28 @@ class Repository(Generic[MODEL]):
                     await remote_repository.create(value, defaults={relation_field: instance.pk}, is_root=False)
 
             for field_name, bfk_data in sorted_data.back_fk.items():
-                bfk_data: BackFKData
                 remote_repository = self.repository_of(field_name)(
                     by=f'{self.by}__{self.model.__name__}',
                     extra=self.extra
                 )
-                remote_pk_attr = remote_repository.pk_attr
                 relation_field = self.get_field_instance(field_name).relation_source_field  # type: ignore
-                rel_instances_map = await self.get_relational_list(instance, field_name, in_map=True)
-                for value in bfk_data.get('edit', EMPTY_TUPLE):
-                    rel_instance = rel_instances_map[value[remote_pk_attr]]
-                    await remote_repository.edit(
-                        rel_instance,
-                        {k: v for k, v in value.items() if k != remote_pk_attr},
-                        is_root=False
-                    )
-                for value in bfk_data.get('add', EMPTY_TUPLE):
-                    await remote_repository.create(value, defaults={relation_field: instance.pk}, is_root=False)
-                for pks_to_remove in bfk_data.get('remove', EMPTY_TUPLE):
-                    await remote_repository.delete_many(pks_to_remove)
+                rel_instances_map = await self.get_relational_list(field_name, in_map=True, instance=instance)
+
+                for value in bfk_data:
+                    if 'pk' in value:
+                        rel_instance = rel_instances_map.pop(value['pk'])
+                        await remote_repository.edit(
+                            rel_instance,
+                            {k: v for k, v in value.items() if k != 'pk'},
+                            is_root=False
+                        )
+                    else:
+                        await remote_repository.create(
+                            value,
+                            defaults={relation_field: instance.pk},
+                            is_root=False
+                        )
+                await remote_repository.delete_many([v.pk for v in rel_instances_map.values()])
 
             for field_name, values in sorted_data.m2m.items():
                 values: M2MData
@@ -475,7 +476,8 @@ class Repository(Generic[MODEL]):
             return validator(value, data, instance)
         return default_validator(field_name, value, data, instance)
 
-    async def get_relational(self, instance: MODEL, field_name: str) -> Optional[BaseModel]:
+    async def get_relational(self, field_name: str, instance: MODEL = None) -> Optional[BaseModel]:
+        instance = instance or self.instance
         rel_instance = getattr(instance, field_name)
         if isinstance(rel_instance, QuerySet):
             await instance.fetch_related(field_name)
@@ -483,19 +485,20 @@ class Repository(Generic[MODEL]):
         return rel_instance
 
     @overload
-    async def get_relational_list(self, instance: MODEL, field_name: str, in_map: bool) -> dict[PK, BaseModel]:
+    async def get_relational_list(self, field_name: str, in_map: bool, instance: MODEL = None) -> dict[PK, BaseModel]:
         ...
 
     @overload
-    async def get_relational_list(self, instance: MODEL, field_name: str) -> list[BaseModel]:
+    async def get_relational_list(self, field_name: str, instance: MODEL = None) -> list[BaseModel]:
         ...
 
     async def get_relational_list(
             self,
-            instance: MODEL,
             field_name: str,
-            in_map: bool = False
+            in_map: bool = False,
+            instance: MODEL = None,
     ) -> list[BaseModel] | dict[PK, BaseModel]:
+        instance = instance or self.instance
         rel_instances: list[BaseModel] = getattr(instance, field_name)
         if isinstance(rel_instances, QuerySet):
             await instance.fetch_related(field_name)
@@ -511,7 +514,7 @@ class Repository(Generic[MODEL]):
             data: DATA,
             instance: Optional[MODEL]
     ):
-        rel_instance = await self.get_relational(instance, field_name) if instance else None
+        rel_instance = await self.get_relational(field_name, instance=instance) if instance else None
         await self.repository_of(field_name)(
             by=f'{self.by}__{self.model.__name__}',
             extra=self.extra
@@ -569,8 +572,10 @@ class Repository(Generic[MODEL]):
     ) -> None:
         field = self.get_field_instance(field_name)
 
-        if value is None and not field.null:
-            raise FieldRequired
+        if value is None:
+            if not field.null:
+                raise FieldRequired
+            return
 
         if not isinstance(value, field.field_type):  # передали правильный тип pk
             raise InvalidType(
@@ -597,73 +602,47 @@ class Repository(Generic[MODEL]):
             data: DATA,
             instance: Optional[MODEL]
     ) -> None:
-        if instance is None and ('remove' in value or 'edit' in value):
-            raise ValueError('remove и edit могут быть переданы только если объект именяется, а не создается')
-
+        values_list = value
         remote_repository = self.repository_of(field_name)(
             by=f'{self.by}__{self.model.__name__}',
             extra=self.extra
         )
-        remote_pk_attr = remote_repository.pk_attr
-        errors = ObjectErrors()
+        list_errors = ListFieldError()
 
-        if 'add' in value:
-            add_list_error = ListFieldError()
-            values_to_add = value['add']
-            if not isinstance(values_to_add, list) and all(isinstance(v, dict) for v in values_to_add):
-                raise InvalidType(
-                    f'back_fk `{self.model}.{field_name}` `data-add` must be list[dict], '
-                    f'not {type(values_to_add)} ({values_to_add})'
-                )
-            for i, val in enumerate(values_to_add):
-                try:
-                    await remote_repository.validate(val)
-                except ObjectErrors as err:
-                    add_list_error.append(i, err)
-            if add_list_error:
-                errors.add('add', add_list_error)
+        if not isinstance(values_list, list) and all(isinstance(v, dict) for v in values_list):
+            raise InvalidType(
+                f'back_fk `{self.model}.{field_name}` `data-add` must be list[dict], '
+                f'not {type(values_list)} ({values_list})'
+            )
 
-        if 'edit' in value:
-            edit_list_error = ListFieldError()
-            values_to_edit = value['edit']
-            if not isinstance(values_to_edit, list) and all(isinstance(v, dict) for v in values_to_edit):
-                raise InvalidType(
-                    f'back_fk `{self.model}.{field_name}` `data-edit` must be list[dict], '
-                    f'not {type(values_to_edit)} ({values_to_edit})'
-                )
-            rel_instance_map = await self.get_relational_list(instance, field_name, in_map=True)
-            for i, val in enumerate(values_to_edit):
-                rel_instance = rel_instance_map.get(val[remote_pk_attr], None)
+        if instance is None:
+            if any(['pk' in v for v in values_list]):
+                raise ValueError(f'pk может быть передан только если объект изменяется, а не создается')
+            rel_instance_map = {}
+        else:
+            rel_instance_map = await self.get_relational_list(field_name, in_map=True, instance=instance)
+
+        for i, val in enumerate(values_list):
+            if 'pk' in val:
+                rel_instance = rel_instance_map.get(val['pk'])
                 if rel_instance is None:
-                    edit_list_error.append(i, ObjectErrors().add('__root__', NotFoundFK))
+                    list_errors.append(i, ObjectErrors().add('__root__', NotFoundFK))
                     continue
                 try:
                     await remote_repository.validate(
-                        {k: v for k, v in value.items() if k != remote_pk_attr},
-                        rel_instance
+                        {k: v for k, v in val.items() if k != 'pk'},
+                        instance=rel_instance
                     )
                 except ObjectErrors as err:
-                    edit_list_error.append(i, err)
-            if edit_list_error:
-                errors.add('edit', edit_list_error)
+                    list_errors.append(i, err)
+            else:
+                try:
+                    await remote_repository.validate(val)
+                except ObjectErrors as err:
+                    list_errors.append(i, err)
 
-        if 'remove' in value:
-            pk_field_type = remote_repository.pk_field_type
-            remove_list_error = ListFieldError()
-            values_to_remove = value['remove']
-            if not isinstance(values_to_remove, list) and all(isinstance(v, pk_field_type) for v in values_to_remove):
-                raise InvalidType(
-                    f'back_fk `{self.model}.{field_name}` `data-remove` must be list[PK], '
-                    f'not {type(values_to_remove)} ({values_to_remove})'
-                )
-            rel_instance_map = await self.get_relational_list(instance, field_name, in_map=True)
-            for i, remote_pk in enumerate(values_to_remove):
-                rel_instance = rel_instance_map.get(remote_pk, None)
-                if rel_instance is None:
-                    remove_list_error.append(i, ObjectErrors().add('__root__', NotFoundFK))
-
-        if errors:
-            raise errors
+        if list_errors:
+            raise list_errors
 
     async def validate_m2m(
             self,
@@ -693,7 +672,7 @@ class Repository(Generic[MODEL]):
                 if t == 'add':
                     rel_available: dict[PK, BaseModel] = {i.pk: i for i in await remote_repository.get_many(values)}
                 else:
-                    rel_available = await self.get_relational_list(instance, field_name, in_map=True)
+                    rel_available = await self.get_relational_list(field_name, in_map=True, instance=instance)
                 for i, remote_pk in enumerate(values):
                     rel_instance = rel_available.get(remote_pk, None)
                     if rel_instance is None:
@@ -902,6 +881,14 @@ class Repository(Generic[MODEL]):
     def get_translation(cls, lang: str) -> Translation:
         return getattr(cls, f'_TRANSLATION_{lang.upper()}', getattr(cls, f'_TRANSLATION_DEFAULT'))
 
+    @classmethod
+    def get_field_name_for_value(cls, name: str) -> str:
+        field_type = cls.get_field_type(name)
+        if field_type in FieldTypes.pk_relation():
+            field = cls.get_field_instance(name)
+            name = field.reference.model_field_name
+        return name
+
 
 REPOSITORY = TypeVar('REPOSITORY', bound=Type[Repository])
 
@@ -924,3 +911,6 @@ def default_repository(cls: REPOSITORY) -> REPOSITORY:
 class ListValueRepository(Repository[MODEL]):
     async def delete_many(self, item_pk_list: list[PK]) -> int:
         return await self._get_many_queryset(item_pk_list).delete()
+
+    async def delete_one(self, instance: MODEL) -> None:
+        await instance.delete()

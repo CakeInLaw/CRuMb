@@ -3,7 +3,7 @@ from typing import Union
 
 from tortoise import fields
 
-from core.orm.base_model import BaseModel
+from core.orm.base_model import BaseModel, RelatedListValueModel
 
 
 __all__ = ["Document", "DocumentValue"]
@@ -22,10 +22,8 @@ class Document(BaseModel):
         abstract = True
 
 
-class DocumentValue(BaseModel):
+class DocumentValue(RelatedListValueModel):
     """Базовая модель списка для документов"""
-    id: int = fields.BigIntField(pk=True)
-    order: int = fields.SmallIntField()
     doc: Union["Document", fields.ForeignKeyRelation["Document"]]
 
     class Meta:

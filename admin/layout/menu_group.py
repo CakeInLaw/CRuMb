@@ -1,18 +1,19 @@
 from typing import TYPE_CHECKING, Type, Optional
 from math import pi
 
-from flet import ListTile, Icon, Text, Column, Container, padding, icons, Rotate, Scale
+from flet import ListTile, Icon, Text, Column, Container, padding, icons, Rotate
 
-from .menu_item import MenuItem, MenuItemInfo
+from .menu_item import MenuItem
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
+    from .payload import PayloadInfo
 
 
 class MenuGroup(Column):
     icon: str
     label: str
-    items_info: list[MenuItemInfo] = ()
+    items_info: list["PayloadInfo"] = ()
     subgroups: Optional[tuple[Type["MenuGroup"]]] = ()
 
     def __init__(
@@ -39,14 +40,9 @@ class MenuGroup(Column):
             if group.children:
                 self.children.append(group)
         for item_info in self.items_info:
-            resource = self.app.find_resource(item_info.entity)
             self.children.append(MenuItem(
-                icon=resource.ICON,
-                label=resource.name,
-                entity=resource.entity(),
-                method=item_info.method,
-                query=item_info.query,
                 app=self.app,
+                info=item_info,
                 parent=self
             ))
 
@@ -68,7 +64,7 @@ class MenuGroup(Column):
         await self.update_async()
 
     @classmethod
-    def add_item_info(cls, info: MenuItemInfo):
+    def add_item_info(cls, info: "PayloadInfo"):
         if isinstance(cls.items_info, tuple):
             cls.items_info = []
         cls.items_info.append(info)

@@ -31,13 +31,13 @@ class Translation:
             self,
             name: str,
             name_plural: str,
-            fields: dict[str, str],
+            fields: dict[str, str] = None,
             create: str = None,
             edit: str = None,
     ):
         self.name = name
         self.name_plural = name_plural
-        self.fields = fields
+        self.fields = fields or {}
         if create:
             self.create_template = create
         if edit:
@@ -60,7 +60,7 @@ class TranslationRu(Translation):
     _create: str = 'Создание'
     _common_fields = {
         'name': 'Наименование',
-        'order': 'Порядок',
+        'ordering': '№',
     }
 
 
@@ -68,5 +68,5 @@ class TranslationEn(Translation):
     _create: str = 'New'
     _common_fields = {
         'name': 'Name',
-        'order': 'Order',
+        'ordering': '№',
     }
