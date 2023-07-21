@@ -44,6 +44,7 @@ class UserInputWidget(Generic[T]):
             in_table: bool = False,
             parent: Union["Form", "UserInputWidget"] = None,
             on_value_change: Callable[["UserInputWidget"], Coroutine[Any, Any, None] | None] = None,
+            default_width: int | float = 250,
             **kwargs
     ):
         super().__init__(**kwargs)
@@ -51,7 +52,7 @@ class UserInputWidget(Generic[T]):
         self.label = label
         self.null = null
         self.required = required
-
+        self.default_width = default_width
         self._set_initial_value(initial_value)
 
         if in_table and not self.can_be_placed_in_table:
@@ -136,6 +137,7 @@ class UserInput(Generic[_I]):
     null: bool = False
     required: bool = False
     on_value_change:  Callable[[UserInputWidget], Coroutine[Any, Any, None]] = None
+    default_width: int | float = 250,
 
     def widget(
             self,

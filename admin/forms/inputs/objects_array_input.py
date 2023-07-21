@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from flet import Column, Row, ElevatedButton, Text
+from flet import Column, Row, ElevatedButton, Text, ScrollMode
 
 from core.orm import BaseModel
 from core.types import BackFKData
@@ -37,10 +37,10 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Column):
             for initial in self.initial_value
         ]
 
-        self.label_control = self.create_label()
+        self.label_control = Text(self.label)
         self.actions = Row([
             ElevatedButton('Добавить', on_click=self.handle_add_row),
-        ])
+        ], scroll=ScrollMode.AUTO)
         self.table = self.create_table()
         self.controls = [
             self.label_control,
@@ -52,7 +52,7 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Column):
         return Table(
             header=TableHeader(
                 cells=[
-                    TableHeaderCell(label=col.label)
+                    TableHeaderCell(label=col.label, default_width=col.default_width)
                     for col in self.object_schema.fields
                 ]
             ),
@@ -61,9 +61,6 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Column):
             ),
         )
 
-    def create_label(self):
-        return Text(self.label)
-
     def create_table_row(self, initial: Optional[BaseModel | dict[str, Any]] = None) -> ObjectInputTableRowWidget:
         return self.object_schema.widget(parent=self, initial=initial)
 
@@ -71,7 +68,8 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Column):
         widget = self.create_table_row()
         if self.has_ordering:
             widget.set_value({'ordering': self.table.body.length + 1})
-        await self.table.add_row(widget)
+        self.table.add_row(widget)
+        await self.table.body.scroll_to_async(offset=-1, duration=10)
 
     def has_changed(self) -> bool:
         return any(widget.has_changed() for widget in self.objects_list)

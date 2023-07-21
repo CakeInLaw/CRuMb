@@ -18,6 +18,7 @@ class ObjectInputTableRowWidget(ObjectInputBaseWidget, TableRow):
 
 @dataclass
 class ObjectInputTableRow(ObjectInputBase[ObjectInputTableRowWidget]):
+
     @property
     def widget_type(self):
         return ObjectInputTableRowWidget

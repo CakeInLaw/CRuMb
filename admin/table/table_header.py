@@ -16,7 +16,7 @@ class TableHeader(Row):
             self,
             cells: list[TableHeaderCell] = None,
     ):
-        super().__init__(height=40, spacing=0)
+        super().__init__(height=35, spacing=0)
 
         self.controls = self.cells = cells or []
         for cell in cells:

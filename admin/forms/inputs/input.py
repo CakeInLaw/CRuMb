@@ -8,7 +8,10 @@ from .user_input import UserInputWidget, UserInput, T, _I
 
 class InputWidget(UserInputWidget[T], TextField):
 
-    def __init__(self, **kwargs):
+    def __init__(
+            self,
+            **kwargs
+    ):
         kwargs.setdefault('border', 2)
         kwargs.setdefault('border_radius', 12)
         kwargs.setdefault('text_size', 14)
@@ -18,7 +21,7 @@ class InputWidget(UserInputWidget[T], TextField):
         if self.in_table:
             self.apply_in_table_params()
         else:
-            self.width = self.width or 250
+            self.width = self.default_width
 
     def set_error_text(self, text: Optional[str]):
         self.error_text = text

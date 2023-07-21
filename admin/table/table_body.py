@@ -1,15 +1,16 @@
 from typing import TYPE_CHECKING
 
-from flet import Container, ListView as FletListView
+from flet import ListView as FletListView
 
 from core.utils import default_if_none
+from .cell_position import VerticalPosition
 from .table_row import TableRow
 
 if TYPE_CHECKING:
     from . import Table, TableHeader
 
 
-class TableBody(Container):
+class TableBody(FletListView):
     table: "Table"
     rows: list[TableRow]
     row_height = 30
@@ -19,16 +20,14 @@ class TableBody(Container):
             rows: list[TableRow] = None,
             rows_count: int = 12,
     ):
-        super().__init__()
-        self.rows = default_if_none(rows, [])
-        self.content = FletListView(
-            controls=self.rows,
+        super().__init__(
             item_extent=self.row_height,
             height=self.row_height * rows_count,
             spacing=0,
-            divider_thickness=1,
-            auto_scroll=True
         )
+        self.rows = default_if_none(rows, [])
+        self.controls = self.rows
+        self.update_borders()
 
     def set_table(self, table: "Table"):
         self.table = table
@@ -41,6 +40,22 @@ class TableBody(Container):
             w = hc.width
             for row in self.rows:
                 row.cells[i].width = w
+        self.update_width()
+
+    def update_width(self):
+        self.width = sum([c.width for c in self.header.cells])
+
+    def update_borders(self):
+        length = len(self.rows)
+        if length == 0:
+            return
+        elif length == 1:
+            self.rows[0].update_borders(VerticalPosition.SINGLE)
+        else:
+            self.rows[0].update_borders(VerticalPosition.TOP)
+            for cell in self.rows[1:-1]:
+                cell.update_borders(VerticalPosition.MIDDLE)
+            self.rows[-1].update_borders(VerticalPosition.BOTTOM)
 
     def add_row(self, table_row: TableRow, index: int = -1):
         assert index == -1 or index >= 1
@@ -52,6 +67,7 @@ class TableBody(Container):
         for i, hc in enumerate(self.header.cells):
             table_row.cells[i].width = hc.width
         table_row.set_body(self)
+        self.update_borders()
 
     @property
     def length(self) -> int:

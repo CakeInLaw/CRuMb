@@ -44,6 +44,7 @@ class WidthChanger(GestureDetector):
     async def handle_update(self, e: DragUpdateEvent):
         new_width = self.width_on_start + (e.global_x - self.global_x_on_start)
         cell = self.change_cell
+        cell.body.update_width()
         await cell.table.update_column_width(
             index=cell.header.cells.index(cell),
             width=max((cell.MIN_WIDTH, new_width))

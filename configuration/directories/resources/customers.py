@@ -16,5 +16,14 @@ class CustomerResource(Resource):
         'name',
         'register_address',
         'price_group_id',
-        'customer_locations'
+        ('customer_locations', {
+            'object_schema': {
+                'primitive': (
+                    ('ordering', {"default_width": 40}),
+                    ('name', {"default_width": 200}),
+                    ('delivery_address', {"default_width": 220}),
+                    ('user_id', {"default_width": 150})
+                )
+            }
+        })
     )

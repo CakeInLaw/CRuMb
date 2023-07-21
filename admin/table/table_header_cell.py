@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING
 
 from flet import (
-    Container, Row, Stack, Text,
-    ClipBehavior, TextOverflow, padding,
-    border, BorderSide,
+    Container, Stack, Text,
+    ClipBehavior, TextOverflow, padding, alignment,
+    Border, BorderSide,
 )
 
 from .cell_position import HorizontalPosition
@@ -25,20 +25,23 @@ class TableHeaderCell(Container):
     def __init__(
             self,
             label: str,
+            default_width: int | float = 250,
     ):
         super().__init__(clip_behavior=ClipBehavior.ANTI_ALIAS)
         self.position = HorizontalPosition.MIDDLE
 
-        self.width = 150
+        self.width = default_width
         self.real_content = Container(
-            Text(label, overflow=TextOverflow.ELLIPSIS),
+            Text(label, overflow=TextOverflow.ELLIPSIS, size=15),
             padding=padding.symmetric(horizontal=5),
             clip_behavior=ClipBehavior.ANTI_ALIAS_WITH_SAVE_LAYER,
+            alignment=alignment.center_left
         )
         self.content = Stack([self.real_content, WidthChanger(self, side='left'), WidthChanger(self, side='right')])
 
     def set_header(self, header: "TableHeader"):
         self.header = header
+        self.height = self.header.height
 
     @property
     def position(self) -> HorizontalPosition:
@@ -46,14 +49,16 @@ class TableHeaderCell(Container):
 
     @position.setter
     def position(self, v: HorizontalPosition):
+        if getattr(self, '_position', None) == v:
+            return
         self._position = v
+        self.border = Border(bottom=self.BORDER_SIDE)
         match v:
             case HorizontalPosition.LEFT | HorizontalPosition.MIDDLE:
-                self.border = border.only(right=self.BORDER_SIDE)
-            case HorizontalPosition.RIGHT:
-                self.border = None
+                self.border.right = self.BORDER_SIDE
             case HorizontalPosition.SINGLE:
-                self.border = border.only(right=self.BORDER_SIDE, left=self.BORDER_SIDE)
+                self.border.right = self.BORDER_SIDE
+                self.border.left = self.BORDER_SIDE
 
     @property
     def table(self) -> "Table":

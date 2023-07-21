@@ -1,4 +1,4 @@
-from flet import Container, Row, Column, OptionalNumber, ScrollMode
+from flet import Container, Row, Column, OptionalNumber, ScrollMode, border
 
 from .table_header import TableHeader
 from .table_body import TableBody
@@ -11,12 +11,12 @@ class Table(Container):
             header: TableHeader,
             body: TableBody,
     ):
-        super().__init__()
+        super().__init__(border=border.all(1, 'black'), border_radius=15)
         self.header = header
         self.header.set_table(self)
         self.body = body
         self.body.set_table(self)
-        self.content = Row([Column([self.header, self.body], spacing=0)], scroll=ScrollMode.AUTO, width=1500)
+        self.content = Row([Column([self.header, self.body], spacing=0)], scroll=ScrollMode.AUTO)
 
     async def update_column_width(self, index: int, width: OptionalNumber):
         self.header.cells[index].width = width
@@ -24,6 +24,8 @@ class Table(Container):
             row.cells[index].width = width
         await self.update_async()
 
-    async def add_row(self, table_row: TableRow, index: int = -1):
+    def add_row(self, table_row: TableRow, index: int = -1):
         self.body.add_row(table_row=table_row, index=index)
-        await self.update_async()
+
+    def scroll_to_async(self, row: TableRow):
+        return self.body.scroll_to_async(key=row.key, duration=0)
