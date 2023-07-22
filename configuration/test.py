@@ -6,43 +6,31 @@ from .admin import CakeInLawAdmin
 class TestAdmin(CakeInLawAdmin):
     @classmethod
     def run_target(cls, page: ft.Page):
+        page.title = "Tooltip Example"
 
-        page.title = "AlertDialog examples"
+        class InputContainer(ft.Container):
+            def __init__(
+                    self,
+                    content: ft.Control,
+                    label: str = None,
+            ):
+                super().__init__(content=content)
 
-        dlg = ft.AlertDialog(
-            modal=True,
-            title=ft.Text("Hello, you!"), on_dismiss=lambda e: print("Dialog dismissed!"),
-        )
-
-        def close_dlg(e):
-            dlg_modal.open = False
-            page.update()
-
-        dlg_modal = ft.AlertDialog(
-            modal=True,
-            title=ft.Text("Please confirm"),
-            content=ft.Text("Do you really want to delete all those files?"),
-            actions=[
-                ft.TextButton("Yes", on_click=close_dlg),
-                ft.TextButton("No", on_click=close_dlg),
-            ],
-            actions_alignment=ft.MainAxisAlignment.END,
-            on_dismiss=lambda e: print("Modal dialog dismissed!"),
-        )
-
-        def open_dlg(e):
-            page.dialog = dlg
-            dlg.open = True
-            page.update()
-
-        def open_dlg_modal(e):
-            page.dialog = dlg_modal
-            dlg_modal.open = True
-            page.update()
 
         page.add(
-            ft.ElevatedButton("Open dialog", on_click=open_dlg),
-            ft.ElevatedButton("Open modal dialog", on_click=open_dlg_modal),
+            InputContainer(ft.Dropdown(
+                dense=True,
+                label='Sasha',
+                border=ft.InputBorder.UNDERLINE,
+                border_radius=10,
+                options=(
+                    ft.dropdown.Option(key=1, text='Sasha'),
+                    ft.dropdown.Option(key=2, text='Sasha2'),
+                    ft.dropdown.Option(key=3, text='Sasha3'),
+                    ft.dropdown.Option(key=4, text='Sasha4'),
+                    ft.dropdown.Option(key=5, text='Sasha5'),
+                )
+            ))
         )
 
 

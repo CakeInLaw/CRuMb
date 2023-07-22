@@ -5,7 +5,7 @@ from .base import ObjectInputBase, ObjectInputBaseWidget
 
 
 class ObjectInputTableRowWidget(ObjectInputBaseWidget, TableRow):
-    children_in_table: bool = True
+    children_in_table_cell: bool = True
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

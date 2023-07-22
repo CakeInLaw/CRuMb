@@ -236,7 +236,7 @@ class Repository(Generic[MODEL]):
             is_root: bool = True,
             run_in_transaction: Optional[bool] = None,
             validate: Optional[bool] = None,
-    ):
+    ) -> BaseModel:
         """
         :param instance: Существующий объект модели для изменения.
         :param data: Данные для вставки в БД, которые соответствуют её структуре.

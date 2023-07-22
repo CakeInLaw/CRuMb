@@ -4,7 +4,7 @@ from flet import Control, UserControl, Column, Row, Container
 
 from core.exceptions import ObjectErrors
 from .schema import FormSchema, InputGroup
-from .inputs import UserInputWidget, UserInput, UndefinedValue
+from .widgets import UserInputWidget, UserInput, UndefinedValue
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin

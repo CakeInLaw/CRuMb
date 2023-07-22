@@ -1,4 +1,4 @@
-from admin.forms import Primitive, inputs
+from admin.forms import Primitive, widgets
 from admin.resource import Resource
 from ..repositories import CustomerRepository
 from configuration.admin import CakeInLawAdmin

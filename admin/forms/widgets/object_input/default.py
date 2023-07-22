@@ -6,7 +6,7 @@ from .base import ObjectInputBaseWidget, ObjectInputBase
 
 
 class ObjectInputWidget(ObjectInputBaseWidget, Container):
-    children_in_table: bool = False
+    children_in_table_cell: bool = False
 
     def __init__(self, variant: str = 'row', **kwargs):
         super().__init__(**kwargs)

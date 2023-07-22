@@ -11,6 +11,11 @@ class CheckboxWidget(UserInputWidget[bool], ft.Checkbox):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.on_change = self.handle_value_change_and_update
+        if self.in_table_cell:
+            self.apply_in_table_cell_params()
+
+    def apply_in_table_cell_params(self):
+        self.label = None
 
     @property
     def final_value(self) -> Optional[bool]:

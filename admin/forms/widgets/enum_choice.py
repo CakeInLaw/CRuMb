@@ -35,9 +35,15 @@ class EnumChoiceWidget(UserInputWidget[E], dropdown.Dropdown):
         if not self.required:
             self.options.insert(0, dropdown.Option(key=EMPTY, text=EMPTY_TEXT))
         self.on_change = self.handle_value_change_and_update
-        if self.in_table:
-            self.border = InputBorder.NONE
-            self.label = None
+        if self.in_table_cell:
+            self.apply_in_table_cell_params()
+        else:
+            self.width = self.default_width
+
+    def apply_in_table_cell_params(self):
+        self.border = InputBorder.NONE
+        self.content_padding = 0
+        self.label = None
 
     def set_value(self, value: E, initial: bool = False):
         assert value is None or isinstance(value, Enum)

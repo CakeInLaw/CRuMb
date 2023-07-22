@@ -4,7 +4,7 @@ from typing import Optional
 from core.orm import BaseModel
 from core.types import PK
 from admin.layout import PayloadInfo
-from admin.forms.inputs import InputWidget, Input
+from admin.forms.widgets import InputWidget, Input
 from admin.exceptions import InputValidationError
 
 

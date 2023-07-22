@@ -11,7 +11,7 @@ from .user_input import UserInput, UserInputWidget
 
 
 class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Column):
-    can_be_placed_in_table: bool = False
+    can_be_placed_in_table_cell: bool = False
 
     @property
     def final_value(self) -> BackFKData:
@@ -37,13 +37,11 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Column):
             for initial in self.initial_value
         ]
 
-        self.label_control = Text(self.label)
         self.actions = Row([
             ElevatedButton('Добавить', on_click=self.handle_add_row),
         ], scroll=ScrollMode.AUTO)
         self.table = self.create_table()
         self.controls = [
-            self.label_control,
             self.actions,
             self.table
         ]

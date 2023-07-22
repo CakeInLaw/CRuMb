@@ -1,18 +1,16 @@
 from dataclasses import dataclass, field
 from typing import Any, TypeVar
 
-from flet import Container, Row, Column, Control
+from flet import Control
 
 from core.orm import BaseModel
-from admin.exceptions import InputValidationError
-from admin.table import TableRow, TableCell
 from ..user_input import UserInputWidget, UserInput, UndefinedValue
 from ... import InputGroup
 
 
 class ObjectInputBaseWidget(UserInputWidget[dict[str, Any]]):
-    can_be_placed_in_table: bool = False
-    children_in_table: bool
+    can_be_placed_in_table_cell: bool = False
+    children_in_table_cell: bool
 
     @property
     def final_value(self) -> dict[str, Any]:
@@ -31,7 +29,7 @@ class ObjectInputBaseWidget(UserInputWidget[dict[str, Any]]):
         self.fields_map: dict[str, UserInputWidget] = {}
 
     def _create_widget(self, item: UserInput) -> UserInputWidget | Control:
-        widget = item.widget(parent=self, initial=self.initial_for(item), in_table=self.children_in_table)
+        widget = item.widget(parent=self, initial=self.initial_for(item), in_table_cell=self.children_in_table_cell)
         self.fields_map[item.name] = widget
         return widget
 

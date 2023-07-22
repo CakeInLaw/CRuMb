@@ -1,4 +1,3 @@
-import asyncio
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, TypeVar, Optional, Any, Generic, Type, Union, Callable, Coroutine
 
@@ -14,7 +13,7 @@ T = TypeVar('T')
 
 
 class UserInputWidget(Generic[T]):
-    can_be_placed_in_table: bool = True
+    can_be_placed_in_table_cell: bool = True
 
     @property
     def final_value(self) -> T:
@@ -38,10 +37,11 @@ class UserInputWidget(Generic[T]):
             *,
             name: str,
             label: str = None,
+            helper_text: str = None,
             null: bool = False,
             required: bool = False,
             initial_value: T = None,
-            in_table: bool = False,
+            in_table_cell: bool = False,
             parent: Union["Form", "UserInputWidget"] = None,
             on_value_change: Callable[["UserInputWidget"], Coroutine[Any, Any, None] | None] = None,
             default_width: int | float = 250,
@@ -49,15 +49,16 @@ class UserInputWidget(Generic[T]):
     ):
         super().__init__(**kwargs)
         self.name = name
-        self.label = label
+        self.label_text = label
+        self.helper_text = helper_text
         self.null = null
         self.required = required
         self.default_width = default_width
         self._set_initial_value(initial_value)
 
-        if in_table and not self.can_be_placed_in_table:
+        if in_table_cell and not self.can_be_placed_in_table_cell:
             raise ValueError('Так нельзя:(')
-        self.in_table = in_table
+        self.in_table_cell = in_table_cell
         self.parent = parent
         self.on_value_change = on_value_change
 
@@ -105,7 +106,7 @@ class UserInputWidget(Generic[T]):
     def _transform_value(self):
         pass
 
-    def apply_in_table_params(self):
+    def apply_in_table_cell_params(self):
         pass
 
     async def handle_value_change_and_update(self, event_or_control: ControlEvent | Control):
@@ -134,10 +135,11 @@ _I = TypeVar('_I', bound=Union[Control, UserInputWidget])
 class UserInput(Generic[_I]):
     name: str
     label: str = None
+    helper_text: str = None
     null: bool = False
     required: bool = False
     on_value_change:  Callable[[UserInputWidget], Coroutine[Any, Any, None]] = None
-    default_width: int | float = 250,
+    default_width: int | float = 250
 
     def widget(
             self,

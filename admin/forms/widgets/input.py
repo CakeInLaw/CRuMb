@@ -18,15 +18,15 @@ class InputWidget(UserInputWidget[T], TextField):
         kwargs.setdefault('dense', True)
         super().__init__(**kwargs)
         self.on_blur = self.handle_value_change_and_update
-        if self.in_table:
-            self.apply_in_table_params()
+        if self.in_table_cell:
+            self.apply_in_table_cell_params()
         else:
             self.width = self.default_width
 
     def set_error_text(self, text: Optional[str]):
         self.error_text = text
 
-    def apply_in_table_params(self):
+    def apply_in_table_cell_params(self):
         self.border = InputBorder.NONE
         self.content_padding = 0
         self.label = None
