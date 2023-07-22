@@ -24,14 +24,14 @@ class StrInputWidget(InputWidget[str]):
             max_length: Optional[int] = None,
             min_length: Optional[int] = None,
             empty_as_none: bool = False,
+            is_password: bool = False,
             **kwargs
     ):
         super().__init__(**kwargs)
         self._max_length = max_length
         self.min_length = min_length
         self.empty_as_none = empty_as_none
-        assert not (self.empty_as_none and self.required), 'empty_as_none и required не могут быть одновременно True'
-        if self.name in ('password', 're_password'):
+        if is_password:
             self.password = self.can_reveal_password = True
 
     def _validate(self) -> None:
@@ -53,7 +53,7 @@ class StrInput(Input[S]):
     max_length: Optional[int] = None
     min_length: Optional[int] = None
     empty_as_none: bool = False
-    keyboard_type: Optional[KeyboardType] = None
+    is_password: bool = False
 
     @property
     def widget_type(self):

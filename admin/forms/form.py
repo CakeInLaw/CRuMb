@@ -5,6 +5,7 @@ from flet import Control, UserControl, Column, Row, Container
 from core.exceptions import ObjectErrors
 from .schema import FormSchema, InputGroup
 from .widgets import UserInputWidget, UserInput, UndefinedValue
+from .widget_containers import SimpleWidgetContainer, BaseWidgetContainer
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
@@ -52,21 +53,21 @@ class Form(UserControl):
     def _build_form(self) -> list[Row | Column]:
         return [self._build_item(item=item) for item in self.get_form_schema()]
 
-    def _create_widget(self, item: UserInput):
+    def _create_widget_in_container(self, item: UserInput):
         widget = item.widget(parent=self, initial=self.initial_for(item))
         self.fields_map[item.name] = widget
-        return widget
+        return SimpleWidgetContainer(widget)
 
-    def _build_item(self, item: UserInput | InputGroup) -> Row | Column:
+    def _build_item(self, item: UserInput | InputGroup) -> Row | Column | BaseWidgetContainer:
         if isinstance(item, UserInput):
-            return self._create_widget(item)
+            return self._create_widget_in_container(item)
         controls: list[Control] = []
         item: InputGroup
         for subgroup_or_input in item:
             if isinstance(subgroup_or_input, InputGroup):
                 controls.append(self._build_item(subgroup_or_input))
             elif isinstance(subgroup_or_input, UserInput):
-                controls.append(self._create_widget(subgroup_or_input))
+                controls.append(self._create_widget_in_container(subgroup_or_input))
             else:
                 raise ValueError('что-то пошло не так')
         return item.to_control(controls)
@@ -87,7 +88,7 @@ class Form(UserControl):
             root = _err.pop('__root__')
             # TODO
         for field, e in _err.items():
-            self.fields_map[field].set_object_error(e)
+            self.fields_map[field].set_error(e)
 
     def form_is_valid(self):
         is_valid = True

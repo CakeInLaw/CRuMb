@@ -24,8 +24,8 @@ class DateInputWidget(InputWidget[date]):
             max_date: Optional[date] = None,
             **kwargs
     ):
-        kwargs['keyboard_type'] = KeyboardType.DATETIME
         super().__init__(**kwargs)
+        self.keyboard_type = KeyboardType.DATETIME
         self.min_date = min_date
         self.max_date = max_date
 

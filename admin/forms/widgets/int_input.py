@@ -22,8 +22,9 @@ class IntInputWidget(InputWidget[int]):
             max_value: Optional[int] = None,
             **kwargs
     ):
-        kwargs['keyboard_type'] = KeyboardType.NUMBER
         super().__init__(**kwargs)
+        self.keyboard_type = KeyboardType.NUMBER
+
         self.min_value = min_value
         self.max_value = max_value
 

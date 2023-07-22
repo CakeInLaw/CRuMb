@@ -9,7 +9,8 @@ class ObjectInputWidget(ObjectInputBaseWidget, Container):
     children_in_table_cell: bool = False
 
     def __init__(self, variant: str = 'row', **kwargs):
-        super().__init__(**kwargs)
+        Container.__init__(self)
+        ObjectInputBaseWidget.__init__(self, **kwargs)
         self.variant = variant
         self.content = self.create_content()
 

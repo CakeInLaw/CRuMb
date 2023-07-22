@@ -8,6 +8,7 @@ from admin.forms.widgets import InputWidget, Input
 from admin.exceptions import InputValidationError
 
 
+# TODO: переделать на dropdown с элементами, подбираемыми по вводу
 class RelatedChoiceWidget(InputWidget):
 
     real_value: Optional[BaseModel]
@@ -17,9 +18,9 @@ class RelatedChoiceWidget(InputWidget):
         return self.real_value.pk if self.real_value else None
 
     def __init__(self, entity: str, method: str, **kwargs):
-        kwargs['read_only'] = True
-        kwargs['on_focus'] = self.open_choice
         super().__init__(**kwargs)
+        self.on_focus = self.open_choice
+        self.read_only = True  # для самого видимого инпута, чтобы не изменяли текст вручную
 
         self.entity = entity
         self.method = method

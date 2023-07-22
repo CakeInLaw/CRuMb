@@ -19,10 +19,10 @@ class CustomerResource(Resource):
         ('customer_locations', {
             'object_schema': {
                 'primitive': (
-                    ('ordering', {"default_width": 40}),
-                    ('name', {"default_width": 200}),
-                    ('delivery_address', {"default_width": 220}),
-                    ('user_id', {"default_width": 150})
+                    ('ordering', {"width": 40}),
+                    ('name', {"width": 200}),
+                    ('delivery_address', {"width": 220}),
+                    ('user_id', {"width": 150})
                 )
             }
         })

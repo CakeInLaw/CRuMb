@@ -23,8 +23,9 @@ class FloatInputWidget(InputWidget[float]):
             decimal_places: int = 2,
             **kwargs
     ):
-        kwargs['keyboard_type'] = KeyboardType.NUMBER
         super().__init__(**kwargs)
+        self.keyboard_type = KeyboardType.NUMBER
+
         self.min_value = min_value
         self.max_value = max_value
         self.decimal_places = decimal_places

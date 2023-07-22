@@ -6,10 +6,10 @@ from flet import Control
 from core.orm import BaseModel
 from ..user_input import UserInputWidget, UserInput, UndefinedValue
 from ... import InputGroup
+from ...widget_containers import TableCellWidgetContainer, SimpleWidgetContainer
 
 
 class ObjectInputBaseWidget(UserInputWidget[dict[str, Any]]):
-    can_be_placed_in_table_cell: bool = False
     children_in_table_cell: bool
 
     @property
@@ -28,16 +28,17 @@ class ObjectInputBaseWidget(UserInputWidget[dict[str, Any]]):
         self.fields = fields
         self.fields_map: dict[str, UserInputWidget] = {}
 
-    def _create_widget(self, item: UserInput) -> UserInputWidget | Control:
-        widget = item.widget(parent=self, initial=self.initial_for(item), in_table_cell=self.children_in_table_cell)
+    def _create_widget_in_container(self, item: UserInput) -> UserInputWidget | Control:
+        widget = item.widget(parent=self, initial=self.initial_for(item))
         self.fields_map[item.name] = widget
-        return widget
+        container = TableCellWidgetContainer if self.children_in_table_cell else SimpleWidgetContainer
+        return container(widget)
 
     def get_widgets(self) -> list[Control]:
         widgets = []
         for f in self.fields:
             if isinstance(f, UserInput):
-                widgets.append(self._create_widget(f))
+                widgets.append(self._create_widget_in_container(f))
             else:
                 widgets.append(self._build_group(f))
         return widgets
@@ -48,7 +49,7 @@ class ObjectInputBaseWidget(UserInputWidget[dict[str, Any]]):
             if isinstance(subgroup_or_input, InputGroup):
                 controls.append(self._build_group(subgroup_or_input))
             elif isinstance(subgroup_or_input, UserInput):
-                controls.append(self._create_widget(subgroup_or_input))
+                controls.append(self._create_widget_in_container(subgroup_or_input))
         return group.to_control(controls)
 
     def initial_for(self, item: UserInput) -> Any:
@@ -78,12 +79,12 @@ class ObjectInputBaseWidget(UserInputWidget[dict[str, Any]]):
                 valid = False
         return valid
 
-    def set_object_error(self, err: dict[str, Any]):
+    def set_error(self, err: dict[str, Any]):
         if '__root__' in err:
             root = err.pop('__root__')
             # TODO
         for name, e in err.items():
-            self.fields_map[name].set_object_error(e)
+            self.fields_map[name].set_error(e)
 
 
 _OI = TypeVar('_OI', bound=ObjectInputBaseWidget)

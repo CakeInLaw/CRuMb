@@ -8,7 +8,8 @@ class ObjectInputTableRowWidget(ObjectInputBaseWidget, TableRow):
     children_in_table_cell: bool = True
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        TableRow.__init__(self)
+        ObjectInputBaseWidget.__init__(self, **kwargs)
         self.create_cells()
 
     def create_cells(self) -> None:

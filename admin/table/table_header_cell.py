@@ -25,12 +25,12 @@ class TableHeaderCell(Container):
     def __init__(
             self,
             label: str,
-            default_width: int | float = 250,
+            width: int | float = 250,
     ):
         super().__init__(clip_behavior=ClipBehavior.ANTI_ALIAS)
         self.position = HorizontalPosition.MIDDLE
 
-        self.width = default_width
+        self.width = width
         self.real_content = Container(
             Text(label, overflow=TextOverflow.ELLIPSIS, size=15),
             padding=padding.symmetric(horizontal=5),

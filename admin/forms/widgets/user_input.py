@@ -7,13 +7,15 @@ from admin.exceptions import InputValidationError
 
 if TYPE_CHECKING:
     from ..form import Form
+    from ..widget_containers.base import BaseWidgetContainer
 
 
 T = TypeVar('T')
 
 
 class UserInputWidget(Generic[T]):
-    can_be_placed_in_table_cell: bool = True
+
+    container: "BaseWidgetContainer"
 
     @property
     def final_value(self) -> T:
@@ -41,24 +43,18 @@ class UserInputWidget(Generic[T]):
             null: bool = False,
             required: bool = False,
             initial_value: T = None,
-            in_table_cell: bool = False,
             parent: Union["Form", "UserInputWidget"] = None,
             on_value_change: Callable[["UserInputWidget"], Coroutine[Any, Any, None] | None] = None,
-            default_width: int | float = 250,
-            **kwargs
+            width: int | float = 250,
     ):
-        super().__init__(**kwargs)
         self.name = name
         self.label_text = label
         self.helper_text = helper_text
         self.null = null
         self.required = required
-        self.default_width = default_width
+        self.container_width = width
         self._set_initial_value(initial_value)
 
-        if in_table_cell and not self.can_be_placed_in_table_cell:
-            raise ValueError('Так нельзя:(')
-        self.in_table_cell = in_table_cell
         self.parent = parent
         self.on_value_change = on_value_change
 
@@ -84,15 +80,18 @@ class UserInputWidget(Generic[T]):
             raise err
 
     def _on_success_validation(self):
-        self.set_error_text(None)
+        self.rm_error_text()
 
     def _on_error_validation(self, err: InputValidationError):
         self.set_error_text(err.msg)
 
     def set_error_text(self, text: Optional[str]):
-        pass
+        self.container.set_error_text(text)
 
-    def set_object_error(self, err: dict[str, Any]):
+    def rm_error_text(self):
+        self.container.rm_error()
+
+    def set_error(self, err: dict[str, Any]):
         self.set_error_text(err.get('msg', 'Какая-то ошибка'))
 
     def is_valid(self) -> bool:
@@ -104,9 +103,6 @@ class UserInputWidget(Generic[T]):
         return valid
 
     def _transform_value(self):
-        pass
-
-    def apply_in_table_cell_params(self):
         pass
 
     async def handle_value_change_and_update(self, event_or_control: ControlEvent | Control):
@@ -139,7 +135,7 @@ class UserInput(Generic[_I]):
     null: bool = False
     required: bool = False
     on_value_change:  Callable[[UserInputWidget], Coroutine[Any, Any, None]] = None
-    default_width: int | float = 250
+    width: int | float = 250
 
     def widget(
             self,

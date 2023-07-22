@@ -11,7 +11,6 @@ from .user_input import UserInput, UserInputWidget
 
 
 class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Column):
-    can_be_placed_in_table_cell: bool = False
 
     @property
     def final_value(self) -> BackFKData:
@@ -29,7 +28,9 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Column):
             variant: str = 'table',
             **kwargs
     ):
-        super().__init__(**kwargs)
+        Column.__init__(self)
+        UserInputWidget.__init__(self, **kwargs)
+
         self.object_schema = object_schema
         self.variant = variant
         self.objects_list: list[ObjectInputTableRowWidget] = [
@@ -50,7 +51,7 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Column):
         return Table(
             header=TableHeader(
                 cells=[
-                    TableHeaderCell(label=col.label, default_width=col.default_width)
+                    TableHeaderCell(label=col.label, width=col.width)
                     for col in self.object_schema.fields
                 ]
             ),
@@ -75,9 +76,9 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Column):
     def set_value(self, value: Any, initial: bool = False):
         pass
 
-    def set_object_error(self, err: dict[int, dict[str, Any]]):
+    def set_error(self, err: dict[int, dict[str, Any]]):
         for i, e in err.items():
-            self.objects_list[i].set_object_error(e)
+            self.objects_list[i].set_error(e)
 
     def is_valid(self) -> bool:
         valid = True

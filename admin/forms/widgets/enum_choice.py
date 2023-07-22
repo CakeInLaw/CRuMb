@@ -27,23 +27,19 @@ class EnumChoiceWidget(UserInputWidget[E], dropdown.Dropdown):
     ):
         assert enum_type is not None
         self.enum_type = enum_type
-        super().__init__(**kwargs)
+        dropdown.Dropdown.__init__(
+            self,
+            border=InputBorder.NONE,
+            content_padding=0,
+            dense=True,
+            text_size=14,
+            on_change=self.handle_value_change_and_update,
+        )
+        UserInputWidget.__init__(self, **kwargs)
 
-        self.options = [
-            dropdown.Option(key=x.value, text=x.name) for x in self.enum_type
-        ]
+        self.options = [dropdown.Option(key=x.value, text=x.name) for x in self.enum_type],
         if not self.required:
             self.options.insert(0, dropdown.Option(key=EMPTY, text=EMPTY_TEXT))
-        self.on_change = self.handle_value_change_and_update
-        if self.in_table_cell:
-            self.apply_in_table_cell_params()
-        else:
-            self.width = self.default_width
-
-    def apply_in_table_cell_params(self):
-        self.border = InputBorder.NONE
-        self.content_padding = 0
-        self.label = None
 
     def set_value(self, value: E, initial: bool = False):
         assert value is None or isinstance(value, Enum)
