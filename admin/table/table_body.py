@@ -14,12 +14,12 @@ class TableBody(FletListView):
     rows: list[TableRow]
     row_height = 30
 
-    _active_row: TableRow
+    _active_row: TableRow = None
 
     def __init__(
             self,
             rows: list[TableRow] = None,
-            rows_count: int = 12,
+            rows_count: int = 11,
     ):
         super().__init__(
             item_extent=self.row_height,
@@ -66,8 +66,11 @@ class TableBody(FletListView):
 
     @active_row.setter
     def active_row(self, v: Optional[TableRow]):
-        if self._active_row:
-            self._active_row.deactivate()
+        if self._active_row and self._active_row is v:
+            return
+        prev = self._active_row
         self._active_row = v
+        if prev:
+            prev.deactivate()
         if self._active_row:
             self._active_row.activate()

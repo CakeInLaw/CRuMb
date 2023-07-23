@@ -11,7 +11,9 @@ class CheckboxWidget(UserInputWidget[bool], Checkbox):
     def __init__(self, **kwargs):
         Checkbox.__init__(self)
         UserInputWidget.__init__(self, **kwargs)
-        self.on_change = self.handle_value_change_and_update
+
+        self.on_focus = self.start_change_event_handler
+        self.on_blur = self.end_change_event_handler
 
     @property
     def final_value(self) -> Optional[bool]:

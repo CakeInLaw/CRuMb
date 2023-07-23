@@ -12,8 +12,8 @@ if TYPE_CHECKING:
 class TableRow(Container):
     body: "TableBody"
     DEFAULT_BGCOLOR: str = '#F4F6F8'
-    ACTIVE_BGCOLOR: str = '#0068FF'
-    SELECTED_BGCOLOR: str = '#E9E8FF'
+    ACTIVE_BGCOLOR: str = '#0068FF,0.5'
+    SELECTED_BGCOLOR: str = '#E9E8FF,0.5'
 
     def __init__(
             self,
@@ -50,7 +50,17 @@ class TableRow(Container):
         return len(self.cells)
 
     def activate(self):
-        self.bgcolor = self.ACTIVE_BGCOLOR
+        for cell in self.cells:
+            cell.change_bgcolor()
 
     def deactivate(self):
-        self.bgcolor = self.DEFAULT_BGCOLOR
+        for cell in self.cells:
+            cell.change_bgcolor()
+
+    @property
+    def is_active(self):
+        return self.body.active_row is self
+
+    @property
+    def is_selected(self):
+        return False  # TODO

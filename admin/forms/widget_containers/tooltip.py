@@ -7,7 +7,6 @@ if TYPE_CHECKING:
 
 
 class WidgetTooltip(Tooltip):
-    has_error: bool = False
 
     def __init__(
             self,
@@ -35,7 +34,6 @@ class WidgetTooltip(Tooltip):
         self.wait_duration = 0
 
     def set_error_text(self, text: str):
-        self.has_error = True
         self.message = text
         self.border = border.all(1, '#ff3838')
         self.bgcolor = '#ff5d5d'
@@ -43,7 +41,6 @@ class WidgetTooltip(Tooltip):
         self.wait_duration = 0
 
     def rm_error(self):
-        self.has_error = False
         if self.helper_text:
             self._set_helper_text(self.helper_text)
         else:

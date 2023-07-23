@@ -17,7 +17,8 @@ class InputWidget(UserInputWidget[T], TextField):
             text_size=14,
             dense=True,
             border=InputBorder.NONE,
-            on_blur=self.handle_value_change_and_update,
+            on_focus=self.start_change_event_handler,
+            on_blur=self.end_change_event_handler,
         )
         UserInputWidget.__init__(self, **kwargs)
 

@@ -30,3 +30,12 @@ class TableCell(Container):
     @property
     def body(self) -> "TableBody":
         return self.row.body
+
+    def change_bgcolor(self):
+        row = self.row
+        if row.is_active:
+            self.bgcolor = row.ACTIVE_BGCOLOR
+        elif row.is_selected:
+            self.bgcolor = row.SELECTED_BGCOLOR
+        else:
+            self.bgcolor = row.DEFAULT_BGCOLOR

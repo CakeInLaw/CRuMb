@@ -12,8 +12,14 @@ class TableCellWidgetContainer(BaseWidgetContainer[W], TableCell):
 
     def set_error_text(self, text: str):
         super().set_error_text(text)
-        self.bgcolor = 'error,0.2'
+        self.change_bgcolor()
 
     def rm_error(self):
         super().rm_error()
-        self.bgcolor = None
+        self.change_bgcolor()
+
+    def change_bgcolor(self):
+        if self.widget.has_error:
+            self.bgcolor = 'error,0.2'
+        else:
+            super().change_bgcolor()

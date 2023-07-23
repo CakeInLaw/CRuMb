@@ -19,7 +19,8 @@ class RelatedChoiceWidget(InputWidget):
 
     def __init__(self, entity: str, method: str, **kwargs):
         super().__init__(**kwargs)
-        self.on_focus = self.open_choice
+        self.on_blur = None
+        self.on_start_changing = self.open_choice
         self.read_only = True  # для самого видимого инпута, чтобы не изменяли текст вручную
 
         self.entity = entity
@@ -36,7 +37,10 @@ class RelatedChoiceWidget(InputWidget):
 
     async def update_real_value(self, new_value: Optional[BaseModel]) -> None:
         self.set_value(new_value)
-        await self.handle_value_change_and_update(self)
+        await self.on_end_changing.get_handler()(self)
+
+    async def on_cancel_choice(self):
+        await self.on_end_changing.get_handler()(self)
 
     async def open_choice(self, e):
         await self.form.box.add_modal(info=PayloadInfo(
@@ -45,6 +49,7 @@ class RelatedChoiceWidget(InputWidget):
             query={
                 'current_chosen': self.real_value,
                 'handle_confirm': self.update_real_value,
+                'handle_cancel': self.on_cancel_choice,
             }
         ))
 

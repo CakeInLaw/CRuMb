@@ -27,13 +27,15 @@ class EnumChoiceWidget(UserInputWidget[E], dropdown.Dropdown):
     ):
         assert enum_type is not None
         self.enum_type = enum_type
+
         dropdown.Dropdown.__init__(
             self,
             border=InputBorder.NONE,
             content_padding=0,
             dense=True,
             text_size=14,
-            on_change=self.handle_value_change_and_update,
+            on_focus=self.start_change_event_handler,
+            on_blur=self.end_change_event_handler
         )
         UserInputWidget.__init__(self, **kwargs)
 
