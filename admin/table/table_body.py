@@ -1,9 +1,8 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from flet import ListView as FletListView
 
 from core.utils import default_if_none
-from .cell_position import VerticalPosition
 from .table_row import TableRow
 
 if TYPE_CHECKING:
@@ -14,6 +13,8 @@ class TableBody(FletListView):
     table: "Table"
     rows: list[TableRow]
     row_height = 30
+
+    _active_row: TableRow
 
     def __init__(
             self,
@@ -27,7 +28,6 @@ class TableBody(FletListView):
         )
         self.rows = default_if_none(rows, [])
         self.controls = self.rows
-        self.update_borders()
 
     def set_table(self, table: "Table"):
         self.table = table
@@ -40,22 +40,6 @@ class TableBody(FletListView):
             w = hc.width
             for row in self.rows:
                 row.cells[i].width = w
-        self.update_width()
-
-    def update_width(self):
-        self.width = sum([c.width for c in self.header.cells])
-
-    def update_borders(self):
-        length = len(self.rows)
-        if length == 0:
-            return
-        elif length == 1:
-            self.rows[0].update_borders(VerticalPosition.SINGLE)
-        else:
-            self.rows[0].update_borders(VerticalPosition.TOP)
-            for cell in self.rows[1:-1]:
-                cell.update_borders(VerticalPosition.MIDDLE)
-            self.rows[-1].update_borders(VerticalPosition.BOTTOM)
 
     def add_row(self, table_row: TableRow, index: int = -1):
         assert index == -1 or index >= 1
@@ -67,7 +51,6 @@ class TableBody(FletListView):
         for i, hc in enumerate(self.header.cells):
             table_row.cells[i].width = hc.width
         table_row.set_body(self)
-        self.update_borders()
 
     @property
     def length(self) -> int:
@@ -76,3 +59,15 @@ class TableBody(FletListView):
     @property
     def header(self) -> "TableHeader":
         return self.table.header
+
+    @property
+    def active_row(self) -> Optional[TableRow]:
+        return self._active_row
+
+    @active_row.setter
+    def active_row(self, v: Optional[TableRow]):
+        if self._active_row:
+            self._active_row.deactivate()
+        self._active_row = v
+        if self._active_row:
+            self._active_row.activate()

@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Union
 
-from flet import Tooltip, Control, border, TextStyle
+from flet import Tooltip, Control, TextStyle, padding, border
 
 if TYPE_CHECKING:
     from admin.forms.widgets import UserInputWidget
@@ -17,7 +17,7 @@ class WidgetTooltip(Tooltip):
         super().__init__(
             content=content,
             prefer_below=False,
-            padding=10,
+            padding=padding.symmetric(5, 10),
             vertical_offset=20,
             border_radius=5,
         )

@@ -1,16 +1,18 @@
 from dataclasses import dataclass, field
-from typing import Any, TypeVar
-
-from flet import Control
+from typing import Any, TypeVar, Generic, Type
 
 from core.orm import BaseModel
 from ..user_input import UserInputWidget, UserInput, UndefinedValue
 from ... import InputGroup
-from ...widget_containers import TableCellWidgetContainer, SimpleWidgetContainer
+
+from ...widget_containers import BaseWidgetContainer
 
 
-class ObjectInputBaseWidget(UserInputWidget[dict[str, Any]]):
-    children_in_table_cell: bool
+C = TypeVar('C', bound=BaseWidgetContainer)
+
+
+class ObjectInputBaseWidget(Generic[C], UserInputWidget[dict[str, Any]]):
+    child_container: Type[C]
 
     @property
     def final_value(self) -> dict[str, Any]:
@@ -28,29 +30,10 @@ class ObjectInputBaseWidget(UserInputWidget[dict[str, Any]]):
         self.fields = fields
         self.fields_map: dict[str, UserInputWidget] = {}
 
-    def _create_widget_in_container(self, item: UserInput) -> UserInputWidget | Control:
+    def _create_widget_in_container(self, item: UserInput) -> C:
         widget = item.widget(parent=self, initial=self.initial_for(item))
         self.fields_map[item.name] = widget
-        container = TableCellWidgetContainer if self.children_in_table_cell else SimpleWidgetContainer
-        return container(widget)
-
-    def get_widgets(self) -> list[Control]:
-        widgets = []
-        for f in self.fields:
-            if isinstance(f, UserInput):
-                widgets.append(self._create_widget_in_container(f))
-            else:
-                widgets.append(self._build_group(f))
-        return widgets
-
-    def _build_group(self, group: InputGroup) -> Control:
-        controls: list[Control] = []
-        for subgroup_or_input in group:
-            if isinstance(subgroup_or_input, InputGroup):
-                controls.append(self._build_group(subgroup_or_input))
-            elif isinstance(subgroup_or_input, UserInput):
-                controls.append(self._create_widget_in_container(subgroup_or_input))
-        return group.to_control(controls)
+        return self.child_container(widget)
 
     def initial_for(self, item: UserInput) -> Any:
         if self.initial_value is None:

@@ -17,7 +17,6 @@ class InputWidget(UserInputWidget[T], TextField):
             text_size=14,
             dense=True,
             border=InputBorder.NONE,
-            content_padding=0,
             on_blur=self.handle_value_change_and_update,
         )
         UserInputWidget.__init__(self, **kwargs)

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from flet import Column, Row, ElevatedButton, Text, ScrollMode
+from flet import Container, Column, Row, ElevatedButton, ScrollMode
 
 from core.orm import BaseModel
 from core.types import BackFKData
@@ -10,7 +10,7 @@ from .object_input import ObjectInputTableRow, ObjectInputTableRowWidget
 from .user_input import UserInput, UserInputWidget
 
 
-class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Column):
+class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
 
     @property
     def final_value(self) -> BackFKData:
@@ -28,7 +28,7 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Column):
             variant: str = 'table',
             **kwargs
     ):
-        Column.__init__(self)
+        Container.__init__(self, padding=12)
         UserInputWidget.__init__(self, **kwargs)
 
         self.object_schema = object_schema
@@ -42,10 +42,10 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Column):
             ElevatedButton('Добавить', on_click=self.handle_add_row),
         ], scroll=ScrollMode.AUTO)
         self.table = self.create_table()
-        self.controls = [
+        self.content = Column([
             self.actions,
             self.table
-        ]
+        ])
 
     def create_table(self) -> Table:
         return Table(
@@ -98,6 +98,7 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Column):
 class ObjectsArrayInput(UserInput[ObjectsArrayInputWidget]):
     object_schema: ObjectInputTableRow = None
     variant: str = 'table'
+    width: int = None
 
     @property
     def widget_type(self):

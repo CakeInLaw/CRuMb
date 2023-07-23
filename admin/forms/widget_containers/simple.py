@@ -1,7 +1,7 @@
 from flet import Stack, Container, Text, border, padding
 
 from .base import BaseWidgetContainer, W
-from ..widgets import CheckboxWidget
+from ..widgets import CheckboxWidget, InputWidget
 
 
 class SimpleWidgetContainer(BaseWidgetContainer[W], Stack):
@@ -11,7 +11,6 @@ class SimpleWidgetContainer(BaseWidgetContainer[W], Stack):
         self.container = Container(
             content=self.widget_tooltip,
             border_radius=12,
-            padding=padding.all(10)
         )
         self._label = Text(
             value=self.widget.label_text or '',
@@ -21,7 +20,7 @@ class SimpleWidgetContainer(BaseWidgetContainer[W], Stack):
         self._label_container = Container(
             content=self._label,
             padding=padding.symmetric(horizontal=3),
-            bgcolor='white',
+            bgcolor='background',
             left=10,
             offset=(0, -0.5),
             visible=not not self.widget.label_text
@@ -34,6 +33,10 @@ class SimpleWidgetContainer(BaseWidgetContainer[W], Stack):
             self.widget.label = self.widget.label_text
         else:
             self.container.border = border.all(2, 'primary')
+        if isinstance(self.widget, InputWidget):
+            self.widget.content_padding = 12
+        if self.widget.container_width:
+            self.container.width = self.widget.container_width
 
     def set_normal_borders(self):
         self.container.border = border.all(2, 'primary')

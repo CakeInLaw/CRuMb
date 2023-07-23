@@ -1,4 +1,4 @@
-from flet import Container, Row, Column, OptionalNumber, ScrollMode, border
+from flet import Container, Row, Column, OptionalNumber, ScrollMode
 
 from .table_header import TableHeader
 from .table_body import TableBody
@@ -11,7 +11,7 @@ class Table(Container):
             header: TableHeader,
             body: TableBody,
     ):
-        super().__init__(border=border.all(1, 'black'), border_radius=15)
+        super().__init__()
         self.header = header
         self.header.set_table(self)
         self.body = body

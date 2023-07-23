@@ -31,7 +31,7 @@ class RelatedChoiceWidget(InputWidget):
         self.value = str(self.real_value) if self.real_value else ''
 
     def _validate(self) -> None:
-        if self.required and self.value is None:
+        if self.required and self.real_value is None:
             raise InputValidationError('Обязательное поле')
 
     async def update_real_value(self, new_value: Optional[BaseModel]) -> None:

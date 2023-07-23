@@ -135,7 +135,7 @@ class UserInput(Generic[_I]):
     null: bool = False
     required: bool = False
     on_value_change:  Callable[[UserInputWidget], Coroutine[Any, Any, None]] = None
-    width: int | float = 250
+    width: int | float = 350
 
     def widget(
             self,

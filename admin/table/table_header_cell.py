@@ -3,10 +3,8 @@ from typing import TYPE_CHECKING
 from flet import (
     Container, Stack, Text,
     ClipBehavior, TextOverflow, padding, alignment,
-    Border, BorderSide,
 )
 
-from .cell_position import HorizontalPosition
 from .width_changer import WidthChanger
 
 if TYPE_CHECKING:
@@ -16,7 +14,6 @@ if TYPE_CHECKING:
 class TableHeaderCell(Container):
     header: "TableHeader"
 
-    BORDER_SIDE = BorderSide(1, 'black')
     MIN_WIDTH = 12
 
     global_x_on_width_change_start: float
@@ -28,7 +25,6 @@ class TableHeaderCell(Container):
             width: int | float = 250,
     ):
         super().__init__(clip_behavior=ClipBehavior.ANTI_ALIAS)
-        self.position = HorizontalPosition.MIDDLE
 
         self.width = width
         self.real_content = Container(
@@ -42,23 +38,6 @@ class TableHeaderCell(Container):
     def set_header(self, header: "TableHeader"):
         self.header = header
         self.height = self.header.height
-
-    @property
-    def position(self) -> HorizontalPosition:
-        return self._position
-
-    @position.setter
-    def position(self, v: HorizontalPosition):
-        if getattr(self, '_position', None) == v:
-            return
-        self._position = v
-        self.border = Border(bottom=self.BORDER_SIDE)
-        match v:
-            case HorizontalPosition.LEFT | HorizontalPosition.MIDDLE:
-                self.border.right = self.BORDER_SIDE
-            case HorizontalPosition.SINGLE:
-                self.border.right = self.BORDER_SIDE
-                self.border.left = self.BORDER_SIDE
 
     @property
     def table(self) -> "Table":

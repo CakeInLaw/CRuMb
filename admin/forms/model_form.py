@@ -124,6 +124,7 @@ class ModelForm(Form):
 
     async def on_click_create(self, e):
         if not self.form_is_valid():
+            await self.update_async()
             return
         try:
             instance = await self.repository(
@@ -143,6 +144,7 @@ class ModelForm(Form):
 
     async def on_click_edit(self, e):
         if not self.form_is_valid():
+            await self.update_async()
             return
         try:
             instance = await self.repository(
