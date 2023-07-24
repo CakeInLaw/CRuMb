@@ -1,10 +1,8 @@
 from typing import TYPE_CHECKING, Any, Callable, Optional, Type, Union, Coroutine
 
-from flet import ElevatedButton, Row, Control
-from tortoise import fields
+from flet import ElevatedButton, Row
 
 from core.exceptions import ObjectErrors
-from core.orm import BaseModel, fields as orm_fields
 from core.enums import FieldTypes, NotifyStatus
 from core.types import FK_TYPE
 
@@ -16,6 +14,8 @@ if TYPE_CHECKING:
     from core.repository import Repository
     from admin.resource import Resource
     from admin.layout import BOX
+    from tortoise import fields
+    from core.orm import BaseModel, fields as orm_fields
 
 
 class ModelForm(Form):
@@ -25,10 +25,10 @@ class ModelForm(Form):
             resource: "Resource",
             box: "BOX",
             *,
-            instance: Optional[BaseModel] = None,
+            instance: Optional["BaseModel"] = None,
             primitive: Primitive = None,
             is_subform: bool = False,
-            on_success: Callable[["ModelForm", BaseModel], Coroutine[Any, Any, None]] = None,
+            on_success: Callable[["ModelForm", "BaseModel"], Coroutine[Any, Any, None]] = None,
             on_error: Callable[["ModelForm", ObjectErrors], Coroutine[Any, Any, None]] = None,
             **kwargs
     ):
@@ -107,7 +107,7 @@ class ModelForm(Form):
         return primitive
 
     @staticmethod
-    async def on_success_default(form: "ModelForm", instance: BaseModel):
+    async def on_success_default(form: "ModelForm", instance: "BaseModel"):
         if form.create:
             await form.box.close()
             await form.app.open(PayloadInfo(
@@ -170,7 +170,7 @@ class ModelForm(Form):
     @property
     def _input_schema_creators(
             self
-    ) -> dict[FieldTypes, Callable[[fields.Field, dict[str, Any]], widgets.UserInput]]:
+    ) -> dict[FieldTypes, Callable[["fields.Field", dict[str, Any]], widgets.UserInput]]:
         return {  # type: ignore
             FieldTypes.INT: self.int_input_creator,
             FieldTypes.FLOAT: self.float_input_creator,
@@ -189,7 +189,7 @@ class ModelForm(Form):
             # FieldTypes.M2M: self.input_creator,
         }
 
-    def input_creator_base_kwargs(self, field: fields.Field) -> dict[str, Any]:
+    def input_creator_base_kwargs(self, field: "fields.Field") -> dict[str, Any]:
         return {
             'name': field.model_field_name,
             'label': self.resource.translate_field(field.model_field_name),
@@ -199,7 +199,7 @@ class ModelForm(Form):
 
     def int_input_creator(
             self,
-            field: fields.IntField | fields.SmallIntField | fields.BigIntField,
+            field: Union["fields.IntField", "fields.SmallIntField", "fields.BigIntField"],
             extra: dict[str, Any]
     ) -> widgets.IntInput:
         kwargs = self.input_creator_base_kwargs(field)
@@ -210,7 +210,7 @@ class ModelForm(Form):
 
     def float_input_creator(
             self,
-            field: orm_fields.FloatField,
+            field: "orm_fields.FloatField",
             extra: dict[str, Any]
     ) -> widgets.FloatInput:
         kwargs = self.input_creator_base_kwargs(field)
@@ -221,7 +221,7 @@ class ModelForm(Form):
 
     def str_input_creator(
             self,
-            field: orm_fields.CharField,
+            field: "orm_fields.CharField",
             extra: dict[str, Any]
     ) -> widgets.StrInput:
         kwargs = self.input_creator_base_kwargs(field)
@@ -233,7 +233,7 @@ class ModelForm(Form):
 
     def text_input_creator(
             self,
-            field: fields.TextField,
+            field: "fields.TextField",
             extra: dict[str, Any]
     ) -> widgets.TextInput:
         kwargs = self.input_creator_base_kwargs(field)
@@ -243,7 +243,7 @@ class ModelForm(Form):
 
     def bool_input_creator(
             self,
-            field: fields.BooleanField,
+            field: "fields.BooleanField",
             extra: dict[str, Any]
     ) -> widgets.Checkbox:
         kwargs = self.input_creator_base_kwargs(field)
@@ -252,7 +252,7 @@ class ModelForm(Form):
 
     def enum_input_creator(
             self,
-            field: fields.data.CharEnumFieldInstance | fields.data.IntEnumFieldInstance,
+            field: Union["fields.data.CharEnumFieldInstance", "fields.data.IntEnumFieldInstance"],
             extra: dict[str, Any]
     ) -> widgets.EnumChoice:
         kwargs = self.input_creator_base_kwargs(field)
@@ -261,7 +261,7 @@ class ModelForm(Form):
 
     def date_input_creator(
             self,
-            field: fields.DateField,
+            field: "fields.DateField",
             extra: dict[str, Any]
     ) -> widgets.DateInput:
         kwargs = self.input_creator_base_kwargs(field)
@@ -270,7 +270,7 @@ class ModelForm(Form):
 
     def datetime_input_creator(
             self,
-            field: fields.DatetimeField,
+            field: "fields.DatetimeField",
             extra: dict[str, Any]
     ) -> widgets.DatetimeInput:
         kwargs = self.input_creator_base_kwargs(field)
@@ -280,10 +280,10 @@ class ModelForm(Form):
     def object_input_creator(
             self,
             field: Union[
-                fields.relational.ForeignKeyFieldInstance,
-                fields.relational.OneToOneFieldInstance,
-                fields.relational.BackwardFKRelation,
-                fields.relational.BackwardOneToOneRelation,
+                "fields.relational.ForeignKeyFieldInstance",
+                "fields.relational.OneToOneFieldInstance",
+                "fields.relational.BackwardFKRelation",
+                "fields.relational.BackwardOneToOneRelation",
             ],
             extra: dict[str, Any],
             data_row: bool = False
@@ -328,7 +328,7 @@ class ModelForm(Form):
 
     def objects_array_input_creator(
             self,
-            field: fields.relational.BackwardFKRelation,
+            field: "fields.relational.BackwardFKRelation",
             extra: dict[str, Any]
     ) -> widgets.ObjectsArrayInput:
         kwargs = self.input_creator_base_kwargs(field)

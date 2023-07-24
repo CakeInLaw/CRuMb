@@ -1,5 +1,3 @@
-from typing import Optional
-
 from tortoise.fields import CharField as TortoiseCharField
 from tortoise.validators import MinLengthValidator
 from tortoise.exceptions import ConfigurationError
