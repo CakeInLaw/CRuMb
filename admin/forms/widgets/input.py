@@ -41,6 +41,7 @@ class InputWidget(UserInputWidget[T], Container):
 
     def set_mode(self, v: Literal['read', 'write']):
         assert v in ('read', 'write')
+        assert not (v == 'write' and self.read_only)
         self._mode = v
         if v == 'read':
             self.text.visible = True

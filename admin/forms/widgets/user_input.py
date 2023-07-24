@@ -152,8 +152,9 @@ class UserInputWidget(Generic[T]):
         if v:
             self.__on_start_changing.subscribe(v)
 
-    async def start_change_event_handler(self, e):
+    async def start_change_event_handler(self, e=None):
         self.set_mode('write')
+        print(123)
         await self.on_start_changing.get_handler()(self)
         await self.form.update_async()
 
@@ -166,12 +167,11 @@ class UserInputWidget(Generic[T]):
         if v:
             self.__on_end_changing.subscribe(v)
 
-    async def end_change_event_handler(self, e):
+    async def end_change_event_handler(self, e=None):
         self.set_mode('read')
-        return await self.on_end_changing.get_handler()(self)
-
-    async def end_change(self):
-        await self.update_async()
+        print(12312)
+        await self.on_end_changing.get_handler()(self)
+        await self.form.update_async()
 
 
 class UndefinedValue:

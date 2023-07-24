@@ -13,7 +13,6 @@ class CheckboxWidget(UserInputWidget[bool], FletCheckbox):
         FletCheckbox.__init__(self)
         UserInputWidget.__init__(self, **kwargs)
 
-        self.on_focus = self.start_change_event_handler
         self.on_blur = self.end_change_event_handler
         self.__finalize_init__()
 

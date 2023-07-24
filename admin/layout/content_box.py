@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Coroutine
 
 from flet import Control, Column, Container, Stack, BoxShadow, ClipBehavior, ScrollMode
 
@@ -17,7 +17,7 @@ class ContentBox(Container, Box):
     def __init__(
             self,
             container: "ContentsBoxContainer",
-            tab: "Tab"
+            tab: "Tab",
     ):
         super().__init__(
             padding=10,
@@ -32,6 +32,8 @@ class ContentBox(Container, Box):
         self.tab = tab
         self.app = self.container.app
         self.resource = self.tab.resource
+        self.on_close = self.tab.info.query.get('BOX_on_close')
+
         self._root = Column(
             controls=[Loader()],
             scroll=ScrollMode.ALWAYS,
@@ -56,7 +58,7 @@ class ContentBox(Container, Box):
         self.payload = await self.resource.get_payload(
             box=self,
             method=self.tab.info.method,
-            **self.tab.info.query,
+            **self.filter_payload_query(self.tab.info),
         )
         if hasattr(self.payload, '__tab_title__'):
             self.change_title(self.payload.__tab_title__)
@@ -70,6 +72,8 @@ class ContentBox(Container, Box):
         self.tab.title = title
 
     async def close(self):
+        if self.on_close:
+            self.on_close()
         await self.tab.close()
 
     async def add_modal(self, info: "PayloadInfo") -> ModalBox:

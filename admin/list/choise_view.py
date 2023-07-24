@@ -19,7 +19,6 @@ class ChoiceView(Container):
             box: "BOX",
             current_chosen: Optional[BaseModel],
             handle_confirm: Callable[[Optional[BaseModel]], Coroutine[Any, Any, None]],
-            handle_cancel: Callable[[], Coroutine[Any, Any, None]] = None,
     ):
         super().__init__()
         self.resource = resource
@@ -27,7 +26,6 @@ class ChoiceView(Container):
         self.box = box
         self.selected = current_chosen
         self.handle_confirm = handle_confirm
-        self.handle_cancel = handle_cancel
 
         self.datagrid = Datagrid(
             box=self.box,
@@ -71,9 +69,4 @@ class ChoiceView(Container):
 
     async def on_choice(self, e):
         await self.handle_confirm(self.selected)
-        await self.close()
-
-    async def on_cancel(self, e):
-        if self.handle_cancel:
-            await self.handle_cancel()
         await self.close()

@@ -52,14 +52,12 @@ class Resource(Generic[REPOSITORY]):
             box: "BOX",
             current_chosen: Optional[BaseModel],
             handle_confirm: Callable[[Optional[BaseModel]], Coroutine[Any, Any, None]],
-            handle_cancel: Callable[[], Coroutine[Any, Any, None]]
     ) -> ChoiceView:
         view = ChoiceView(
             resource=self,
             box=box,
             current_chosen=current_chosen,
             handle_confirm=handle_confirm,
-            handle_cancel=handle_cancel,
         )
         await view.prepare()
         return self.with_tab_title(view, 'choice')

@@ -47,10 +47,10 @@ class RelatedChoiceWidget(UserInputWidget[PK], Container):
 
     async def update_real_value(self, new_value: Optional[BaseModel]) -> None:
         self.set_value(new_value)
-        await self.on_end_changing.get_handler()(self)
+        await self.end_change_event_handler()
 
     async def on_cancel_choice(self):
-        await self.on_end_changing.get_handler()(self)
+        await self.end_change_event_handler()
 
     async def open_choice(self, e):
         await self.form.box.add_modal(info=PayloadInfo(
@@ -59,7 +59,7 @@ class RelatedChoiceWidget(UserInputWidget[PK], Container):
             query={
                 'current_chosen': self.real_value,
                 'handle_confirm': self.update_real_value,
-                'handle_cancel': self.on_cancel_choice,
+                'BOX_on_close': self.on_cancel_choice,
             }
         ))
 

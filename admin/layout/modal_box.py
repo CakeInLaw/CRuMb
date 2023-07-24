@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, Coroutine
+from typing import TYPE_CHECKING
 
 from flet import Container, Card, Control, Row, Column, Text, MainAxisAlignment, ClipBehavior, ScrollMode,\
     Theme, ColorScheme
@@ -16,7 +16,6 @@ class ModalBox(Container, Box):
             self,
             parent: "ContentBox",
             info: "PayloadInfo",
-            on_close: Callable[[], Coroutine[..., ..., None]] = None
     ):
         super().__init__(
             padding=20,
@@ -30,7 +29,7 @@ class ModalBox(Container, Box):
         self.info = info
         self.app = self.parent.app
         self.resource = self.app.find_resource(info.entity)
-        self.on_close = on_close
+        self.on_close = self.info.query.get('BOX_on_close')
 
         # header
         self.box_title = Text(size=14)
@@ -67,7 +66,7 @@ class ModalBox(Container, Box):
         self.payload = await self.resource.get_payload(
             box=self,
             method=self.info.method,
-            **self.info.query,
+            **self.filter_payload_query(self.info),
         )
         if hasattr(self.payload, '__tab_title__'):
             self.change_title(self.payload.__tab_title__)
