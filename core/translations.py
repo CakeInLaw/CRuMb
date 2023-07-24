@@ -25,7 +25,7 @@ class Translation:
     _create: str
     create_template: str = '{self.name}: {self._create}'
 
-    edit_template: str = '{self.name}: {obj}'
+    edit_template: str = '{self.name}: {instance}'
 
     def __init__(
             self,

@@ -16,6 +16,7 @@ class TextInputWidget(StrInputWidget):
         self.shift_enter = True
         self.min_lines = min_lines
         self.max_lines = max_lines
+        self.__finalize_init__()
 
 
 @dataclass

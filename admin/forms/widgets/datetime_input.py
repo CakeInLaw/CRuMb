@@ -28,6 +28,7 @@ class DatetimeInputWidget(InputWidget[datetime]):
         self.keyboard_type = KeyboardType.DATETIME
         self.min_dt = min_dt
         self.max_dt = max_dt
+        self.__finalize_init__()
 
     def to_datetime(self) -> Optional[datetime]:
         if self.value == '':

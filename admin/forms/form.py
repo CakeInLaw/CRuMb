@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Optional, Any
 
-from flet import Control, UserControl, Column, Row, Container
+from flet import Control, UserControl, Column, Row
 
 from core.exceptions import ObjectErrors
 from .schema import FormSchema, InputGroup
@@ -42,7 +42,7 @@ class Form(UserControl):
         if self.action_bar:
             controls.append(self.action_bar)
         controls.append(self.body)
-        return Column(controls=controls)
+        return Column(controls=controls, spacing=10)
 
     def build_form(self) -> Column:
         return Column(controls=self._build_form())

@@ -1,26 +1,73 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Literal
 
-from flet import TextField, InputBorder
+from flet import Container, Stack, Text, TextField, InputBorder, TextOverflow, alignment, padding
 
 from .user_input import UserInputWidget, UserInput, T, _I
+from ..widget_containers import BaseWidgetContainer, SimpleWidgetContainer
 
 
-class InputWidget(UserInputWidget[T], TextField):
+class InputWidget(UserInputWidget[T], Container):
+    _mode: Literal['read', 'write']
 
     def __init__(
             self,
             **kwargs
     ):
-        TextField.__init__(
-            self,
+        self.input = TextField(
             text_size=14,
             dense=True,
             border=InputBorder.NONE,
-            on_focus=self.start_change_event_handler,
             on_blur=self.end_change_event_handler,
         )
+        self.text = Text(size=14, no_wrap=True, overflow=TextOverflow.ELLIPSIS)
+        Container.__init__(
+            self,
+            content=Stack(controls=[self.text, self.input]),
+            alignment=alignment.center_left
+        )
+
         UserInputWidget.__init__(self, **kwargs)
+
+        self.on_start_changing = self.focus_on_start_changing
+
+    async def focus_on_start_changing(self, e):
+        await self.input.focus_async()
+
+    def apply_container(self, container: BaseWidgetContainer):
+        super().apply_container(container)
+        if isinstance(self.container, SimpleWidgetContainer):
+            self.padding = padding.symmetric(horizontal=12)
+
+    def set_mode(self, v: Literal['read', 'write']):
+        assert v in ('read', 'write')
+        self._mode = v
+        if v == 'read':
+            self.text.visible = True
+            self.input.visible = False
+        else:
+            self.text.visible = False
+            self.input.visible = True
+
+    def _transform_value(self):
+        self.value = self.input.value
+
+    @property
+    def value(self):
+        return self.input.value
+
+    @value.setter
+    def value(self, v: str):
+        self.text.value = v
+        self.input.value = v
+
+    @property
+    def read_only(self):
+        return self.input.read_only
+
+    @read_only.setter
+    def read_only(self, v: bool):
+        self.input.read_only = v
 
 
 @dataclass

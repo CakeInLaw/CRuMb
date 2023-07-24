@@ -8,8 +8,6 @@ from .input import InputWidget, Input
 
 
 class FloatInputWidget(InputWidget[float]):
-    min_value: Optional[float | int]
-    max_value: Optional[float | int]
 
     @property
     def final_value(self) -> float:
@@ -29,6 +27,7 @@ class FloatInputWidget(InputWidget[float]):
         self.min_value = min_value
         self.max_value = max_value
         self.decimal_places = decimal_places
+        self.__finalize_init__()
 
     def _validate(self) -> None:
         empty = self.value == ''
@@ -50,6 +49,7 @@ class FloatInputWidget(InputWidget[float]):
         self.value = '' if value is None else str(value)
 
     def _transform_value(self):
+        super()._transform_value()
         value = self.value.replace(',', '.') if ',' in self.value else self.value
         try:
             self.value = f'{float(value):.{self.decimal_places}f}'

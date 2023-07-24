@@ -42,6 +42,7 @@ class EnumChoiceWidget(UserInputWidget[E], dropdown.Dropdown):
         self.options = [dropdown.Option(key=x.value, text=x.name) for x in self.enum_type],
         if not self.required:
             self.options.insert(0, dropdown.Option(key=EMPTY, text=EMPTY_TEXT))
+        self.__finalize_init__()
 
     def set_value(self, value: E, initial: bool = False):
         assert value is None or isinstance(value, Enum)

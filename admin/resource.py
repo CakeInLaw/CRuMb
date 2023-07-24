@@ -89,7 +89,7 @@ class Resource(Generic[REPOSITORY]):
             on_error: Callable[[ModelForm, ObjectErrors], Coroutine[Any, Any, None]] = None,
     ) -> ModelForm | Control:
         try:
-            obj = await self.repository(
+            instance = await self.repository(
                 by='admin',
                 extra={'target': 'edit'}
             ).get_one(pk)
@@ -103,11 +103,11 @@ class Resource(Generic[REPOSITORY]):
             resource=self,
             box=box,
             primitive=primitive,
-            obj=obj,
+            instance=instance,
             on_success=on_success,
             on_error=on_error,
         )
-        return self.with_tab_title(form, 'edit', obj=obj)
+        return self.with_tab_title(form, 'edit', instance=instance)
 
     @classmethod
     def entity(cls) -> str:
@@ -174,8 +174,8 @@ class Resource(Generic[REPOSITORY]):
     def _tab_title_create(self) -> str:
         return self.translation.create()
 
-    def _tab_title_edit(self, obj: BaseModel) -> str:
-        return self.translation.edit(obj=obj)
+    def _tab_title_edit(self, instance: BaseModel) -> str:
+        return self.translation.edit(instance=instance)
 
     # Функции для сравнения параметров вкладок.
     # Если True, то вкладка создаваться не будет и откроется существующая

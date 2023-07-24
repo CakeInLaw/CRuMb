@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Callable, Coroutine
 
-from flet import Container, Card, Control, Row, Column, Text, MainAxisAlignment, ClipBehavior, ScrollMode
+from flet import Container, Card, Control, Row, Column, Text, MainAxisAlignment, ClipBehavior, ScrollMode,\
+    Theme, ColorScheme
 
 from .payload import Box
 from ..components.buttons import CloseButton
@@ -23,6 +24,7 @@ class ModalBox(Container, Box):
             bottom=0,
             left=0,
             right=0,
+            theme=Theme(color_scheme=ColorScheme(background='#f0f4fa'))
         )
         self.parent = parent
         self.info = info

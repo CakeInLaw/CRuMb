@@ -27,6 +27,7 @@ class IntInputWidget(InputWidget[int]):
 
         self.min_value = min_value
         self.max_value = max_value
+        self.__finalize_init__()
 
     def _validate(self) -> None:
         empty = self.value == ''

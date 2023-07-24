@@ -39,8 +39,6 @@ class ChoiceView(Container):
             ElevatedButton('Выбрать', on_click=self.on_choice),
             ElevatedButton('Очистить', on_click=self.on_clean),
             ElevatedButton('Создать', on_click=self.on_click_create),
-            ElevatedButton('Отменить', on_click=self.on_cancel),
-
         ])
         self.content = Column([self.actions, self.datagrid], expand=True)
 

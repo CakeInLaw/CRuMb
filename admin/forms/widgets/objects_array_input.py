@@ -5,7 +5,7 @@ from flet import Container, Column, Row, ElevatedButton, ScrollMode
 
 from core.orm import BaseModel
 from core.types import BackFKData
-from admin.table import Table, TableHeader, TableHeaderCell, TableBody
+from admin.components.table import Table, TableHeader, TableHeaderCell, TableBody
 from .object_input import ObjectInputTableRow, ObjectInputTableRowWidget
 from .user_input import UserInput, UserInputWidget
 
@@ -48,6 +48,7 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
             self.actions,
             self.table
         ])
+        self.__finalize_init__()
 
     def create_table(self) -> Table:
         return Table(
@@ -102,6 +103,7 @@ class ObjectsArrayInput(UserInput[ObjectsArrayInputWidget]):
     object_schema: ObjectInputTableRow = None
     variant: str = 'table'
     width: int = None
+    height: int = None
     rows_count: int = 11
 
     @property
