@@ -12,6 +12,7 @@ C = TypeVar('C', bound=BaseWidgetContainer)
 
 
 class ObjectInputBaseWidget(Generic[C], UserInputWidget[dict[str, Any]]):
+    editable = False
     child_container: Type[C]
 
     @property

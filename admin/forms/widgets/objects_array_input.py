@@ -11,6 +11,7 @@ from .user_input import UserInput, UserInputWidget
 
 
 class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
+    editable: bool = False
 
     @property
     def final_value(self) -> BackFKData:

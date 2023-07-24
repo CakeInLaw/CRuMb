@@ -10,8 +10,9 @@ class SimpleWidgetContainer(BaseWidgetContainer[W], Stack):
         self.container = Container(
             content=self.widget_tooltip,
             border_radius=12,
-            on_click=self.widget.start_change_event_handler
         )
+        if self.widget.editable and not self.widget.read_only:
+            self.container.on_click = self.widget.start_change_event_handler
         self._label = Text(
             value=self.widget.label_text or '',
             size=12,

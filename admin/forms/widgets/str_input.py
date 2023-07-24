@@ -23,7 +23,7 @@ class StrInputWidget(InputWidget[str]):
             **kwargs
     ):
         super().__init__(**kwargs)
-        self._max_length = max_length
+        self.max_length = max_length
         self.min_length = min_length
         self.empty_as_none = empty_as_none
         if is_password:
@@ -31,8 +31,8 @@ class StrInputWidget(InputWidget[str]):
         self.__finalize_init__()
 
     def _validate(self) -> None:
-        if self._max_length is not None and len(self.value) > self._max_length:
-            raise InputValidationError(msg=f'Максимум символов - {self._max_length}')
+        if self.max_length is not None and len(self.value) > self.max_length:
+            raise InputValidationError(msg=f'Максимум символов - {self.max_length}')
         if self.min_length is not None and len(self.value) < self.min_length:
             raise InputValidationError(msg=f'Минимум символов - {self.min_length}')
 

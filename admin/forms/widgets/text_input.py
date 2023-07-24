@@ -12,10 +12,12 @@ class TextInputWidget(StrInputWidget):
             **kwargs
     ):
         super().__init__(**kwargs)
-        self.multiline = True
-        self.shift_enter = True
-        self.min_lines = min_lines
-        self.max_lines = max_lines
+        self.input.multiline = True
+        self.input.shift_enter = True
+        self.text.min_lines = min_lines
+        self.input.min_lines = min_lines
+        self.text.max_lines = max_lines
+        self.input.max_lines = max_lines
         self.__finalize_init__()
 
 

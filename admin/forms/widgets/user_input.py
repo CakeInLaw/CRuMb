@@ -15,7 +15,7 @@ T = TypeVar('T')
 
 
 class UserInputWidget(Generic[T]):
-
+    editable: bool = True
     container: "BaseWidgetContainer"
 
     @property
