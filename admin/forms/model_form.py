@@ -1,6 +1,6 @@
-from typing import TYPE_CHECKING, Any, Callable, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Type, Union, Coroutine
 
-from flet import ElevatedButton, Row, Control, MainAxisAlignment
+from flet import ElevatedButton, Row, Control
 from tortoise import fields
 
 from core.exceptions import ObjectErrors
@@ -9,8 +9,8 @@ from core.enums import FieldTypes, NotifyStatus
 from core.types import FK_TYPE
 
 from admin.layout import PayloadInfo
-from .inputs import UserInput, UndefinedValue
-from . import Form, Primitive, inputs, FormSchema, InputGroup
+from .widgets import UserInput, UndefinedValue
+from . import Form, Primitive, widgets, FormSchema, InputGroup
 
 if TYPE_CHECKING:
     from core.repository import Repository
@@ -28,6 +28,8 @@ class ModelForm(Form):
             instance: Optional[BaseModel] = None,
             primitive: Primitive = None,
             is_subform: bool = False,
+            on_success: Callable[["ModelForm", BaseModel], Coroutine[Any, Any, None]] = None,
+            on_error: Callable[["ModelForm", ObjectErrors], Coroutine[Any, Any, None]] = None,
             **kwargs
     ):
         super().__init__(app=resource.app, box=box, **kwargs)
@@ -35,6 +37,8 @@ class ModelForm(Form):
         self.instance = instance
         self.is_subform = is_subform
         self.primitive = primitive
+        self.on_success = on_success or self.on_success_default
+        self.on_error = on_error or self.on_error_default
 
     @property
     def repository(self) -> Type["Repository"]:
@@ -62,7 +66,7 @@ class ModelForm(Form):
             schema.add_item(self._from_primitive_item(item))
         return schema
 
-    def _from_primitive_item(self, item: Any) -> inputs.UserInput | InputGroup:
+    def _from_primitive_item(self, item: Any) -> widgets.UserInput | InputGroup:
         if Primitive.is_schema(item):
             return item
         elif Primitive.is_group(item):
@@ -102,8 +106,25 @@ class ModelForm(Form):
                 primitive.add(name)
         return primitive
 
+    @staticmethod
+    async def on_success_default(form: "ModelForm", instance: BaseModel):
+        if form.create:
+            await form.box.close()
+            await form.app.open(PayloadInfo(
+                entity=form.resource.entity(),
+                method='edit',
+                query={'pk': instance.pk}
+            ))
+        else:
+            await form.box.reload_content()
+
+    @staticmethod
+    async def on_error_default(form: "ModelForm", error: ObjectErrors):
+        pass
+
     async def on_click_create(self, e):
         if not self.form_is_valid():
+            await self.update_async()
             return
         try:
             instance = await self.repository(
@@ -111,47 +132,45 @@ class ModelForm(Form):
                 extra={'target': 'create'}
             ).create(self.cleaned_data())
             await self.app.notify('Создан 1 элемент', NotifyStatus.SUCCESS)
-            await self.box.close()
-            await self.app.open(PayloadInfo(
-                entity=self.resource.entity(),
-                method='edit',
-                query={'pk': instance.pk}
-            ))
+            await self.on_success(form=self, instance=instance)
         except ObjectErrors as err:
             self.set_object_errors(err)
             await self.update_async()
             await self.app.notify('Исправьте ошибки', NotifyStatus.ERROR)
+            await self.on_error(form=self, error=err)
 
     def create_btn(self) -> ElevatedButton:
         return ElevatedButton('Создать', on_click=self.on_click_create)
 
     async def on_click_edit(self, e):
         if not self.form_is_valid():
+            await self.update_async()
             return
         try:
-            await self.repository(
+            instance = await self.repository(
                 by='admin',
                 extra={'target': 'create'}
             ).edit(self.instance, self.cleaned_data())
             await self.app.notify('Элемент изменен', NotifyStatus.SUCCESS)
-            await self.box.reload_content()
+            await self.on_success(form=self, instance=instance)
         except ObjectErrors as err:
             self.set_object_errors(err)
             await self.update_async()
             await self.app.notify('Исправьте ошибки', NotifyStatus.ERROR)
+            await self.on_error(form=self, error=err)
 
     def edit_btn(self) -> ElevatedButton:
         return ElevatedButton('Изменить', on_click=self.on_click_edit)
 
-    def get_action_bar(self) -> Control:
-        return Row(
-            controls=[self.create_btn() if self.create else self.edit_btn()],
-        )
+    def get_action_bar(self) -> Row:
+        action_bar = super().get_action_bar()
+        action_bar.controls.append(self.create_btn() if self.create else self.edit_btn())
+        return action_bar
 
     @property
     def _input_schema_creators(
             self
-    ) -> dict[FieldTypes, Callable[[fields.Field, dict[str, Any]], inputs.UserInput]]:
+    ) -> dict[FieldTypes, Callable[[fields.Field, dict[str, Any]], widgets.UserInput]]:
         return {  # type: ignore
             FieldTypes.INT: self.int_input_creator,
             FieldTypes.FLOAT: self.float_input_creator,
@@ -182,81 +201,81 @@ class ModelForm(Form):
             self,
             field: fields.IntField | fields.SmallIntField | fields.BigIntField,
             extra: dict[str, Any]
-    ) -> inputs.IntInput:
+    ) -> widgets.IntInput:
         kwargs = self.input_creator_base_kwargs(field)
         kwargs['min_value'] = field.constraints['ge']
         kwargs['max_value'] = field.constraints['le']
         kwargs.update(extra)
-        return inputs.IntInput(**kwargs)
+        return widgets.IntInput(**kwargs)
 
     def float_input_creator(
             self,
             field: orm_fields.FloatField,
             extra: dict[str, Any]
-    ) -> inputs.FloatInput:
+    ) -> widgets.FloatInput:
         kwargs = self.input_creator_base_kwargs(field)
         kwargs['min_value'] = field.constraints['ge']
         kwargs['max_value'] = field.constraints['le']
         kwargs.update(extra)
-        return inputs.FloatInput(**kwargs)
+        return widgets.FloatInput(**kwargs)
 
     def str_input_creator(
             self,
             field: orm_fields.CharField,
             extra: dict[str, Any]
-    ) -> inputs.StrInput:
+    ) -> widgets.StrInput:
         kwargs = self.input_creator_base_kwargs(field)
         kwargs['min_length'] = field.constraints['min_length']
         kwargs['max_length'] = field.constraints['max_length']
         kwargs['empty_as_none'] = field.null
         kwargs.update(extra)
-        return inputs.StrInput(**kwargs)
+        return widgets.StrInput(**kwargs)
 
     def text_input_creator(
             self,
             field: fields.TextField,
             extra: dict[str, Any]
-    ) -> inputs.TextInput:
+    ) -> widgets.TextInput:
         kwargs = self.input_creator_base_kwargs(field)
         kwargs['empty_as_none'] = field.null
         kwargs.update(extra)
-        return inputs.TextInput(**kwargs)
+        return widgets.TextInput(**kwargs)
 
     def bool_input_creator(
             self,
             field: fields.BooleanField,
             extra: dict[str, Any]
-    ) -> inputs.Checkbox:
+    ) -> widgets.Checkbox:
         kwargs = self.input_creator_base_kwargs(field)
         kwargs.update(extra)
-        return inputs.Checkbox(**kwargs)
+        return widgets.Checkbox(**kwargs)
 
     def enum_input_creator(
             self,
             field: fields.data.CharEnumFieldInstance | fields.data.IntEnumFieldInstance,
             extra: dict[str, Any]
-    ) -> inputs.EnumChoice:
+    ) -> widgets.EnumChoice:
         kwargs = self.input_creator_base_kwargs(field)
         kwargs.update(extra)
-        return inputs.EnumChoice(**kwargs)
+        return widgets.EnumChoice(**kwargs)
 
     def date_input_creator(
             self,
             field: fields.DateField,
             extra: dict[str, Any]
-    ) -> inputs.DateInput:
+    ) -> widgets.DateInput:
         kwargs = self.input_creator_base_kwargs(field)
         kwargs.update(extra)
-        return inputs.DateInput(**kwargs)
+        return widgets.DateInput(**kwargs)
 
     def datetime_input_creator(
             self,
             field: fields.DatetimeField,
             extra: dict[str, Any]
-    ) -> inputs.DatetimeInput:
+    ) -> widgets.DatetimeInput:
         kwargs = self.input_creator_base_kwargs(field)
         kwargs.update(extra)
-        return inputs.DatetimeInput(**kwargs)
+        return widgets.DatetimeInput(**kwargs)
 
     def object_input_creator(
             self,
@@ -268,11 +287,11 @@ class ModelForm(Form):
             ],
             extra: dict[str, Any],
             data_row: bool = False
-    ) -> inputs.ObjectInputBase:
+    ) -> widgets.ObjectInputBase:
         if data_row:
-            object_input_class = inputs.ObjectInputTableRow
+            object_input_class = widgets.ObjectInputTableRow
         else:
-            object_input_class = inputs.ObjectInput
+            object_input_class = widgets.ObjectInput
         kwargs = self.input_creator_base_kwargs(field)
 
         if 'fields' in extra:
@@ -288,7 +307,7 @@ class ModelForm(Form):
             primitive=primitive,
             is_subform=True,
         )
-        processed_fields: list[InputGroup, inputs.UserInput] = [
+        processed_fields: list[InputGroup, widgets.UserInput] = [
             relative_model_form._from_primitive_item(item)
             for item in relative_model_form.primitive or relative_model_form._generate_primitive()
         ]
@@ -301,20 +320,20 @@ class ModelForm(Form):
             self,
             field: FK_TYPE,
             extra: dict[str, Any]
-    ) -> inputs.RelatedChoice:
+    ) -> widgets.RelatedChoice:
         kwargs = self.input_creator_base_kwargs(field)
         kwargs['entity'] = self.resource.relative_resource(field.model_field_name).entity()
         kwargs.update(extra)
-        return inputs.RelatedChoice(**kwargs)
+        return widgets.RelatedChoice(**kwargs)
 
     def objects_array_input_creator(
             self,
             field: fields.relational.BackwardFKRelation,
             extra: dict[str, Any]
-    ) -> inputs.ObjectsArrayInput:
+    ) -> widgets.ObjectsArrayInput:
         kwargs = self.input_creator_base_kwargs(field)
         object_schema_info = extra.get('object_schema', {})
-        if not isinstance(object_schema_info, inputs.ObjectInputTableRowWidget):
+        if not isinstance(object_schema_info, widgets.ObjectInputTableRow):
             extra['object_schema'] = self.object_input_creator(field, extra=object_schema_info, data_row=True)
         kwargs.update(extra)
-        return inputs.ObjectsArrayInput(**kwargs)
+        return widgets.ObjectsArrayInput(**kwargs)

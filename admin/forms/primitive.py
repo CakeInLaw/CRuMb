@@ -1,9 +1,9 @@
 from typing import Any, Optional
 
-from . import inputs, InputGroup
+from . import widgets, InputGroup
 
 
-PRIMITIVE_ITEM = str | tuple[str, dict[str, Any]] | dict[str, Any] | inputs.UserInput | InputGroup
+PRIMITIVE_ITEM = str | tuple[str, dict[str, Any]] | dict[str, Any] | widgets.UserInput | InputGroup
 
 
 class Primitive:
@@ -37,7 +37,7 @@ class Primitive:
 
     @staticmethod
     def is_schema(item: PRIMITIVE_ITEM) -> bool:
-        return isinstance(item, (inputs.UserInput, InputGroup))
+        return isinstance(item, (widgets.UserInput, InputGroup))
 
     @staticmethod
     def is_group(item: PRIMITIVE_ITEM) -> bool:

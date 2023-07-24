@@ -4,7 +4,8 @@ from flet import Control, UserControl, Column, Row, Container
 
 from core.exceptions import ObjectErrors
 from .schema import FormSchema, InputGroup
-from .inputs import UserInputWidget, UserInput, UndefinedValue
+from .widgets import UserInputWidget, UserInput, UndefinedValue
+from .widget_containers import SimpleWidgetContainer, BaseWidgetContainer
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
@@ -18,8 +19,8 @@ class Form(UserControl):
 
     schema: FormSchema = None
     fields_map: FIELDS_MAP
-    action_bar: Optional[Control]
-    submit_bar: Optional[Control]
+    body: Column
+    action_bar: Row
 
     def __init__(
             self,
@@ -36,15 +37,12 @@ class Form(UserControl):
 
     def build(self):
         controls = []
-        body = self.build_form()
-        action_bar = self.get_action_bar()
-        submit_bar = self.get_submit_bar()
-        if action_bar:
-            controls.append(action_bar)
-        controls.append(body)
-        if submit_bar:
-            controls.append(submit_bar)
-        return Container(Column(controls=controls))
+        self.body = self.build_form()
+        self.action_bar: Row = self.get_action_bar()
+        if self.action_bar:
+            controls.append(self.action_bar)
+        controls.append(self.body)
+        return Column(controls=controls)
 
     def build_form(self) -> Column:
         return Column(controls=self._build_form())
@@ -52,30 +50,27 @@ class Form(UserControl):
     def _build_form(self) -> list[Row | Column]:
         return [self._build_item(item=item) for item in self.get_form_schema()]
 
-    def _create_widget(self, item: UserInput):
+    def _create_widget_in_container(self, item: UserInput):
         widget = item.widget(parent=self, initial=self.initial_for(item))
         self.fields_map[item.name] = widget
-        return widget
+        return SimpleWidgetContainer(widget)
 
-    def _build_item(self, item: UserInput | InputGroup) -> Row | Column:
+    def _build_item(self, item: UserInput | InputGroup) -> Row | Column | BaseWidgetContainer:
         if isinstance(item, UserInput):
-            return self._create_widget(item)
+            return self._create_widget_in_container(item)
         controls: list[Control] = []
         item: InputGroup
         for subgroup_or_input in item:
             if isinstance(subgroup_or_input, InputGroup):
                 controls.append(self._build_item(subgroup_or_input))
             elif isinstance(subgroup_or_input, UserInput):
-                controls.append(self._create_widget(subgroup_or_input))
+                controls.append(self._create_widget_in_container(subgroup_or_input))
             else:
                 raise ValueError('что-то пошло не так')
         return item.to_control(controls)
 
-    def get_action_bar(self) -> Control:
-        pass
-
-    def get_submit_bar(self) -> Control:
-        pass
+    def get_action_bar(self) -> Row:
+        return Row(controls=[])
 
     def get_form_schema(self) -> FormSchema:
         assert self.schema
@@ -87,7 +82,7 @@ class Form(UserControl):
             root = _err.pop('__root__')
             # TODO
         for field, e in _err.items():
-            self.fields_map[field].set_object_error(e)
+            self.fields_map[field].set_error(e)
 
     def form_is_valid(self):
         is_valid = True

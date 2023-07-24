@@ -1,20 +1,22 @@
-import asyncio
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, TypeVar, Optional, Any, Generic, Type, Union, Callable, Coroutine
 
 from flet import Control, ControlEvent
+from flet_core.event_handler import EventHandler
 
 from admin.exceptions import InputValidationError
 
 if TYPE_CHECKING:
     from ..form import Form
+    from ..widget_containers.base import BaseWidgetContainer
 
 
 T = TypeVar('T')
 
 
 class UserInputWidget(Generic[T]):
-    can_be_placed_in_table: bool = True
+
+    container: "BaseWidgetContainer"
 
     @property
     def final_value(self) -> T:
@@ -38,28 +40,28 @@ class UserInputWidget(Generic[T]):
             *,
             name: str,
             label: str = None,
+            helper_text: str = None,
             null: bool = False,
             required: bool = False,
             initial_value: T = None,
-            in_table: bool = False,
             parent: Union["Form", "UserInputWidget"] = None,
             on_value_change: Callable[["UserInputWidget"], Coroutine[Any, Any, None] | None] = None,
-            default_width: int | float = 250,
-            **kwargs
+            width: int | float = 250,
     ):
-        super().__init__(**kwargs)
         self.name = name
-        self.label = label
+        self.label_text = label
+        self.helper_text = helper_text
         self.null = null
         self.required = required
-        self.default_width = default_width
+        self.container_width = width
         self._set_initial_value(initial_value)
 
-        if in_table and not self.can_be_placed_in_table:
-            raise ValueError('Так нельзя:(')
-        self.in_table = in_table
+        self.has_error = False
         self.parent = parent
         self.on_value_change = on_value_change
+        self.__on_start_changing = EventHandler()
+        self.__on_end_changing = EventHandler()
+        self.on_end_changing = self.handle_value_change_and_update
 
     def _set_initial_value(self, initial_value: T) -> None:
         self.initial_value = initial_value
@@ -83,44 +85,71 @@ class UserInputWidget(Generic[T]):
             raise err
 
     def _on_success_validation(self):
-        self.set_error_text(None)
+        if self.has_error:
+            self.rm_error()
 
     def _on_error_validation(self, err: InputValidationError):
         self.set_error_text(err.msg)
 
     def set_error_text(self, text: Optional[str]):
-        pass
+        self.has_error = True
+        self.container.set_error_text(text)
 
-    def set_object_error(self, err: dict[str, Any]):
+    def rm_error(self):
+        self.has_error = False
+        self.container.rm_error()
+
+    def set_error(self, err: dict[str, Any]):
         self.set_error_text(err.get('msg', 'Какая-то ошибка'))
 
     def is_valid(self) -> bool:
-        valid = True
         try:
             self.validate()
+            return True
         except InputValidationError:
-            valid = False
-        return valid
+            return False
 
     def _transform_value(self):
         pass
 
-    def apply_in_table_params(self):
-        pass
-
-    async def handle_value_change_and_update(self, event_or_control: ControlEvent | Control):
-        self.handle_value_change(event_or_control=event_or_control)
+    async def handle_value_change_and_update(self, widget: "UserInputWidget"):
+        self.handle_value_change(widget=widget)
         await self.form.update_async()
 
-    def handle_value_change(self, event_or_control: ControlEvent | Control):
-        control = event_or_control if isinstance(event_or_control, Control) else event_or_control.control
-        if self is control:
+    def handle_value_change(self, widget: "UserInputWidget"):
+        if self is widget:
             if not self.is_valid():
                 return
             self._transform_value()
         if self.on_value_change:
-            self.on_value_change(control)
-        self.parent.handle_value_change(control)
+            self.on_value_change(widget)
+        self.parent.handle_value_change(widget)
+
+    @property
+    def on_start_changing(self):
+        return self.__on_start_changing
+
+    @on_start_changing.setter
+    def on_start_changing(self, v: Callable[["UserInputWidget"], ...]):
+        if v:
+            self.__on_start_changing.subscribe(v)
+
+    async def start_change_event_handler(self, e: Union[ControlEvent, "UserInputWidget"]):
+        widget = e if isinstance(e, UserInputWidget) else e.control
+        return await self.on_start_changing.get_handler()(widget)
+
+    @property
+    def on_end_changing(self):
+        return self.__on_end_changing
+
+    @on_end_changing.setter
+    def on_end_changing(self, v: Callable[["UserInputWidget"], ...]):
+        if v:
+            self.__on_end_changing.subscribe(v)
+
+    async def end_change_event_handler(self, e: Union[ControlEvent, "UserInputWidget"]):
+        widget = e if isinstance(e, UserInputWidget) else e.control
+        return await self.on_end_changing.get_handler()(widget)
 
 
 class UndefinedValue:
@@ -134,10 +163,11 @@ _I = TypeVar('_I', bound=Union[Control, UserInputWidget])
 class UserInput(Generic[_I]):
     name: str
     label: str = None
+    helper_text: str = None
     null: bool = False
     required: bool = False
     on_value_change:  Callable[[UserInputWidget], Coroutine[Any, Any, None]] = None
-    default_width: int | float = 250,
+    width: int | float = 350
 
     def widget(
             self,

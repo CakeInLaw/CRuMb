@@ -4,10 +4,11 @@ from typing import Optional
 from core.orm import BaseModel
 from core.types import PK
 from admin.layout import PayloadInfo
-from admin.forms.inputs import InputWidget, Input
+from admin.forms.widgets import InputWidget, Input
 from admin.exceptions import InputValidationError
 
 
+# TODO: переделать на dropdown с элементами, подбираемыми по вводу
 class RelatedChoiceWidget(InputWidget):
 
     real_value: Optional[BaseModel]
@@ -17,9 +18,10 @@ class RelatedChoiceWidget(InputWidget):
         return self.real_value.pk if self.real_value else None
 
     def __init__(self, entity: str, method: str, **kwargs):
-        kwargs['read_only'] = True
-        kwargs['on_focus'] = self.open_choice
         super().__init__(**kwargs)
+        self.on_blur = None
+        self.on_start_changing = self.open_choice
+        self.read_only = True  # для самого видимого инпута, чтобы не изменяли текст вручную
 
         self.entity = entity
         self.method = method
@@ -30,12 +32,15 @@ class RelatedChoiceWidget(InputWidget):
         self.value = str(self.real_value) if self.real_value else ''
 
     def _validate(self) -> None:
-        if self.required and self.value is None:
+        if self.required and self.real_value is None:
             raise InputValidationError('Обязательное поле')
 
     async def update_real_value(self, new_value: Optional[BaseModel]) -> None:
         self.set_value(new_value)
-        await self.handle_value_change_and_update(self)
+        await self.on_end_changing.get_handler()(self)
+
+    async def on_cancel_choice(self):
+        await self.on_end_changing.get_handler()(self)
 
     async def open_choice(self, e):
         await self.form.box.add_modal(info=PayloadInfo(
@@ -44,6 +49,7 @@ class RelatedChoiceWidget(InputWidget):
             query={
                 'current_chosen': self.real_value,
                 'handle_confirm': self.update_real_value,
+                'handle_cancel': self.on_cancel_choice,
             }
         ))
 

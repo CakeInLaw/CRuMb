@@ -1,8 +1,6 @@
 from typing import TYPE_CHECKING
 
-from flet import Container, Control, Border, BorderSide, alignment, padding
-
-from .cell_position import HorizontalPosition, VerticalPosition
+from flet import Container, Control, alignment, padding
 
 if TYPE_CHECKING:
     from . import Table, TableHeader, TableBody, TableRow
@@ -10,7 +8,6 @@ if TYPE_CHECKING:
 
 class TableCell(Container):
     row: "TableRow"
-    position: tuple[HorizontalPosition, VerticalPosition]
 
     def __init__(self, content: Control):
         super().__init__(
@@ -18,27 +15,9 @@ class TableCell(Container):
             padding=padding.symmetric(horizontal=5)
         )
         self.content = content
-        self.position = (HorizontalPosition.LEFT, VerticalPosition.TOP)
 
     def set_row(self, row: "TableRow"):
         self.row = row
-        self.border = Border()
-        self.height = self.body.row_height
-
-    @property
-    def position(self) -> tuple[HorizontalPosition, VerticalPosition]:
-        return self._position
-
-    @position.setter
-    def position(self, v: tuple[HorizontalPosition, VerticalPosition]):
-        if getattr(self, '_position', None) == v:
-            return
-        self._position = v
-        self.border = Border()
-        if v[0] in (HorizontalPosition.LEFT, HorizontalPosition.MIDDLE):
-            self.border.right = BorderSide(1, 'black')
-        if v[1] in (VerticalPosition.TOP, VerticalPosition.MIDDLE):
-            self.border.bottom = BorderSide(1, 'black')
 
     @property
     def table(self) -> "Table":
@@ -51,3 +30,12 @@ class TableCell(Container):
     @property
     def body(self) -> "TableBody":
         return self.row.body
+
+    def change_bgcolor(self):
+        row = self.row
+        if row.is_active:
+            self.bgcolor = row.ACTIVE_BGCOLOR
+        elif row.is_selected:
+            self.bgcolor = row.SELECTED_BGCOLOR
+        else:
+            self.bgcolor = row.DEFAULT_BGCOLOR

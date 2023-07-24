@@ -6,10 +6,10 @@ from flet import Control, Text, icons
 from core.enums import FieldTypes
 from core.types import PK
 from core.orm.base_model import BaseModel
-from core.exceptions import ItemNotFound
+from core.exceptions import ItemNotFound, ObjectErrors
 from core.repository import REPOSITORY
 from admin.list import ListView, ChoiceView
-from admin.forms import Form, ModelForm, Primitive
+from admin.forms import ModelForm, Primitive
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
@@ -27,6 +27,10 @@ class Resource(Generic[REPOSITORY]):
     ICON = icons.SPORTS_GYMNASTICS
 
     datagrid_columns: list[str]
+
+    model_form: Type[ModelForm] = ModelForm
+    create_model_form: Optional[Type[ModelForm]] = None
+    edit_model_form: Optional[Type[ModelForm]] = None
     form_primitive: Primitive = None
     create_form_primitive: Primitive = None
     edit_form_primitive: Primitive = None
@@ -47,30 +51,43 @@ class Resource(Generic[REPOSITORY]):
             self,
             box: "BOX",
             current_chosen: Optional[BaseModel],
-            handle_confirm: Callable[[Optional[BaseModel]], Coroutine[Any, Any, None]]
+            handle_confirm: Callable[[Optional[BaseModel]], Coroutine[Any, Any, None]],
+            handle_cancel: Callable[[], Coroutine[Any, Any, None]]
     ) -> ChoiceView:
         view = ChoiceView(
             resource=self,
             box=box,
             current_chosen=current_chosen,
             handle_confirm=handle_confirm,
+            handle_cancel=handle_cancel,
         )
         await view.prepare()
         return self.with_tab_title(view, 'choice')
 
-    def _get_form(self, *, box: "BOX", obj: BaseModel = None, primitive: Primitive = None) -> Form:
-        return ModelForm(
+    async def get_create_form(
+            self,
+            box: "BOX",
+            on_success: Callable[[ModelForm, BaseModel], Coroutine[Any, Any, None]] = None,
+            on_error: Callable[[ModelForm, ObjectErrors], Coroutine[Any, Any, None]] = None,
+    ) -> ModelForm:
+        primitive = self.create_form_primitive or self.form_primitive
+        model_form = self.create_model_form or self.model_form
+        form = model_form(
             resource=self,
             box=box,
             primitive=primitive,
-            instance=obj
+            on_success=on_success,
+            on_error=on_error,
         )
+        return self.with_tab_title(form, 'create')
 
-    async def get_create_form(self, box: "BOX") -> Form | Control:
-        primitive = self.create_form_primitive or self.form_primitive
-        return self.with_tab_title(self._get_form(box=box, primitive=primitive), 'create')
-
-    async def get_edit_form(self, box: "BOX", pk: PK) -> Form | Control:
+    async def get_edit_form(
+            self,
+            box: "BOX",
+            pk: PK,
+            on_success: Callable[[ModelForm, BaseModel], Coroutine[Any, Any, None]] = None,
+            on_error: Callable[[ModelForm, ObjectErrors], Coroutine[Any, Any, None]] = None,
+    ) -> ModelForm | Control:
         try:
             obj = await self.repository(
                 by='admin',
@@ -81,7 +98,16 @@ class Resource(Generic[REPOSITORY]):
             error.__tab_title__ = 'Ошибка'
             return error
         primitive = self.edit_form_primitive or self.form_primitive
-        return self.with_tab_title(self._get_form(box=box, obj=obj, primitive=primitive), 'edit', obj=obj)
+        model_form = self.edit_model_form or self.model_form
+        form = model_form(
+            resource=self,
+            box=box,
+            primitive=primitive,
+            obj=obj,
+            on_success=on_success,
+            on_error=on_error,
+        )
+        return self.with_tab_title(form, 'edit', obj=obj)
 
     @classmethod
     def entity(cls) -> str:

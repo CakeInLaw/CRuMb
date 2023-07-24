@@ -1,16 +1,19 @@
 from dataclasses import dataclass
 from typing import Optional
 
-import flet as ft
+from flet import Checkbox
 
 from .user_input import UserInputWidget, UserInput
 
 
-class CheckboxWidget(UserInputWidget[bool], ft.Checkbox):
+class CheckboxWidget(UserInputWidget[bool], Checkbox):
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.on_change = self.handle_value_change_and_update
+        Checkbox.__init__(self)
+        UserInputWidget.__init__(self, **kwargs)
+
+        self.on_focus = self.start_change_event_handler
+        self.on_blur = self.end_change_event_handler
 
     @property
     def final_value(self) -> Optional[bool]:

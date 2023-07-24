@@ -1,25 +1,27 @@
 from typing import TYPE_CHECKING
 
-from flet import Row
+from flet import Container, Row
 
 from core.utils import default_if_none
-from .cell_position import VerticalPosition, HorizontalPosition
 from .table_cell import TableCell
 
 if TYPE_CHECKING:
     from . import Table, TableHeader, TableBody
 
 
-class TableRow(Row):
+class TableRow(Container):
     body: "TableBody"
+    DEFAULT_BGCOLOR: str = '#F4F6F8'
+    ACTIVE_BGCOLOR: str = '#0068FF,0.5'
+    SELECTED_BGCOLOR: str = '#E9E8FF,0.5'
 
     def __init__(
             self,
             cells: list[TableCell] = None,
     ):
-        super().__init__(spacing=0)
-
-        self.controls = self.cells = default_if_none(cells, [])
+        super().__init__(bgcolor=self.DEFAULT_BGCOLOR)
+        self.cells = default_if_none(cells, [])
+        self.content = Row(controls=self.cells, spacing=0)
         for cell in self.cells:
             cell.row = self
 
@@ -33,20 +35,7 @@ class TableRow(Row):
 
     def set_body(self, body: "TableBody"):
         self.body = body
-
-    def update_borders(self, vertical_position: VerticalPosition):
-        length = len(self.cells)
-        if length == 0:
-            return
-        elif length == 1:
-            self.cells[0].position = (HorizontalPosition.SINGLE, vertical_position)
-        else:
-            self.cells[0].position = (HorizontalPosition.LEFT, vertical_position)
-            middle = (HorizontalPosition.MIDDLE, vertical_position)
-            for cell in self.cells[1:-1]:
-                cell.position = middle
-            self.cells[-1].position = (HorizontalPosition.RIGHT, vertical_position)
-
+        self.height = self.body.row_height
 
     @property
     def table(self) -> "Table":
@@ -59,3 +48,19 @@ class TableRow(Row):
     @property
     def length(self) -> int:
         return len(self.cells)
+
+    def activate(self):
+        for cell in self.cells:
+            cell.change_bgcolor()
+
+    def deactivate(self):
+        for cell in self.cells:
+            cell.change_bgcolor()
+
+    @property
+    def is_active(self):
+        return self.body.active_row is self
+
+    @property
+    def is_selected(self):
+        return False  # TODO

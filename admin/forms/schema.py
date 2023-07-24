@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from flet import Control, Row, Column
 
 if TYPE_CHECKING:
-    from .inputs import UserInput
+    from .widgets import UserInput
 
 
 @dataclass

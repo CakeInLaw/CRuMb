@@ -5,7 +5,6 @@ from flet import Control, Column, Container, Stack, BoxShadow, ClipBehavior, Scr
 from .loader import Loader
 from .payload import Box
 from .modal_box import ModalBox
-from .size_aware_container import SizeAwareContainer
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
@@ -60,15 +59,15 @@ class ContentBox(Container, Box):
             **self.tab.info.query,
         )
         if hasattr(self.payload, '__tab_title__'):
-            self.tab.title = self.payload.__tab_title__
-        await self.app.update_async()
+            self.change_title(self.payload.__tab_title__)
+            await self.tab.update_async()
+        await self.update_async()
 
     async def reload_content(self):
         await self.load_content()
 
-    async def change_title(self, title: str):
+    def change_title(self, title: str):
         self.tab.title = title
-        await self.tab.update_async()
 
     async def close(self):
         await self.tab.close()

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from flet import Column, Row, ElevatedButton, Text, ScrollMode
+from flet import Container, Column, Row, ElevatedButton, ScrollMode
 
 from core.orm import BaseModel
 from core.types import BackFKData
@@ -10,8 +10,7 @@ from .object_input import ObjectInputTableRow, ObjectInputTableRowWidget
 from .user_input import UserInput, UserInputWidget
 
 
-class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Column):
-    can_be_placed_in_table: bool = False
+class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
 
     @property
     def final_value(self) -> BackFKData:
@@ -27,37 +26,40 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Column):
             self,
             object_schema: ObjectInputTableRow,
             variant: str = 'table',
+            rows_count: int = 11,
             **kwargs
     ):
-        super().__init__(**kwargs)
+        Container.__init__(self, padding=12)
+        UserInputWidget.__init__(self, **kwargs)
+
         self.object_schema = object_schema
         self.variant = variant
+        self.rows_count = rows_count
         self.objects_list: list[ObjectInputTableRowWidget] = [
             self.create_table_row(initial=initial)
             for initial in self.initial_value
         ]
 
-        self.label_control = Text(self.label)
         self.actions = Row([
             ElevatedButton('Добавить', on_click=self.handle_add_row),
         ], scroll=ScrollMode.AUTO)
         self.table = self.create_table()
-        self.controls = [
-            self.label_control,
+        self.content = Column([
             self.actions,
             self.table
-        ]
+        ])
 
     def create_table(self) -> Table:
         return Table(
             header=TableHeader(
                 cells=[
-                    TableHeaderCell(label=col.label, default_width=col.default_width)
+                    TableHeaderCell(label=col.label, width=col.width)
                     for col in self.object_schema.fields
                 ]
             ),
             body=TableBody(
                 rows=self.objects_list,
+                rows_count=self.rows_count
             ),
         )
 
@@ -77,9 +79,9 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Column):
     def set_value(self, value: Any, initial: bool = False):
         pass
 
-    def set_object_error(self, err: dict[int, dict[str, Any]]):
+    def set_error(self, err: dict[int, dict[str, Any]]):
         for i, e in err.items():
-            self.objects_list[i].set_object_error(e)
+            self.objects_list[i].set_error(e)
 
     def is_valid(self) -> bool:
         valid = True
@@ -99,6 +101,8 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Column):
 class ObjectsArrayInput(UserInput[ObjectsArrayInputWidget]):
     object_schema: ObjectInputTableRow = None
     variant: str = 'table'
+    width: int = None
+    rows_count: int = 11
 
     @property
     def widget_type(self):

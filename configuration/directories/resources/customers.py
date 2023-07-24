@@ -1,8 +1,23 @@
-from admin.forms import Primitive, inputs
+from flet import TextButton
+
+from admin.forms import Primitive, ModelForm
+from admin.layout import PayloadInfo
 from admin.resource import Resource
 from ..repositories import CustomerRepository
 from configuration.admin import CakeInLawAdmin
 from configuration.menu_groups import Sells
+
+
+class CreateCustomerForm(ModelForm):
+    async def did_mount_async(self):
+        async def open_in_modal(e):
+            await self.box.add_modal(PayloadInfo(
+                entity=self.resource.entity(),
+                method='create',
+            ))
+
+        self.action_bar.controls.append(TextButton('Открыть в модалке', on_click=open_in_modal))
+        await self.update_async()
 
 
 @CakeInLawAdmin.register(
@@ -12,6 +27,7 @@ class CustomerResource(Resource):
     repository = CustomerRepository
     datagrid_columns = ['name', 'register_address', 'price_group_id']
 
+    create_model_form = CreateCustomerForm
     form_primitive = Primitive(
         'name',
         'register_address',
@@ -19,11 +35,11 @@ class CustomerResource(Resource):
         ('customer_locations', {
             'object_schema': {
                 'primitive': (
-                    ('ordering', {"default_width": 40}),
-                    ('name', {"default_width": 200}),
-                    ('delivery_address', {"default_width": 220}),
-                    ('user_id', {"default_width": 150})
+                    ('ordering', {"width": 40}),
+                    ('name', {"width": 200}),
+                    ('delivery_address', {"width": 220}),
+                    ('user_id', {"width": 150})
                 )
-            }
+            },
         })
     )

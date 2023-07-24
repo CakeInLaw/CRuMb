@@ -1,39 +1,25 @@
 from typing import TYPE_CHECKING
 
-from flet import Row
+from flet import Container, Row
 
-from .cell_position import HorizontalPosition
 from .table_header_cell import TableHeaderCell
 
 if TYPE_CHECKING:
     from . import Table, TableBody
 
 
-class TableHeader(Row):
+class TableHeader(Container):
     table: "Table"
 
     def __init__(
             self,
             cells: list[TableHeaderCell] = None,
     ):
-        super().__init__(height=35, spacing=0)
-
-        self.controls = self.cells = cells or []
+        super().__init__(bgcolor='#DDDCDF')
+        self.cells = cells or []
+        self.content = Row(controls=self.cells, height=35, spacing=0)
         for cell in cells:
             cell.set_header(self)
-        self.update_borders()
-
-    def update_borders(self):
-        length = len(self.cells)
-        if length == 0:
-            return
-        elif length == 1:
-            self.cells[0].position = HorizontalPosition.SINGLE
-        else:
-            self.cells[0].position = HorizontalPosition.LEFT
-            for cell in self.cells[1:-1]:
-                cell.position = HorizontalPosition.MIDDLE
-            self.cells[-1].position = HorizontalPosition.RIGHT
 
     def add_cell(self, cell: TableHeaderCell, index: int = -1):
         assert index == -1 or index >= 1

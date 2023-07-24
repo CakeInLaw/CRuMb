@@ -1,44 +1,89 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Coroutine
 
-from flet import Card
+from flet import Container, Card, Control, Row, Column, Text, MainAxisAlignment, ClipBehavior, ScrollMode
 
 from .payload import Box
+from ..components.buttons import CloseButton
+from admin.layout import Loader
 
 if TYPE_CHECKING:
     from admin.layout import ContentBox, PayloadInfo
 
 
-class ModalBox(Card, Box):
+class ModalBox(Container, Box):
     def __init__(
             self,
             parent: "ContentBox",
-            info: "PayloadInfo"
+            info: "PayloadInfo",
+            on_close: Callable[[], Coroutine[..., ..., None]] = None
     ):
-        super().__init__()
+        super().__init__(
+            padding=20,
+            top=0,
+            bottom=0,
+            left=0,
+            right=0,
+        )
         self.parent = parent
         self.info = info
         self.app = self.parent.app
         self.resource = self.app.find_resource(info.entity)
+        self.on_close = on_close
+
+        # header
+        self.box_title = Text(size=14)
+        self.close_btn = CloseButton(on_click=self.handle_close, size=40)
+        self.header = Row(
+            controls=[self.box_title, self.close_btn],
+            alignment=MainAxisAlignment.SPACE_BETWEEN
+        )
+
+        # main_content
+        self.payload_container = Container()
+        self.content = Card(
+            content=Container(
+                content=Column([self.header, self.payload_container], scroll=ScrollMode.ALWAYS),
+                padding=10,
+                clip_behavior=ClipBehavior.ANTI_ALIAS_WITH_SAVE_LAYER,
+            ),
+            margin=30,
+        )
+        self.payload = Loader()
 
     async def did_mount_async(self):
         await self.load_content()
 
+    @property
+    def payload(self):
+        return self.payload_container.content
+
+    @payload.setter
+    def payload(self, v: Control):
+        self.payload_container.content = v
+
     async def load_content(self):
-        self.content = await self.resource.get_payload(
+        self.payload = await self.resource.get_payload(
             box=self,
             method=self.info.method,
             **self.info.query,
         )
-        await self.app.update_async()
+        if hasattr(self.payload, '__tab_title__'):
+            self.change_title(self.payload.__tab_title__)
+        await self.update_async()
 
     async def reload_content(self):
         await self.load_content()
 
-    async def close(self):
-        await self.parent.close_modal(self)
+    def change_title(self, title: str):
+        self.box_title.value = title
 
     async def add_modal(self, info: "PayloadInfo") -> "ModalBox":
         return await self.parent.add_modal(info=info)
 
-    async def change_title(self, title: str):
-        pass
+    async def close(self):
+        if self.on_close:
+            await self.on_close()
+        await self.parent.close_modal(self)
+
+    async def handle_close(self, e):
+        await self.close()
