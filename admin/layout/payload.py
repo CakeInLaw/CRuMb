@@ -20,5 +20,5 @@ class Box(Protocol):
     async def add_modal(self, info: "PayloadInfo") -> "ModalBox":
         raise NotImplementedError
 
-    async def change_title(self, title: str):
+    def change_title(self, title: str):
         raise NotImplementedError

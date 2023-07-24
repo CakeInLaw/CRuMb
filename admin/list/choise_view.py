@@ -3,11 +3,13 @@ from typing import TYPE_CHECKING, Optional, Callable, Coroutine, Any
 from flet import Container, Column, Row, ElevatedButton, DataRow
 
 from core.orm import BaseModel
+from admin.layout.payload import PayloadInfo
 from .datagrid import Datagrid
 
 if TYPE_CHECKING:
     from admin.resource import Resource
     from admin.layout import BOX
+    from admin.forms import ModelForm
 
 
 class ChoiceView(Container):
@@ -36,6 +38,7 @@ class ChoiceView(Container):
         self.actions = Row([
             ElevatedButton('Выбрать', on_click=self.on_choice),
             ElevatedButton('Очистить', on_click=self.on_clean),
+            ElevatedButton('Создать', on_click=self.on_click_create),
             ElevatedButton('Отменить', on_click=self.on_cancel),
 
         ])
@@ -52,6 +55,20 @@ class ChoiceView(Container):
 
     async def on_clean(self, e):
         await self.handle_confirm(None)
+        await self.close()
+
+    async def choose_on_create(self, form: "ModelForm", instance: BaseModel):
+        await self.handle_confirm(instance)
+        await form.box.close()
+
+    async def on_click_create(self, e):
+        await self.box.add_modal(PayloadInfo(
+            entity=self.resource.entity(),
+            method='create',
+            query={
+                'on_success': self.choose_on_create,
+            }
+        ))
         await self.close()
 
     async def on_choice(self, e):

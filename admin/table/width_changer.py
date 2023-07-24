@@ -48,4 +48,3 @@ class WidthChanger(GestureDetector):
             index=cell.header.cells.index(cell),
             width=max((cell.MIN_WIDTH, new_width))
         )
-

@@ -1,8 +1,10 @@
 from typing import TYPE_CHECKING, Optional
 
 from flet import DragTarget, DragTargetAcceptEvent, Draggable, \
-    Container, Stack, Row, IconButton, Text, TextSpan, \
-    ScrollMode, icons, border, padding
+    Container, Stack, Row, Text, TextSpan, \
+    ScrollMode, border, padding
+
+from admin.components.buttons import CloseButton
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
@@ -23,7 +25,7 @@ class Tab(Draggable):
             Text(spans=[self._title], color='black')
         ]
         if has_close:
-            row.append(self.create_close_btn())
+            row.append(CloseButton(on_click=self.handle_close))
         self.container = Container(
             padding=padding.only(left=10),
             border=border.symmetric(horizontal=border.BorderSide(1, 'black,0.2')),
@@ -72,15 +74,6 @@ class Tab(Draggable):
     def deactivate(self):
         self.content_box.visible = False
         self.container.bgcolor = 'white'
-
-    def create_close_btn(self):
-        return IconButton(
-            icon=icons.CLOSE_ROUNDED,
-            icon_size=15,
-            height=30,
-            width=30,
-            on_click=self.handle_close
-        )
 
     async def on_drag_accept(self, e: DragTargetAcceptEvent):
         tab: Tab = self.page.get_control(e.src_id)

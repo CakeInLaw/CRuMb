@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS "dir__positions" (
 );
 CREATE TABLE IF NOT EXISTS "dir__price_groups" (
     "id" SERIAL NOT NULL PRIMARY KEY,
-    "name" VARCHAR(50) NOT NULL
+    "name" VARCHAR(50) NOT NULL UNIQUE
 );
 CREATE TABLE IF NOT EXISTS "dir__customers" (
     "id" SERIAL NOT NULL PRIMARY KEY,

@@ -26,6 +26,7 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
             self,
             object_schema: ObjectInputTableRow,
             variant: str = 'table',
+            rows_count: int = 11,
             **kwargs
     ):
         Container.__init__(self, padding=12)
@@ -33,6 +34,7 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
 
         self.object_schema = object_schema
         self.variant = variant
+        self.rows_count = rows_count
         self.objects_list: list[ObjectInputTableRowWidget] = [
             self.create_table_row(initial=initial)
             for initial in self.initial_value
@@ -57,6 +59,7 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
             ),
             body=TableBody(
                 rows=self.objects_list,
+                rows_count=self.rows_count
             ),
         )
 
@@ -99,6 +102,7 @@ class ObjectsArrayInput(UserInput[ObjectsArrayInputWidget]):
     object_schema: ObjectInputTableRow = None
     variant: str = 'table'
     width: int = None
+    rows_count: int = 11
 
     @property
     def widget_type(self):

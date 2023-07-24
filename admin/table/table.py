@@ -22,6 +22,7 @@ class Table(Container):
         self.header.cells[index].width = width
         for row in self.body.rows:
             row.cells[index].width = width
+        self.body.update_width()
         await self.update_async()
 
     def add_row(self, table_row: TableRow, index: int = -1):

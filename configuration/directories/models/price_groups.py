@@ -15,7 +15,7 @@ __all__ = ["PriceGroup"]
 
 class PriceGroup(Directory):
     id: int = fields.IntField(pk=True)
-    name: str = orm_fields.CharField(max_length=50)
+    name: str = orm_fields.CharField(max_length=50, unique=True)
 
     customers: list["Customer"] | fields.BackwardFKRelation["Customer"]
     prices: list["NomenclaturePrice"] | fields.BackwardFKRelation["NomenclaturePrice"]

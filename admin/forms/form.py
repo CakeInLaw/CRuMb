@@ -19,8 +19,8 @@ class Form(UserControl):
 
     schema: FormSchema = None
     fields_map: FIELDS_MAP
-    action_bar: Optional[Control]
-    submit_bar: Optional[Control]
+    body: Column
+    action_bar: Row
 
     def __init__(
             self,
@@ -37,15 +37,12 @@ class Form(UserControl):
 
     def build(self):
         controls = []
-        body = self.build_form()
-        action_bar = self.get_action_bar()
-        submit_bar = self.get_submit_bar()
-        if action_bar:
-            controls.append(action_bar)
-        controls.append(body)
-        if submit_bar:
-            controls.append(submit_bar)
-        return Container(Column(controls=controls))
+        self.body = self.build_form()
+        self.action_bar: Row = self.get_action_bar()
+        if self.action_bar:
+            controls.append(self.action_bar)
+        controls.append(self.body)
+        return Column(controls=controls)
 
     def build_form(self) -> Column:
         return Column(controls=self._build_form())
@@ -72,11 +69,8 @@ class Form(UserControl):
                 raise ValueError('что-то пошло не так')
         return item.to_control(controls)
 
-    def get_action_bar(self) -> Control:
-        pass
-
-    def get_submit_bar(self) -> Control:
-        pass
+    def get_action_bar(self) -> Row:
+        return Row(controls=[])
 
     def get_form_schema(self) -> FormSchema:
         assert self.schema

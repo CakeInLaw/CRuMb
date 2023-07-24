@@ -40,6 +40,7 @@ class TableBody(FletListView):
             w = hc.width
             for row in self.rows:
                 row.cells[i].width = w
+        self.update_width()
 
     def add_row(self, table_row: TableRow, index: int = -1):
         assert index == -1 or index >= 1
@@ -51,6 +52,9 @@ class TableBody(FletListView):
         for i, hc in enumerate(self.header.cells):
             table_row.cells[i].width = hc.width
         table_row.set_body(self)
+
+    def update_width(self):
+        self.width = sum([c.width for c in self.header.cells])
 
     @property
     def length(self) -> int:

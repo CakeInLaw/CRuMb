@@ -162,10 +162,10 @@ class ModelForm(Form):
     def edit_btn(self) -> ElevatedButton:
         return ElevatedButton('Изменить', on_click=self.on_click_edit)
 
-    def get_action_bar(self) -> Control:
-        return Row(
-            controls=[self.create_btn() if self.create else self.edit_btn()],
-        )
+    def get_action_bar(self) -> Row:
+        action_bar = super().get_action_bar()
+        action_bar.controls.append(self.create_btn() if self.create else self.edit_btn())
+        return action_bar
 
     @property
     def _input_schema_creators(
