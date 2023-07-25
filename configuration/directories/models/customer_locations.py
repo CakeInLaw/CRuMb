@@ -13,8 +13,8 @@ __all__ = ["CustomerLocation"]
 
 
 class CustomerLocation(Directory):
-    id: int = fields.IntField(pk=True)
-    ordering: int = fields.SmallIntField()
+    id: int = orm_fields.IntField(pk=True)
+    ordering: int = orm_fields.SmallIntField(editable=False)
     name: str = orm_fields.CharField(max_length=100)
     customer: Union["Customer", fields.ForeignKeyRelation["Customer"]] = fields.ForeignKeyField(
         'directories.Customer', related_name='customer_locations', on_delete=fields.RESTRICT

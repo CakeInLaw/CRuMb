@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Union
 
 from tortoise import fields
+from core.orm import fields as orm_fields
 
 from core.orm.base_model import BaseModel, RelatedListValueModel
 
@@ -13,10 +14,10 @@ class Document(BaseModel):
     """Базовый класс для всех документов"""
 
     PREFIX: str
-    id: int = fields.BigIntField(pk=True)
+    id: int = orm_fields.BigIntField(pk=True)
     conducted: bool = fields.BooleanField(default=False)
     dt: datetime = fields.DatetimeField()
-    comment: str = fields.TextField()
+    comment: str = orm_fields.TextField()
 
     class Meta:
         abstract = True

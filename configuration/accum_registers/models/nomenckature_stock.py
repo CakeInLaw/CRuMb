@@ -16,21 +16,21 @@ __all__ = ["NomenclatureStock", "NomenclatureStockResult"]
 
 
 class NomenclatureStock(AccumRegister):
-    id: int = fields.BigIntField(pk=True)
+    id: int = orm_fields.BigIntField(pk=True)
     nomenclature: Union["Nomenclature", fields.ForeignKeyRelation["Nomenclature"]] = fields.ForeignKeyField(
         'directories.Nomenclature', related_name='stock_history', on_delete=fields.CASCADE
     )
     document_ref: str = orm_fields.CharField(max_length=DOCUMENT_REF_LEN)
     count: float = orm_fields.FloatField()
     dt: datetime = fields.DatetimeField()
-    commit: str = fields.TextField()
+    commit: str = orm_fields.TextField()
 
     class Meta:
         table = "accum_register__nomenclature_stock"
 
 
 class NomenclatureStockResult(AccumRegisterResult):
-    id: int = fields.IntField(pk=True)
+    id: int = orm_fields.IntField(pk=True)
     nomenclature: Union["Nomenclature", fields.OneToOneRelation["Nomenclature"]] = fields.OneToOneField(
         'directories.Nomenclature', related_name='stock', on_delete=fields.CASCADE
     )

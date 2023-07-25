@@ -1,12 +1,12 @@
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Optional, Any
 
 from flet import Container, Row, Text, Icon, icons, padding, alignment, TextOverflow, MainAxisAlignment
 
 from core.orm import BaseModel
 from core.types import PK
 from admin.layout import PayloadInfo
-from admin.forms.widgets import UserInputWidget, Input
+from admin.forms.widgets import UserInputWidget, UserInput
 from admin.exceptions import InputValidationError
 from ..widget_containers import BaseWidgetContainer, SimpleWidgetContainer
 
@@ -20,12 +20,13 @@ class RelatedChoiceWidget(UserInputWidget[PK], Container):
     def final_value(self) -> Optional[PK]:
         return self.real_value.pk if self.real_value else None
 
-    def __init__(self, entity: str, method: str, **kwargs):
+    def __init__(self, entity: str, method: str, query: dict[str, Any], **kwargs):
         Container.__init__(self, alignment=alignment.center_left)
         UserInputWidget.__init__(self, **kwargs)
 
         self.entity = entity
         self.method = method
+        self.query = query
 
         self.text = Text(size=14, no_wrap=True, overflow=TextOverflow.ELLIPSIS)
         self.content = Row(
@@ -51,7 +52,6 @@ class RelatedChoiceWidget(UserInputWidget[PK], Container):
 
     async def update_real_value(self, new_value: Optional[BaseModel]) -> None:
         self.set_value(new_value)
-        await self.end_change_event_handler()
 
     async def on_cancel_choice(self):
         await self.end_change_event_handler()
@@ -64,14 +64,16 @@ class RelatedChoiceWidget(UserInputWidget[PK], Container):
                 'current_chosen': self.real_value,
                 'handle_confirm': self.update_real_value,
                 'BOX_on_close': self.on_cancel_choice,
+                **self.query
             }
         ))
 
 
 @dataclass
-class RelatedChoice(Input[RelatedChoiceWidget]):
+class RelatedChoice(UserInput[RelatedChoiceWidget]):
     entity: str = ''
     method: str = 'choice'
+    query: dict[str, Any] = field(default_factory=dict)
 
     @property
     def widget_type(self):

@@ -13,7 +13,7 @@ __all__ = ["Provider"]
 
 
 class Provider(Directory):
-    id: int = fields.IntField(pk=True)
+    id: int = orm_fields.IntField(pk=True)
     name: str = orm_fields.CharField(max_length=50)
     register_address: str = orm_fields.CharField(max_length=200)
 

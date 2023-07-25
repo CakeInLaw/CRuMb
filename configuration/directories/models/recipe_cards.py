@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Union
 
 from tortoise import fields
+from core.orm import fields as orm_fields
 
 from core.entities.directories import Directory, DirectoryValueRepository
 
@@ -12,11 +13,11 @@ __all__ = ["RecipeCard", "RecipeCardIngredients"]
 
 
 class RecipeCard(Directory):
-    id: int = fields.IntField(pk=True)
+    id: int = orm_fields.IntField(pk=True)
     product: Union["Nomenclature", fields.OneToOneRelation["Nomenclature"]] = fields.OneToOneField(
         "directories.Nomenclature", related_name="recipe", on_delete=fields.CASCADE
     )
-    text: str = fields.TextField()
+    text: str = orm_fields.TextField()
 
     ingredients: list["RecipeCardIngredients"] | fields.BackwardFKRelation["RecipeCardIngredients"]
 

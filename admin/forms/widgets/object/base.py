@@ -11,8 +11,7 @@ from ...widget_containers import BaseWidgetContainer
 C = TypeVar('C', bound=BaseWidgetContainer)
 
 
-class ObjectInputBaseWidget(Generic[C], UserInputWidget[dict[str, Any]]):
-    editable = False
+class ObjectBaseWidget(Generic[C], UserInputWidget[dict[str, Any]]):
     child_container: Type[C]
 
     @property
@@ -30,6 +29,7 @@ class ObjectInputBaseWidget(Generic[C], UserInputWidget[dict[str, Any]]):
         super().__init__(**kwargs)
         self.fields = fields
         self.fields_map: dict[str, UserInputWidget] = {}
+        self.editable = False
 
     def _create_widget_in_container(self, item: UserInput) -> C:
         widget = item.widget(parent=self, initial=self.initial_for(item))
@@ -71,11 +71,11 @@ class ObjectInputBaseWidget(Generic[C], UserInputWidget[dict[str, Any]]):
             self.fields_map[name].set_error(e)
 
 
-_OI = TypeVar('_OI', bound=ObjectInputBaseWidget)
+_OI = TypeVar('_OI', bound=ObjectBaseWidget)
 
 
 @dataclass
-class ObjectInputBase(UserInput[_OI]):
+class ObjectBase(UserInput[_OI]):
     fields: list[UserInput] = field(default_factory=list)
 
     def add_field(self, item: UserInput | InputGroup) -> None:

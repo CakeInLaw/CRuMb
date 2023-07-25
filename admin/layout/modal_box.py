@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING
 from flet import Container, Card, Control, Row, Column, Text, MainAxisAlignment, ClipBehavior, ScrollMode,\
     Theme, ColorScheme
 
+from .loader import Loader
 from .payload import Box
 from ..components.buttons import CloseButton
-from admin.layout import Loader
 
 if TYPE_CHECKING:
     from admin.layout import ContentBox, PayloadInfo

@@ -9,7 +9,7 @@ class SimpleWidgetContainer(BaseWidgetContainer[W], Stack):
         Stack.__init__(self)
 
         self.container = Container(border_radius=12)
-        if self.widget.editable and not self.widget.read_only:
+        if self.widget.editable:
             self.gesture_detector = GestureDetector(
                 content=self.widget_tooltip,
                 mouse_cursor=MouseCursor.CLICK

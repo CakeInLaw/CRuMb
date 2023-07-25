@@ -16,13 +16,13 @@ __all__ = ["Nomenclature"]
 
 
 class Nomenclature(Directory):
-    id: int = fields.BigIntField(pk=True)
+    id: int = orm_fields.BigIntField(pk=True)
 
     name: str = orm_fields.CharField(max_length=50)
 
-    type: NomenclatureTypes = fields.CharEnumField(NomenclatureTypes, max_length=1)
+    type: NomenclatureTypes = orm_fields.CharEnumField(NomenclatureTypes, max_length=1)
 
-    units: NomenclatureUnits = fields.CharEnumField(NomenclatureUnits, max_length=1)
+    units: NomenclatureUnits = orm_fields.CharEnumField(NomenclatureUnits, max_length=1)
 
     recipe: Union["RecipeCard", fields.BackwardOneToOneRelation["RecipeCard"]]
     ingredient_of: list["RecipeCardIngredients"] | fields.BackwardFKRelation["RecipeCardIngredients"]

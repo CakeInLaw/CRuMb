@@ -1,17 +1,17 @@
 from dataclasses import dataclass
 
 from admin.components.table import TableRow
-from .base import ObjectInputBase, ObjectInputBaseWidget
+from .base import ObjectBase, ObjectBaseWidget
 from ..user_input import UserInput
 from ...widget_containers import TableCellWidgetContainer
 
 
-class ObjectInputTableRowWidget(ObjectInputBaseWidget[TableCellWidgetContainer], TableRow):
+class ObjectTableRowWidget(ObjectBaseWidget[TableCellWidgetContainer], TableRow):
     child_container = TableCellWidgetContainer
 
     def __init__(self, **kwargs):
         TableRow.__init__(self)
-        ObjectInputBaseWidget.__init__(self, **kwargs)
+        ObjectBaseWidget.__init__(self, **kwargs)
         assert all(isinstance(f, UserInput) for f in self.fields), "Можно устанавливать только виджеты, не группы"
         self.create_cells()
 
@@ -24,8 +24,8 @@ class ObjectInputTableRowWidget(ObjectInputBaseWidget[TableCellWidgetContainer],
 
 
 @dataclass
-class ObjectInputTableRow(ObjectInputBase[ObjectInputTableRowWidget]):
+class ObjectTableRow(ObjectBase[ObjectTableRowWidget]):
 
     @property
     def widget_type(self):
-        return ObjectInputTableRowWidget
+        return ObjectTableRowWidget

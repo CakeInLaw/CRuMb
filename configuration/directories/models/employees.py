@@ -15,7 +15,7 @@ __all__ = ["Employee"]
 
 
 class Employee(Directory):
-    id: int = fields.IntField(pk=True)
+    id: int = orm_fields.IntField(pk=True)
     last_name: str = orm_fields.CharField(max_length=40)
     first_name: str = orm_fields.CharField(max_length=40)
     fathers_name: str = orm_fields.CharField(max_length=40)

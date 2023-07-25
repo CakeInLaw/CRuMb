@@ -14,7 +14,7 @@ __all__ = ["User"]
 
 
 class User(Directory):
-    id: int = fields.BigIntField(pk=True)
+    id: int = orm_fields.BigIntField(pk=True)
     username: Optional[str] = orm_fields.CharField(max_length=40, unique=True, null=True)
 
     password_hash: str = orm_fields.CharField(max_length=100)

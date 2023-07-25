@@ -2,18 +2,18 @@ from dataclasses import dataclass
 
 from flet import Container, Row, Column, Control
 
-from .base import ObjectInputBaseWidget, ObjectInputBase
+from .base import ObjectBaseWidget, ObjectBase
 from .. import UserInput
 from ... import InputGroup
 from ...widget_containers import SimpleWidgetContainer
 
 
-class ObjectInputWidget(ObjectInputBaseWidget[SimpleWidgetContainer], Container):
+class ObjectWidget(ObjectBaseWidget[SimpleWidgetContainer], Container):
     child_container = SimpleWidgetContainer
 
     def __init__(self, variant: str = 'row', **kwargs):
         Container.__init__(self)
-        ObjectInputBaseWidget.__init__(self, **kwargs)
+        ObjectBaseWidget.__init__(self, **kwargs)
         self.variant = variant
         self.content = self.create_content()
 
@@ -47,9 +47,9 @@ class ObjectInputWidget(ObjectInputBaseWidget[SimpleWidgetContainer], Container)
 
 
 @dataclass
-class ObjectInput(ObjectInputBase[ObjectInputWidget]):
+class Object(ObjectBase[ObjectWidget]):
     variant: str = 'row'
 
     @property
     def widget_type(self):
-        return ObjectInputWidget
+        return ObjectWidget

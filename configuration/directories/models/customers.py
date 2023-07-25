@@ -13,7 +13,7 @@ __all__ = ["Customer"]
 
 
 class Customer(Directory):
-    id: int = fields.IntField(pk=True)
+    id: int = orm_fields.IntField(pk=True)
     name: str = orm_fields.CharField(max_length=50, unique=True)
     register_address: str = orm_fields.CharField(max_length=200)
 

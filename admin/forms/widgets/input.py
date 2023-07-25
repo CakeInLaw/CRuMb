@@ -60,12 +60,12 @@ class InputWidget(UserInputWidget[T], Container):
         self.input.value = v
 
     @property
-    def read_only(self):
-        return self.input.read_only
+    def editable(self):
+        return not self.input.read_only
 
-    @read_only.setter
-    def read_only(self, v: bool):
-        self.input.read_only = v
+    @editable.setter
+    def editable(self, v: bool):
+        self.input.read_only = not v
 
 
 @dataclass

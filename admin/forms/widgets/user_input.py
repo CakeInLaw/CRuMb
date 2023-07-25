@@ -15,7 +15,6 @@ T = TypeVar('T')
 
 
 class UserInputWidget(Generic[T]):
-    editable: bool = True
     _mode: Literal['read', 'write']
     container: "BaseWidgetContainer"
 
@@ -44,7 +43,7 @@ class UserInputWidget(Generic[T]):
             helper_text: str = None,
             null: bool = False,
             required: bool = False,
-            read_only: bool = False,
+            editable: bool = True,
             initial_value: T = None,
             parent: Union["Form", "UserInputWidget"] = None,
             on_value_change: Callable[["UserInputWidget"], Coroutine[Any, Any, None] | None] = None,
@@ -56,7 +55,7 @@ class UserInputWidget(Generic[T]):
         self.helper_text = helper_text
         self.null = null
         self.required = required
-        self.read_only = read_only
+        self.editable = editable
         self.container_width = width
         self.container_height = height
         self.initial_value = initial_value
@@ -75,7 +74,8 @@ class UserInputWidget(Generic[T]):
 
     def set_mode(self, v: Literal['read', 'write']):
         assert v in ('read', 'write')
-        assert not (v == 'write' and self.read_only)
+        if v == 'write':
+            assert self.editable
         self._mode = v
 
     def apply_container(self, container: BaseWidgetContainer):
@@ -157,7 +157,6 @@ class UserInputWidget(Generic[T]):
 
     async def start_change_event_handler(self, e=None):
         self.set_mode('write')
-        print(123)
         await self.on_start_changing.get_handler()(self)
         await self.form.update_async()
 
@@ -172,7 +171,6 @@ class UserInputWidget(Generic[T]):
 
     async def end_change_event_handler(self, e=None):
         self.set_mode('read')
-        print(12312)
         await self.on_end_changing.get_handler()(self)
         await self.form.update_async()
 
@@ -188,11 +186,11 @@ _I = TypeVar('_I', bound=Union[Control, UserInputWidget])
 class UserInput(Generic[_I]):
     name: str
     label: str = None
-    helper_text: str = None
     null: bool = False
     required: bool = False
-    read_only: bool = False
-    on_value_change:  Callable[[UserInputWidget], Coroutine[Any, Any, None]] = None
+    editable: bool = True
+    on_value_change: Callable[[UserInputWidget], Coroutine[Any, Any, None]] = None
+    helper_text: str = None
     width: int | float = 350
     height: int | float = 40
 

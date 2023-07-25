@@ -6,7 +6,7 @@ class TableCellWidgetContainer(BaseWidgetContainer[W], TableCell):
     def __init__(self, widget: W):
         BaseWidgetContainer.__init__(self, widget=widget)
         TableCell.__init__(self, content=self.widget_tooltip)
-        if not self.widget.read_only:
+        if self.widget.editable:
             self.on_double_tap_down = self.double_click_handler
         self.widget.apply_container(self)
 

@@ -8,6 +8,7 @@ from ..widget_containers import BaseWidgetContainer, SimpleWidgetContainer
 
 
 class CheckboxWidget(UserInputWidget[bool], Row):
+    value: bool
 
     def __init__(self, **kwargs):
         Row.__init__(self)
@@ -15,7 +16,7 @@ class CheckboxWidget(UserInputWidget[bool], Row):
 
         self.icon = Icon()
         self.label = Text(size=14, visible=False)
-        self.color = 'primary' if not self.read_only else None
+        self.color = 'primary' if self.editable else None
         self.controls = [self.icon, self.label]
 
         self.__finalize_init__()
@@ -27,18 +28,6 @@ class CheckboxWidget(UserInputWidget[bool], Row):
             self.container.with_border = False
             self.label.visible = True
             self.label.value = self.label_text
-
-    @property
-    def value(self) -> bool:
-        return self._value
-
-    @value.setter
-    def value(self, v: bool):
-        self._value = v
-        if self._value:
-            self.icon.name = icons.CHECK_BOX
-        else:
-            self.icon.name = icons.CHECK_BOX_OUTLINE_BLANK
 
     @property
     def color(self) -> Optional[str]:
@@ -56,6 +45,10 @@ class CheckboxWidget(UserInputWidget[bool], Row):
     def set_value(self, value: bool, initial: bool = False):
         assert isinstance(value, bool)
         self.value = value
+        if self.value:
+            self.icon.name = icons.CHECK_BOX
+        else:
+            self.icon.name = icons.CHECK_BOX_OUTLINE_BLANK
 
     def set_error_text(self, text: Optional[str]):
         super().set_error_text(text)
@@ -68,7 +61,7 @@ class CheckboxWidget(UserInputWidget[bool], Row):
             self.color = 'primary'
 
     async def start_change_event_handler(self, e=None):
-        self.value = not self.value
+        self.set_value(not self.value)
         await super().start_change_event_handler(e)
         await super().end_change_event_handler(e)
 

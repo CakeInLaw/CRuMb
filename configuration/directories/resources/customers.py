@@ -19,7 +19,7 @@ class CustomerResource(Resource):
         ('customer_locations', {
             'object_schema': {
                 'primitive': (
-                    ('ordering', {"width": 40, 'read_only': True}),
+                    ('ordering', {"width": 40}),
                     ('name', {"width": 200}),
                     ('delivery_address', {"width": 220}),
                     ('user_id', {"width": 150}),
