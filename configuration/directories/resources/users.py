@@ -1,3 +1,4 @@
+from admin.forms import Primitive
 from admin.resource import Resource
 
 from ..repositories import UserRepository
@@ -10,4 +11,5 @@ from configuration.menu_groups import System
 )
 class UserResource(Resource):
     repository = UserRepository
-    datagrid_columns = ['username', 'created_at']
+    list_primitive = Primitive('username', 'created_at')
+    form_primitive = Primitive('username')

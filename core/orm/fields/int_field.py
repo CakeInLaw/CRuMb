@@ -24,7 +24,7 @@ class IntField(fields.IntField):
     @property
     def constraints(self) -> dict:
         result = super().constraints
-        result['editable'] = self.editable
+        result['editable'] = self.reference.constraints.get('editable', True) if self.reference else self.editable
         if self.min_value is not None:
             result['ge'] = self.min_value
         if self.max_value is not None:
@@ -55,7 +55,7 @@ class SmallIntField(fields.SmallIntField):
     @property
     def constraints(self) -> dict:
         result = super().constraints
-        result['editable'] = self.editable
+        result['editable'] = self.reference.constraints.get('editable', True) if self.reference else self.editable
         if self.min_value is not None:
             result['ge'] = self.min_value
         if self.max_value is not None:
@@ -85,7 +85,7 @@ class BigIntField(fields.BigIntField):
     @property
     def constraints(self) -> dict:
         result = super().constraints
-        result['editable'] = self.editable
+        result['editable'] = self.reference.constraints.get('editable', True) if self.reference else self.editable
         if self.min_value is not None:
             result['ge'] = self.min_value
         if self.max_value is not None:

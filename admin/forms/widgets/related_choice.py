@@ -61,8 +61,7 @@ class RelatedChoiceWidget(UserInputWidget[PK], Container):
             entity=self.entity,
             method=self.method,
             query={
-                'current_chosen': self.real_value,
-                'handle_confirm': self.update_real_value,
+                'make_choice': self.update_real_value,
                 'BOX_on_close': self.on_cancel_choice,
                 **self.query
             }

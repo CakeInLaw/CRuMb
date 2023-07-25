@@ -6,8 +6,9 @@ from core.exceptions import ObjectErrors
 from core.enums import NotifyStatus
 
 from admin.layout import PayloadInfo
-from .widgets import UserInput, UndefinedValue
-from . import Form, Primitive, FormSchema, WidgetSchemaCreator
+from admin.forms.widgets import UserInput, UndefinedValue
+from admin.forms import Primitive, FormSchema, WidgetSchemaCreator
+from .input_form import InputForm
 
 if TYPE_CHECKING:
     from core.repository import Repository
@@ -16,24 +17,22 @@ if TYPE_CHECKING:
     from core.orm import BaseModel
 
 
-class ModelForm(Form):
+class ModelInputForm(InputForm):
 
     def __init__(
             self,
             resource: "Resource",
             box: "BOX",
+            primitive: Primitive,
             *,
             instance: Optional["BaseModel"] = None,
-            primitive: Primitive = None,
-            is_subform: bool = False,
-            on_success: Callable[["ModelForm", "BaseModel"], Coroutine[Any, Any, None]] = None,
-            on_error: Callable[["ModelForm", ObjectErrors], Coroutine[Any, Any, None]] = None,
+            on_success: Callable[["ModelInputForm", "BaseModel"], Coroutine[Any, Any, None]] = None,
+            on_error: Callable[["ModelInputForm", ObjectErrors], Coroutine[Any, Any, None]] = None,
             **kwargs
     ):
-        super().__init__(app=resource.app, box=box, **kwargs)
+        super().__init__(box=box, **kwargs)
         self.resource = resource
         self.instance = instance
-        self.is_subform = is_subform
         self.primitive = primitive
         self.on_success = on_success or self.on_success_default
         self.on_error = on_error or self.on_error_default
@@ -64,7 +63,7 @@ class ModelForm(Form):
         return schema
 
     @staticmethod
-    async def on_success_default(form: "ModelForm", instance: "BaseModel"):
+    async def on_success_default(form: "ModelInputForm", instance: "BaseModel"):
         if form.create:
             await form.box.close()
             await form.app.open(PayloadInfo(
@@ -76,7 +75,7 @@ class ModelForm(Form):
             await form.box.reload_content()
 
     @staticmethod
-    async def on_error_default(form: "ModelForm", error: ObjectErrors):
+    async def on_error_default(form: "ModelInputForm", error: ObjectErrors):
         pass
 
     async def on_click_create(self, e):

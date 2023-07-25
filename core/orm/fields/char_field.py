@@ -24,5 +24,5 @@ class CharField(fields.CharField):
         return {
             "min_length": self.min_length,
             "max_length": self.max_length,
-            "editable": self.editable
+            "editable": self.reference.constraints.get('editable', True) if self.reference else self.editable
         }

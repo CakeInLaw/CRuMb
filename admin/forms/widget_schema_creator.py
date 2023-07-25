@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Union, overload
+from typing import TYPE_CHECKING, Any, Union, overload, Callable
 
 from tortoise import fields
 from core.orm import fields as orm_fields
@@ -16,11 +16,13 @@ class WidgetSchemaCreator:
     def __init__(
             self,
             resource: "Resource",
-            all_read_only: bool = False
+            all_read_only: bool = False,
+            allow_groups: bool = True,
     ):
         self.resource = resource
         self.repository = self.resource.repository
         self.all_read_only = all_read_only
+        self.allow_groups = allow_groups
 
     def _creators(self):
         return {  # type: ignore
@@ -42,15 +44,16 @@ class WidgetSchemaCreator:
         }
 
     @property
-    def creators(self):
+    def creators(self) -> dict[FieldTypes, Callable[[fields.Field, ...], widgets.UserInput]]:
         if not hasattr(self, '_cached_creators'):
             setattr(self, '_cached_creators', self._creators())
         return getattr(self, '_cached_creators')
 
-    def from_primitive_item(self, item: PRIMITIVE_ITEM):
+    def from_primitive_item(self, item: PRIMITIVE_ITEM) -> widgets.UserInput | InputGroup:
         if Primitive.is_schema(item):
             return item
         elif Primitive.is_group(item):
+            assert self.allow_groups
             group_field = item.pop('fields')
             group = InputGroup(**item)
             for f in group_field:

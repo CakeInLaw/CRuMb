@@ -8,7 +8,7 @@ from admin.exceptions import InputValidationError
 from ..widget_containers import BaseWidgetContainer, SimpleWidgetContainer
 
 if TYPE_CHECKING:
-    from ..form import Form
+    from admin.forms.forms.form import Form
 
 
 T = TypeVar('T')

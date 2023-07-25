@@ -11,6 +11,7 @@ from configuration.menu_groups import Sells
 class CustomerResource(Resource):
     repository = CustomerRepository
     datagrid_columns = ['name', 'register_address', 'price_group_id']
+    list_primitive = Primitive('name', 'register_address', 'price_group_id')
 
     form_primitive = Primitive(
         'name',

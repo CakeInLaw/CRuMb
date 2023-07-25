@@ -22,9 +22,10 @@ class Translation:
     fields: dict[str, str]
     _common_fields: dict[str, str]
 
+    _choice: str
+    choice_template: str = '{self._choice}: {self.name_plural}'
     _create: str
     create_template: str = '{self.name}: {self._create}'
-
     edit_template: str = '{self.name}: {instance}'
 
     def __init__(
@@ -43,6 +44,9 @@ class Translation:
         if edit:
             self.edit_template = edit
 
+    def choice(self, **kwargs):
+        return self.choice_template.format(**kwargs)
+
     def create(self, **kwargs):
         return self.create_template.format(self=self, **kwargs)
 
@@ -58,6 +62,7 @@ class Translation:
 
 class TranslationRu(Translation):
     _create: str = 'Создание'
+    _choice: str = 'Выбор'
     _common_fields = {
         'name': 'Наименование',
         'ordering': '№',
@@ -66,6 +71,7 @@ class TranslationRu(Translation):
 
 class TranslationEn(Translation):
     _create: str = 'New'
+    _choice: str = 'Choice'
     _common_fields = {
         'name': 'Name',
         'ordering': '№',
