@@ -1,4 +1,4 @@
-from flet import Stack, Container, Text, border, padding
+from flet import Stack, Container, GestureDetector, Text, border, padding, MouseCursor
 
 from .base import BaseWidgetContainer, W
 
@@ -7,12 +7,18 @@ class SimpleWidgetContainer(BaseWidgetContainer[W], Stack):
     def __init__(self, widget: W):
         BaseWidgetContainer.__init__(self, widget=widget)
         Stack.__init__(self)
-        self.container = Container(
-            content=self.widget_tooltip,
-            border_radius=12,
-        )
+
+        self.container = Container(border_radius=12)
         if self.widget.editable and not self.widget.read_only:
-            self.container.on_click = self.widget.start_change_event_handler
+            self.gesture_detector = GestureDetector(
+                content=self.widget_tooltip,
+                mouse_cursor=MouseCursor.CLICK
+            )
+            self.gesture_detector.on_tap_up = self.widget.start_change_event_handler
+            self.container.content = self.gesture_detector
+        else:
+            self.container.content = self.widget_tooltip
+
         self._label = Text(
             value=self.widget.label_text or '',
             size=12,
@@ -32,8 +38,14 @@ class SimpleWidgetContainer(BaseWidgetContainer[W], Stack):
     def set_width(self, v: int | float):
         self.container.width = v
 
+    def get_width(self) -> int | float:
+        return self.container.width
+
     def set_height(self, v: int | float):
         self.container.height = v
+
+    def get_height(self) -> int | float:
+        return self.container.height
 
     @property
     def with_label(self) -> bool:

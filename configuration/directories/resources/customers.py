@@ -1,5 +1,4 @@
 from admin.forms import Primitive
-from admin.forms.widgets import Checkbox
 from admin.resource import Resource
 from ..repositories import CustomerRepository
 from configuration.admin import CakeInLawAdmin
@@ -17,7 +16,6 @@ class CustomerResource(Resource):
         'name',
         'register_address',
         'price_group_id',
-        Checkbox(name='smth', label='Что-то'),
         ('customer_locations', {
             'object_schema': {
                 'primitive': (
@@ -25,7 +23,6 @@ class CustomerResource(Resource):
                     ('name', {"width": 200}),
                     ('delivery_address', {"width": 220}),
                     ('user_id', {"width": 150}),
-                    Checkbox(name='smth', label='Что-то')
                 )
             },
         }),

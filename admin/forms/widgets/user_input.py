@@ -16,6 +16,7 @@ T = TypeVar('T')
 
 class UserInputWidget(Generic[T]):
     editable: bool = True
+    _mode: Literal['read', 'write']
     container: "BaseWidgetContainer"
 
     @property
@@ -73,7 +74,9 @@ class UserInputWidget(Generic[T]):
         self.on_end_changing = self.handle_value_change_and_update
 
     def set_mode(self, v: Literal['read', 'write']):
-        pass
+        assert v in ('read', 'write')
+        assert not (v == 'write' and self.read_only)
+        self._mode = v
 
     def apply_container(self, container: BaseWidgetContainer):
         self.container = container

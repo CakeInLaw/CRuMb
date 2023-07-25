@@ -18,7 +18,6 @@ class CheckboxWidget(UserInputWidget[bool], Row):
         self.color = 'primary' if not self.read_only else None
         self.controls = [self.icon, self.label]
 
-        self.on_blur = self.end_change_event_handler
         self.__finalize_init__()
 
     def apply_container(self, container: BaseWidgetContainer):

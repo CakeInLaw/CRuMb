@@ -7,13 +7,16 @@ class TableCellWidgetContainer(BaseWidgetContainer[W], TableCell):
         BaseWidgetContainer.__init__(self, widget=widget)
         TableCell.__init__(self, content=self.widget_tooltip)
         if not self.widget.read_only:
-            self.on_double_tap = self.double_click_handler
+            self.on_double_tap_down = self.double_click_handler
         self.widget.apply_container(self)
 
     async def double_click_handler(self, e):
         self.activate_row()
-        await self.widget.start_change_event_handler(self.widget)
+        await self.widget.start_change_event_handler(e)
         await self.body.update_async()
+
+    def get_width(self):
+        return self.width
 
     def set_error_text(self, text: str):
         super().set_error_text(text)

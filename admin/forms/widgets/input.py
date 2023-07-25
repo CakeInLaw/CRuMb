@@ -8,7 +8,6 @@ from ..widget_containers import BaseWidgetContainer, SimpleWidgetContainer
 
 
 class InputWidget(UserInputWidget[T], Container):
-    _mode: Literal['read', 'write']
 
     def __init__(
             self,
@@ -40,9 +39,7 @@ class InputWidget(UserInputWidget[T], Container):
             self.padding = padding.symmetric(horizontal=12)
 
     def set_mode(self, v: Literal['read', 'write']):
-        assert v in ('read', 'write')
-        assert not (v == 'write' and self.read_only)
-        self._mode = v
+        super().set_mode(v)
         if v == 'read':
             self.text.visible = True
             self.input.visible = False

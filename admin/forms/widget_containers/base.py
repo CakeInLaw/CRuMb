@@ -26,3 +26,6 @@ class BaseWidgetContainer(Generic[W]):
 
     def rm_error(self):
         self.widget_tooltip.rm_error()
+
+    def get_width(self):
+        raise NotImplementedError
