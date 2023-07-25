@@ -68,10 +68,10 @@ class SimpleWidgetContainer(BaseWidgetContainer[W], Stack):
             self.container.border = None
 
     def set_normal_borders(self):
-        self.container.border = border.all(2, 'primary')
+        self.container.border = border.all(1, 'primary')
 
     def set_error_borders(self):
-        self.container.border = border.all(2, 'error')
+        self.container.border = border.all(1, 'error')
 
     def set_error_text(self, text: str):
         super().set_error_text(text)
