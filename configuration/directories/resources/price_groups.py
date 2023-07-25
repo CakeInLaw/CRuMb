@@ -1,3 +1,4 @@
+from admin.forms import Primitive
 from admin.resource import Resource
 
 from ..repositories import PriceGroupRepository
@@ -10,4 +11,5 @@ from configuration.menu_groups import Prices, Sells
 )
 class PriceGroupResource(Resource):
     repository = PriceGroupRepository
-    datagrid_columns = ['name']
+    list_primitive = Primitive('name')
+    form_primitive = Primitive('name')

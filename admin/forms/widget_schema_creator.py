@@ -1,0 +1,265 @@
+from typing import TYPE_CHECKING, Any, Union, overload, Callable
+
+from tortoise import fields
+from core.orm import fields as orm_fields
+from core.enums import FieldTypes
+from core.types import FK_TYPE
+from admin.forms import Primitive, PRIMITIVE_ITEM, InputGroup, widgets
+
+if TYPE_CHECKING:
+    from admin.resource import Resource
+
+
+class WidgetSchemaCreator:
+    """Автосоставление схем виджетов для зарегистрированных в модели полей"""
+
+    def __init__(
+            self,
+            resource: "Resource",
+            all_read_only: bool = False,
+            allow_groups: bool = True,
+    ):
+        self.resource = resource
+        self.repository = self.resource.repository
+        self.all_read_only = all_read_only
+        self.allow_groups = allow_groups
+
+    def _creators(self):
+        return {  # type: ignore
+            FieldTypes.INT: self.int,
+            FieldTypes.FLOAT: self.float,
+            FieldTypes.STR: self.str,
+            FieldTypes.TEXT: self.text,
+            FieldTypes.BOOL: self.checkbox,
+            FieldTypes.ENUM: self.enum,
+            FieldTypes.DATE: self.date,
+            FieldTypes.DATETIME: self.datetime,
+            FieldTypes.O2O: self.object,
+            FieldTypes.O2O_PK: self.related_choice,
+            FieldTypes.FK: self.object,
+            FieldTypes.FK_PK: self.related_choice,
+            FieldTypes.BACK_O2O: self.related_choice,
+            FieldTypes.BACK_FK: self.table_input,
+            # FieldTypes.M2M: self.input_creator,
+        }
+
+    @property
+    def creators(self) -> dict[FieldTypes, Callable[[fields.Field, ...], widgets.UserInput]]:
+        if not hasattr(self, '_cached_creators'):
+            setattr(self, '_cached_creators', self._creators())
+        return getattr(self, '_cached_creators')
+
+    def from_primitive_item(self, item: PRIMITIVE_ITEM) -> widgets.UserInput | InputGroup:
+        if Primitive.is_schema(item):
+            return item
+        elif Primitive.is_group(item):
+            assert self.allow_groups
+            group_field = item.pop('fields')
+            group = InputGroup(**item)
+            for f in group_field:
+                group.add_field(self.from_primitive_item(f))
+            return group
+        elif Primitive.is_field_name(item):
+            field_name, extra = item, {}
+        elif Primitive.is_field_with_extra(item):
+            field_name, extra = item
+        else:
+            raise ValueError(f'{type(item)}({item}) не подходит ни под какой из типов:)')
+        field_type, field = self.repository.get_field_type_and_instance(field_name)
+        creator = self.creators[field_type]
+        return creator(field, **extra)
+
+    @classmethod
+    def pop_allowed_extra(cls, extra: dict[str, Any], *keys: str):
+        return {k: extra.pop(k) for k in keys if k in extra} if extra else {}
+
+    @classmethod
+    def raise_if_unexpected_extra(cls, field: fields.Field, extra: dict[str, Any]):
+        if extra:
+            raise ValueError(
+                f'{field.model.__name__}.{field.model_field_name} has unexpected extras: {",".join(k for k in extra)}'
+            )
+
+    def base_kwargs(self, field: fields.Field, extra: dict[str, Any]) -> dict[str, Any]:
+        kwargs = {
+            'name': field.model_field_name,
+            'label': self.resource.translate_field(field.model_field_name),
+            'null': field.null,
+            'required': self.repository.field_is_required(field),
+            'editable': field.constraints.get('editable', True),
+            **self.pop_allowed_extra(
+                extra,
+                'name',
+                'label',
+                'null',
+                'required',
+                'editable',
+                'on_value_change',
+                'helper_text',
+                'width',
+                'height',
+            )
+        }
+        if self.all_read_only:
+            kwargs['editable'] = False
+        return kwargs
+
+    def input_kwargs(self, field: fields.Field, extra: dict[str, Any]) -> dict[str, Any]:
+        return self.base_kwargs(field, extra)
+
+    def int(
+            self,
+            field: orm_fields.IntField | orm_fields.SmallIntField | orm_fields.BigIntField,
+            **extra
+    ) -> widgets.IntInput:
+        kwargs = self.input_kwargs(field, extra)
+        constraints = field.constraints
+        kwargs['min_value'] = constraints['ge']
+        kwargs['max_value'] = constraints['le']
+        kwargs.update(self.pop_allowed_extra(extra, 'min_value', 'max_value'))
+        self.raise_if_unexpected_extra(field, extra)
+        return widgets.IntInput(**kwargs)
+
+    def float(self, field: orm_fields.FloatField, **extra) -> widgets.FloatInput:
+        kwargs = self.input_kwargs(field, extra)
+        constraints = field.constraints
+        kwargs['min_value'] = constraints['ge']
+        kwargs['max_value'] = constraints['le']
+        kwargs.update(self.pop_allowed_extra(extra, 'min_value', 'max_value', 'decimal_places'))
+        self.raise_if_unexpected_extra(field, extra)
+        return widgets.FloatInput(**kwargs)
+
+    def str_or_text_kwargs(self, field: Union["orm_fields.CharField", "orm_fields.TextField"], extra) -> dict[str, Any]:
+        kwargs = self.input_kwargs(field, extra)
+        constraints = field.constraints
+        kwargs['min_length'] = constraints['min_length']
+        kwargs['max_length'] = constraints['max_length']
+        kwargs['empty_as_none'] = kwargs['null']
+        kwargs.update(self.pop_allowed_extra(
+            extra,
+            'max_length',
+            'min_length',
+            'empty_as_none',
+        ))
+        return kwargs
+
+    def str(self, field: "orm_fields.CharField", **extra) -> widgets.StrInput:
+        kwargs = self.str_or_text_kwargs(field, extra)
+        kwargs.update(self.pop_allowed_extra(extra, 'is_password'))
+        self.raise_if_unexpected_extra(field, extra)
+        return widgets.StrInput(**kwargs)
+
+    def text(self, field: "orm_fields.TextField", **extra) -> widgets.TextInput:
+        kwargs = self.str_or_text_kwargs(field, extra)
+        kwargs.update(self.pop_allowed_extra(extra, 'min_lines', 'max_lines'))
+        self.raise_if_unexpected_extra(field, extra)
+        return widgets.TextInput(**kwargs)
+
+    def checkbox(self, field: "fields.BooleanField", **extra) -> widgets.Checkbox:
+        kwargs = self.base_kwargs(field, extra)
+        self.raise_if_unexpected_extra(field, extra)
+        return widgets.Checkbox(**kwargs)
+
+    def enum(
+            self,
+            field: Union["orm_fields.CharEnumFieldInstance", "orm_fields.IntEnumFieldInstance"],
+            **extra
+    ) -> widgets.EnumChoice:
+        kwargs = self.base_kwargs(field, extra)
+        kwargs['enum_type'] = field.enum_type
+        kwargs.update(self.pop_allowed_extra(extra, 'enum_type'))
+        self.raise_if_unexpected_extra(field, extra)
+        return widgets.EnumChoice(**kwargs)
+
+    def date(self, field: "fields.DateField", **extra) -> widgets.DateInput:
+        kwargs = self.input_kwargs(field, extra)
+        kwargs.update(self.pop_allowed_extra(extra, 'min_date', 'max_date'))
+        self.raise_if_unexpected_extra(field, extra)
+        return widgets.DateInput(**kwargs)
+
+    def datetime(self, field: "fields.DatetimeField", **extra) -> widgets.DatetimeInput:
+        kwargs = self.input_kwargs(field, extra)
+        kwargs.update(self.pop_allowed_extra(extra, 'min_dt', 'max_dt'))
+        self.raise_if_unexpected_extra(field, extra)
+        return widgets.DatetimeInput(**kwargs)
+
+    @overload
+    def object(
+            self,
+            field: Union[
+                "fields.relational.ForeignKeyFieldInstance",
+                "fields.relational.OneToOneFieldInstance",
+                "fields.relational.BackwardOneToOneRelation",
+            ],
+            **extra,
+    ) -> widgets.Object: ...
+
+    @overload
+    def object(
+            self,
+            field: "fields.relational.BackwardFKRelation",
+            **extra
+    ) -> widgets.ObjectTableRow: ...
+
+    def object(
+            self,
+            field: Union[
+                "fields.relational.ForeignKeyFieldInstance",
+                "fields.relational.OneToOneFieldInstance",
+                "fields.relational.BackwardFKRelation",
+                "fields.relational.BackwardOneToOneRelation",
+            ],
+            **extra,
+    ) -> widgets.Object | widgets.ObjectTableRow:
+        allowed_keys = ['fields']
+        if isinstance(field, fields.relational.BackwardFKRelation):
+            widget_class = widgets.ObjectTableRow
+        else:
+            widget_class = widgets.Object
+            allowed_keys.append('variant')
+        kwargs = self.base_kwargs(field, extra)
+
+        assert 'primitive' in extra or 'fields' in extra
+        if 'fields' not in extra:
+            primitive = extra.pop('primitive')
+            relative_creator = WidgetSchemaCreator(
+                resource=self.resource.relative_resource(kwargs['name']),
+                all_read_only=self.all_read_only
+            )
+            extra['fields'] = [
+                relative_creator.from_primitive_item(item)
+                for item in primitive
+            ]
+
+        kwargs.update(self.pop_allowed_extra(extra, *allowed_keys))
+        self.raise_if_unexpected_extra(field, extra)
+        return widget_class(**kwargs)
+
+    def related_choice(
+            self,
+            field: FK_TYPE,
+            **extra
+    ) -> widgets.RelatedChoice:
+        kwargs = self.base_kwargs(field, extra)
+        kwargs['entity'] = self.resource.relative_resource(field.model_field_name).entity()
+        kwargs.update(self.pop_allowed_extra(extra, 'entity', 'method', 'query'))
+        self.raise_if_unexpected_extra(field, extra)
+        return widgets.RelatedChoice(**kwargs)
+
+    def table_input(
+            self,
+            field: "fields.relational.BackwardFKRelation",
+            **extra
+    ) -> widgets.TableInput:
+        kwargs = self.base_kwargs(field, extra)
+        object_schema_info = extra.get('object_schema', {})
+        if not isinstance(object_schema_info, widgets.ObjectTableRow):
+            extra['object_schema'] = self.object(field, **object_schema_info)
+        kwargs.update(self.pop_allowed_extra(
+            extra,
+            'object_schema',
+            'variant',
+            'rows_count',
+        ))
+        self.raise_if_unexpected_extra(field, extra)
+        return widgets.TableInput(**kwargs)

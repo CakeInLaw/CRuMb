@@ -19,13 +19,14 @@ class TableBody(FletListView):
     def __init__(
             self,
             rows: list[TableRow] = None,
-            rows_count: int = 11,
+            rows_count: int = None,
     ):
         super().__init__(
             item_extent=self.row_height,
-            height=self.row_height * rows_count,
             spacing=0,
         )
+        if rows_count:
+            self.height = self.row_height * rows_count
         self.rows = default_if_none(rows, [])
         self.controls = self.rows
 

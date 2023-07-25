@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Type, Optional
 
-from tortoise import Model, fields
+from tortoise import Model
+from . import fields as orm_fields
 
 if TYPE_CHECKING:
     from core.repository import Repository
@@ -22,8 +23,8 @@ class BaseModel(Model):
 
 class RelatedListValueModel(BaseModel):
     """Модель для строк табличной части"""
-    id: int = fields.BigIntField(pk=True)
-    ordering: int = fields.SmallIntField()
+    id: int = orm_fields.BigIntField(pk=True)
+    ordering: int = orm_fields.SmallIntField(editable=True)
 
     class Meta:
         abstract = True

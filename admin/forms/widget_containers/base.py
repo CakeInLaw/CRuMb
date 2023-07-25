@@ -19,7 +19,6 @@ class BaseWidgetContainer(Generic[W]):
             widget: W,
     ):
         self.widget = widget
-        self.widget.container = self
         self.widget_tooltip = WidgetTooltip(self.widget, helper_text=self.widget.helper_text)
 
     def set_error_text(self, text: str):
@@ -27,3 +26,6 @@ class BaseWidgetContainer(Generic[W]):
 
     def rm_error(self):
         self.widget_tooltip.rm_error()
+
+    def get_width(self):
+        raise NotImplementedError

@@ -5,12 +5,12 @@ from flet import Container, Column, Row, ElevatedButton, ScrollMode
 
 from core.orm import BaseModel
 from core.types import BackFKData
-from admin.table import Table, TableHeader, TableHeaderCell, TableBody
-from .object_input import ObjectInputTableRow, ObjectInputTableRowWidget
+from admin.components.table import Table, TableHeader, TableHeaderCell, TableBody
+from .object import ObjectTableRow, ObjectTableRowWidget
 from .user_input import UserInput, UserInputWidget
 
 
-class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
+class TableInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
 
     @property
     def final_value(self) -> BackFKData:
@@ -24,7 +24,7 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
 
     def __init__(
             self,
-            object_schema: ObjectInputTableRow,
+            object_schema: ObjectTableRow,
             variant: str = 'table',
             rows_count: int = 11,
             **kwargs
@@ -35,7 +35,7 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
         self.object_schema = object_schema
         self.variant = variant
         self.rows_count = rows_count
-        self.objects_list: list[ObjectInputTableRowWidget] = [
+        self.objects_list: list[ObjectTableRowWidget] = [
             self.create_table_row(initial=initial)
             for initial in self.initial_value
         ]
@@ -48,6 +48,8 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
             self.actions,
             self.table
         ])
+        self.editable = False
+        self.__finalize_init__()
 
     def create_table(self) -> Table:
         return Table(
@@ -63,7 +65,7 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
             ),
         )
 
-    def create_table_row(self, initial: Optional[BaseModel | dict[str, Any]] = None) -> ObjectInputTableRowWidget:
+    def create_table_row(self, initial: Optional[BaseModel | dict[str, Any]] = None) -> ObjectTableRowWidget:
         return self.object_schema.widget(parent=self, initial=initial)
 
     async def handle_add_row(self, e):
@@ -98,15 +100,16 @@ class ObjectsArrayInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
 
 
 @dataclass
-class ObjectsArrayInput(UserInput[ObjectsArrayInputWidget]):
-    object_schema: ObjectInputTableRow = None
+class TableInput(UserInput[TableInputWidget]):
+    object_schema: ObjectTableRow = None
     variant: str = 'table'
     width: int = None
+    height: int = None
     rows_count: int = 11
 
     @property
     def widget_type(self):
-        return ObjectsArrayInputWidget
+        return TableInputWidget
 
     def add_field(self, item: UserInput) -> None:
         self.object_schema.fields.append(item)

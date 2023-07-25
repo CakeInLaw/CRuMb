@@ -8,8 +8,7 @@ from core.types import PK
 from core.orm.base_model import BaseModel
 from core.exceptions import ItemNotFound, ObjectErrors
 from core.repository import REPOSITORY
-from admin.list import ListView, ChoiceView
-from admin.forms import ModelForm, Primitive
+from admin.forms import ModelInputForm, Primitive, ListForm, ChoiceForm
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
@@ -26,11 +25,12 @@ class Resource(Generic[REPOSITORY]):
     app: "CRuMbAdmin"
     ICON = icons.SPORTS_GYMNASTICS
 
-    datagrid_columns: list[str]
+    list_primitive: Primitive = None
+    choice_primitive: Primitive = None
 
-    model_form: Type[ModelForm] = ModelForm
-    create_model_form: Optional[Type[ModelForm]] = None
-    edit_model_form: Optional[Type[ModelForm]] = None
+    model_form: Type[ModelInputForm] = ModelInputForm
+    create_model_form: Optional[Type[ModelInputForm]] = None
+    edit_model_form: Optional[Type[ModelInputForm]] = None
     form_primitive: Primitive = None
     create_form_primitive: Primitive = None
     edit_form_primitive: Primitive = None
@@ -42,34 +42,28 @@ class Resource(Generic[REPOSITORY]):
     def relative_resource(self, field_name: str) -> "Resource":
         return self.app.find_resource(self.repository.repository_of(field_name).entity())
 
-    async def get_list_view(self, box: "BOX") -> ListView:
-        view = ListView(resource=self, box=box)
-        await view.prepare()
+    async def get_list_form(self, box: "BOX") -> ListForm:
+        view = ListForm(box=box, primitive=self.list_primitive)
         return self.with_tab_title(view, 'list')
 
     async def get_choice_view(
             self,
             box: "BOX",
-            current_chosen: Optional[BaseModel],
-            handle_confirm: Callable[[Optional[BaseModel]], Coroutine[Any, Any, None]],
-            handle_cancel: Callable[[], Coroutine[Any, Any, None]]
-    ) -> ChoiceView:
-        view = ChoiceView(
-            resource=self,
+            make_choice: Callable[[Optional[BaseModel]], Coroutine[Any, Any, None]],
+    ) -> ChoiceForm:
+        view = ChoiceForm(
             box=box,
-            current_chosen=current_chosen,
-            handle_confirm=handle_confirm,
-            handle_cancel=handle_cancel,
+            primitive=self.choice_primitive or self.list_primitive,
+            make_choice=make_choice
         )
-        await view.prepare()
         return self.with_tab_title(view, 'choice')
 
     async def get_create_form(
             self,
             box: "BOX",
-            on_success: Callable[[ModelForm, BaseModel], Coroutine[Any, Any, None]] = None,
-            on_error: Callable[[ModelForm, ObjectErrors], Coroutine[Any, Any, None]] = None,
-    ) -> ModelForm:
+            on_success: Callable[[ModelInputForm, BaseModel], Coroutine[Any, Any, None]] = None,
+            on_error: Callable[[ModelInputForm, ObjectErrors], Coroutine[Any, Any, None]] = None,
+    ) -> ModelInputForm:
         primitive = self.create_form_primitive or self.form_primitive
         model_form = self.create_model_form or self.model_form
         form = model_form(
@@ -85,11 +79,11 @@ class Resource(Generic[REPOSITORY]):
             self,
             box: "BOX",
             pk: PK,
-            on_success: Callable[[ModelForm, BaseModel], Coroutine[Any, Any, None]] = None,
-            on_error: Callable[[ModelForm, ObjectErrors], Coroutine[Any, Any, None]] = None,
-    ) -> ModelForm | Control:
+            on_success: Callable[[ModelInputForm, BaseModel], Coroutine[Any, Any, None]] = None,
+            on_error: Callable[[ModelInputForm, ObjectErrors], Coroutine[Any, Any, None]] = None,
+    ) -> ModelInputForm | Control:
         try:
-            obj = await self.repository(
+            instance = await self.repository(
                 by='admin',
                 extra={'target': 'edit'}
             ).get_one(pk)
@@ -103,11 +97,11 @@ class Resource(Generic[REPOSITORY]):
             resource=self,
             box=box,
             primitive=primitive,
-            obj=obj,
+            instance=instance,
             on_success=on_success,
             on_error=on_error,
         )
-        return self.with_tab_title(form, 'edit', obj=obj)
+        return self.with_tab_title(form, 'edit', instance=instance)
 
     @classmethod
     def entity(cls) -> str:
@@ -119,7 +113,7 @@ class Resource(Generic[REPOSITORY]):
 
     def _methods(self) -> dict[str, Callable[["BOX", ...], Control | Coroutine[Any, Any, Control]]]:
         return {
-            'list': self.get_list_view,
+            'list': self.get_list_form,
             'choice': self.get_choice_view,
             'create': self.get_create_form,
             'edit': self.get_edit_form,
@@ -174,8 +168,8 @@ class Resource(Generic[REPOSITORY]):
     def _tab_title_create(self) -> str:
         return self.translation.create()
 
-    def _tab_title_edit(self, obj: BaseModel) -> str:
-        return self.translation.edit(obj=obj)
+    def _tab_title_edit(self, instance: BaseModel) -> str:
+        return self.translation.edit(instance=instance)
 
     # Функции для сравнения параметров вкладок.
     # Если True, то вкладка создаваться не будет и откроется существующая

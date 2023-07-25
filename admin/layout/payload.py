@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Protocol, TYPE_CHECKING, Optional
+from typing import Any, Protocol, TYPE_CHECKING, Optional, Callable, Coroutine
 
 if TYPE_CHECKING:
     from .modal_box import ModalBox
@@ -14,6 +14,8 @@ class PayloadInfo:
 
 
 class Box(Protocol):
+    on_close: Callable[[], Coroutine[..., ..., None]]
+
     async def close(self):
         raise NotImplementedError
 
@@ -22,3 +24,8 @@ class Box(Protocol):
 
     def change_title(self, title: str):
         raise NotImplementedError
+
+    @staticmethod
+    def filter_payload_query(info: PayloadInfo):
+        """убирает из query ключи, которые предназначены для Box"""
+        return {k: v for k, v in info.query.items() if not k.startswith('BOX_')}

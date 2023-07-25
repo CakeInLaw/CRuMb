@@ -34,7 +34,7 @@ class CRuMbAdmin(UserControl):
         self.sidebar = Sidebar(app=self)
         self.content_box_container = ContentsBoxContainer(app=self)
 
-        self.page.appbar = self.appbar
+        # self.page.appbar = self.appbar
 
     def _init_resources(self) -> None:
         self._inited_resources = {entity: res(self) for entity, res in self._resources.items()}
@@ -42,6 +42,7 @@ class CRuMbAdmin(UserControl):
     def build(self):
         return Column(
             controls=[
+                self.appbar,
                 self.tabs_bar,
                 Row(
                     controls=[

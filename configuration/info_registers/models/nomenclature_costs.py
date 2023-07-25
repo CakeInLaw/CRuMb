@@ -15,7 +15,7 @@ __all__ = ["NomenclatureCost"]
 
 
 class NomenclatureCost(InfoRegister):
-    id: int = fields.BigIntField(pk=True)
+    id: int = orm_fields.BigIntField(pk=True)
     nomenclature: Union["Nomenclature", fields.ForeignKeyRelation["Nomenclature"]] = fields.ForeignKeyField(
         'directories.Nomenclature', related_name='cost', on_delete=fields.RESTRICT
     )

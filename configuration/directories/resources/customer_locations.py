@@ -11,7 +11,7 @@ from configuration.admin import CakeInLawAdmin
 )
 class CustomerLocationResource(Resource):
     repository = CustomerLocationRepository
-    datagrid_columns = ['customer', 'name', 'delivery_address']
+    list_primitive = Primitive('customer_id', 'name', 'delivery_address')
     form_primitive = Primitive(
         'name',
         'delivery_address',

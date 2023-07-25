@@ -15,8 +15,8 @@ PK = TypeVar('PK', int, str, UUID)
 SORT = list[str]
 FILTERS = list[Filter]
 DATA = dict[str, Any]
-FK_TYPE = fields.IntField | fields.SmallIntField | fields.BigIntField |\
-          fields.UUIDField | orm_fields.CharField | fields.Field
+FK_TYPE = orm_fields.IntField | orm_fields.SmallIntField | orm_fields.BigIntField |\
+          orm_fields.UUIDField | orm_fields.CharField | fields.Field
 
 
 BackFKData = list[DATA]

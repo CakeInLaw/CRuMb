@@ -1,14 +1,17 @@
-from flet import Container
-
-from admin.table import TableCell
+from admin.components.table import TableCell
 from .base import W, BaseWidgetContainer
 
 
 class TableCellWidgetContainer(BaseWidgetContainer[W], TableCell):
     def __init__(self, widget: W):
         BaseWidgetContainer.__init__(self, widget=widget)
-        self.container = Container(content=self.widget_tooltip)
-        TableCell.__init__(self, content=self.container)
+        TableCell.__init__(self, content=self.widget_tooltip)
+        if self.widget.editable:
+            self.on_double_click = self.widget.start_change_event_handler
+        self.widget.apply_container(self)
+
+    def get_width(self):
+        return self.width
 
     def set_error_text(self, text: str):
         super().set_error_text(text)
@@ -20,6 +23,6 @@ class TableCellWidgetContainer(BaseWidgetContainer[W], TableCell):
 
     def change_bgcolor(self):
         if self.widget.has_error:
-            self.bgcolor = 'error,0.2'
+            self.container.bgcolor = 'error,0.2'
         else:
             super().change_bgcolor()

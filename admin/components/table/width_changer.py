@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Literal
 from flet import GestureDetector, Container, MouseCursor, DragStartEvent, DragUpdateEvent
 
 if TYPE_CHECKING:
-    from admin.table import TableHeaderCell
+    from admin.components.table import TableHeaderCell
 
 
 class WidthChanger(GestureDetector):

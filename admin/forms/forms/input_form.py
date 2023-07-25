@@ -1,53 +1,40 @@
 from typing import TYPE_CHECKING, Optional, Any
 
-from flet import Control, UserControl, Column, Row, Container
+from flet import Control, Column, Row
 
 from core.exceptions import ObjectErrors
-from .schema import FormSchema, InputGroup
-from .widgets import UserInputWidget, UserInput, UndefinedValue
-from .widget_containers import SimpleWidgetContainer, BaseWidgetContainer
+from .form import Form
+from admin.forms.schema import FormSchema, InputGroup
+from admin.forms.widgets import UserInputWidget, UserInput, UndefinedValue
+from admin.forms.widget_containers import SimpleWidgetContainer, BaseWidgetContainer
 
 if TYPE_CHECKING:
-    from admin.app import CRuMbAdmin
     from admin.layout import BOX
 
 
 FIELDS_MAP = dict[str, UserInputWidget]
 
 
-class Form(UserControl):
+class InputForm(Form):
 
     schema: FormSchema = None
     fields_map: FIELDS_MAP
     body: Column
-    action_bar: Row
 
     def __init__(
             self,
-            app: "CRuMbAdmin",
             box: "BOX",
             *,
             initial_data: Optional[dict] = None,
     ):
-        super().__init__()
-        self.app = app
-        self.box = box
+        super().__init__(box=box)
         self.fields_map = {}
         self.initial_data = initial_data or {}
 
-    def build(self):
-        controls = []
-        self.body = self.build_form()
-        self.action_bar: Row = self.get_action_bar()
-        if self.action_bar:
-            controls.append(self.action_bar)
-        controls.append(self.body)
-        return Column(controls=controls)
+    def build_body(self) -> Column:
+        return Column(controls=self.build_input_form())
 
-    def build_form(self) -> Column:
-        return Column(controls=self._build_form())
-
-    def _build_form(self) -> list[Row | Column]:
+    def build_input_form(self) -> list[Row | Column]:
         return [self._build_item(item=item) for item in self.get_form_schema()]
 
     def _create_widget_in_container(self, item: UserInput):
