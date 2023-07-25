@@ -318,7 +318,8 @@ class Repository(Generic[MODEL]):
                             defaults={relation_field: instance.pk},
                             is_root=False
                         )
-                await remote_repository.delete_many([v.pk for v in rel_instances_map.values()])
+                if rel_instances_map:
+                    await remote_repository.delete_many([v.pk for v in rel_instances_map.values()])
 
             for field_name, values in sorted_data.m2m.items():
                 values: M2MData

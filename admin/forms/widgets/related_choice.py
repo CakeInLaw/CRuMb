@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from flet import Container, Text, padding, alignment, TextOverflow
+from flet import Container, Row, Text, Icon, icons, padding, alignment, TextOverflow, MainAxisAlignment
 
 from core.orm import BaseModel
 from core.types import PK
@@ -27,7 +27,11 @@ class RelatedChoiceWidget(UserInputWidget[PK], Container):
         self.entity = entity
         self.method = method
 
-        self.content = self.text = Text(size=14, no_wrap=True, overflow=TextOverflow.ELLIPSIS)
+        self.text = Text(size=14, no_wrap=True, overflow=TextOverflow.ELLIPSIS)
+        self.content = Row(
+            controls=[self.text, Icon(icons.FORMAT_LIST_BULLETED_OUTLINED)],
+            alignment=MainAxisAlignment.SPACE_BETWEEN
+        )
         self.on_start_changing = self.open_choice
         self.__finalize_init__()
 
