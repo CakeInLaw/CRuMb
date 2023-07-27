@@ -7,12 +7,12 @@ from tortoise.transactions import in_transaction
 from tortoise.exceptions import ValidationError
 
 from core.orm.base_model import BaseModel
-from .constants import EMPTY_TUPLE
+from .constants import EMPTY_TUPLE, UndefinedValue
 from .exceptions import ItemNotFound, ObjectErrors, UnexpectedDataKey, FieldError, NotUnique, \
     FieldRequired, NotFoundFK, RequiredMissed, InvalidType, AnyFieldError, NoDefaultRepository, ListFieldError
 from .enums import FieldTypes
 from .maps import field_instance_to_type
-from .translations import Translation
+from .translations import BaseTranslation
 
 from .types import MODEL, PK, SORT, FILTERS, DATA, SortedData, RepositoryDescription, BackFKData, M2MData
 
@@ -28,7 +28,7 @@ class Repository(Generic[MODEL]):
     hidden_fields: set[str] = set()
     extra_allowed: set[str] = set()
 
-    _TRANSLATION_DEFAULT: Translation
+    _TRANSLATION_DEFAULT: BaseTranslation
 
     def __init__(
             self,
@@ -879,7 +879,7 @@ class Repository(Generic[MODEL]):
         return cls.opts().full_name
 
     @classmethod
-    def get_translation(cls, lang: str) -> Translation:
+    def get_translation(cls, lang: str) -> BaseTranslation:
         return getattr(cls, f'_TRANSLATION_{lang.upper()}', getattr(cls, f'_TRANSLATION_DEFAULT'))
 
     @classmethod
@@ -889,6 +889,12 @@ class Repository(Generic[MODEL]):
             field = cls.get_field_instance(name)
             name = field.reference.model_field_name
         return name
+
+    @classmethod
+    def get_instance_value(cls, instance: MODEL, name: str) -> str:
+        field_name = cls.get_field_name_for_value(name)
+        return getattr(instance, field_name, UndefinedValue)
+
 
 
 REPOSITORY = TypeVar('REPOSITORY', bound=Type[Repository])

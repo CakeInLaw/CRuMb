@@ -1,15 +1,24 @@
 from admin.forms import Primitive
+from admin.forms.widgets import StrInput
 from admin.resource import Resource
 
 from ..repositories import UserRepository
 from configuration.admin import CakeInLawAdmin
-from configuration.menu_groups import System
+from configuration.menu_groups import Directories
 
 
 @CakeInLawAdmin.register(
-    present_in=(System,)
+    present_in=(Directories,)
 )
 class UserResource(Resource):
     repository = UserRepository
-    list_primitive = Primitive('username', 'created_at')
-    form_primitive = Primitive('username')
+    list_form_primitive = Primitive('username', 'created_at')
+    create_form_primitive = Primitive(
+        'username',
+        StrInput(name='password', required=False, is_password=True, empty_as_none=True, ignore_if_none=True),
+        StrInput(name='re_password', required=False, is_password=True, empty_as_none=True, ignore_if_none=True)
+    )
+    edit_form_primitive = Primitive(
+        'username',
+        'created_at',
+    )

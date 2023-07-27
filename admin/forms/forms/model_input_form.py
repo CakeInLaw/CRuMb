@@ -3,10 +3,11 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Type, Coroutine
 from flet import ElevatedButton, Row
 
 from core.exceptions import ObjectErrors
+from core.constants import UndefinedValue
 from core.enums import NotifyStatus
 
 from admin.layout import PayloadInfo
-from admin.forms.widgets import UserInput, UndefinedValue
+from admin.forms.widgets import UserInput
 from admin.forms import Primitive, FormSchema, WidgetSchemaCreator
 from .input_form import InputForm
 
@@ -49,8 +50,7 @@ class ModelInputForm(InputForm):
         if self.create:
             return super().initial_for(item=item)
         else:
-            field_name = self.repository.get_field_name_for_value(item.name)
-            return getattr(self.instance, field_name, UndefinedValue)
+            return self.repository.get_instance_value(self.instance, item.name)
 
     def get_form_schema(self) -> FormSchema:
         return self.schema or self._generate_form_schema()

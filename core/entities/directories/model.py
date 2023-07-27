@@ -1,7 +1,7 @@
 from core.orm.base_model import BaseModel, RelatedListValueModel
 
 
-__all__ = ["Directory", ]
+__all__ = ["Directory", "DirectoryListValue"]
 
 
 class Directory(BaseModel):

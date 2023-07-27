@@ -25,14 +25,14 @@ class Resource(Generic[REPOSITORY]):
     app: "CRuMbAdmin"
     ICON = icons.SPORTS_GYMNASTICS
 
-    list_primitive: Primitive = None
-    choice_primitive: Primitive = None
+    list_form_primitive: Primitive = None
+    choice_form_primitive: Primitive = None
 
     model_form: Type[ModelInputForm] = ModelInputForm
-    create_model_form: Optional[Type[ModelInputForm]] = None
-    edit_model_form: Optional[Type[ModelInputForm]] = None
     form_primitive: Primitive = None
+    create_model_form: Optional[Type[ModelInputForm]] = None
     create_form_primitive: Primitive = None
+    edit_model_form: Optional[Type[ModelInputForm]] = None
     edit_form_primitive: Primitive = None
 
     def __init__(self, app: "CRuMbAdmin") -> None:
@@ -42,8 +42,26 @@ class Resource(Generic[REPOSITORY]):
     def relative_resource(self, field_name: str) -> "Resource":
         return self.app.find_resource(self.repository.repository_of(field_name).entity())
 
+    async def get_list_primitive(self):
+        return self.list_form_primitive
+
+    async def get_choice_primitive(self):
+        return self.choice_form_primitive or self.list_form_primitive
+
+    async def get_create_form_primitive(self):
+        return self.create_form_primitive or self.form_primitive
+
+    async def get_create_model_form(self):
+        return self.create_model_form or self.model_form
+
+    async def get_edit_form_primitive(self):
+        return self.edit_form_primitive or self.form_primitive
+
+    async def get_edit_model_form(self):
+        return self.edit_model_form or self.model_form
+
     async def get_list_form(self, box: "BOX") -> ListForm:
-        view = ListForm(box=box, primitive=self.list_primitive)
+        view = ListForm(box=box, primitive=self.list_form_primitive)
         return self.with_tab_title(view, 'list')
 
     async def get_choice_view(
@@ -53,7 +71,7 @@ class Resource(Generic[REPOSITORY]):
     ) -> ChoiceForm:
         view = ChoiceForm(
             box=box,
-            primitive=self.choice_primitive or self.list_primitive,
+            primitive=self.choice_form_primitive or self.list_form_primitive,
             make_choice=make_choice
         )
         return self.with_tab_title(view, 'choice')
@@ -64,12 +82,11 @@ class Resource(Generic[REPOSITORY]):
             on_success: Callable[[ModelInputForm, BaseModel], Coroutine[Any, Any, None]] = None,
             on_error: Callable[[ModelInputForm, ObjectErrors], Coroutine[Any, Any, None]] = None,
     ) -> ModelInputForm:
-        primitive = self.create_form_primitive or self.form_primitive
         model_form = self.create_model_form or self.model_form
         form = model_form(
             resource=self,
             box=box,
-            primitive=primitive,
+            primitive=await self.get_create_form_primitive(),
             on_success=on_success,
             on_error=on_error,
         )

@@ -218,12 +218,16 @@ class WidgetSchemaCreator:
             widget_class = widgets.Object
             allowed_keys.append('variant')
         kwargs = self.base_kwargs(field, extra)
+        if 'resource' in extra:
+            kwargs['resource'] = relative_resource = extra.pop('resource')
+        else:
+            kwargs['resource'] = relative_resource = self.resource.relative_resource(field_name=kwargs['name'])
 
         assert 'primitive' in extra or 'fields' in extra
         if 'fields' not in extra:
             primitive = extra.pop('primitive')
             relative_creator = WidgetSchemaCreator(
-                resource=self.resource.relative_resource(kwargs['name']),
+                resource=relative_resource,
                 all_read_only=self.all_read_only
             )
             extra['fields'] = [

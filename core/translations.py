@@ -15,7 +15,7 @@ class Fstr:
         return formatter
 
 
-class Translation:
+class BaseTranslation:
     name: str
     name_plural: str
 
@@ -60,19 +60,26 @@ class Translation:
         return result
 
 
-class TranslationRu(Translation):
+class TranslationRu(BaseTranslation):
     _create: str = 'Создание'
     _choice: str = 'Выбор'
     _common_fields = {
         'name': 'Наименование',
         'ordering': '№',
+        'count': 'Количество',
     }
 
 
-class TranslationEn(Translation):
+class TranslationEn(BaseTranslation):
     _create: str = 'New'
     _choice: str = 'Choice'
     _common_fields = {
         'name': 'Name',
         'ordering': '№',
+        'count': 'Count',
     }
+
+
+class Translation:
+    Ru = TranslationRu
+    En = TranslationEn

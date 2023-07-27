@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Union
 from tortoise import fields
 from core.orm import fields as orm_fields
 
-from core.entities.directories import Directory, DirectoryValueRepository
+from core.entities.directories import Directory, DirectoryListValue
 
 if TYPE_CHECKING:
     from configuration.directories.models import Nomenclature
@@ -28,13 +28,11 @@ class RecipeCard(Directory):
         return str(self.product)
 
 
-class RecipeCardIngredients(DirectoryValueRepository):
+class RecipeCardIngredients(DirectoryListValue):
     product: Union["Nomenclature", fields.ForeignKeyRelation["Nomenclature"]] = fields.ForeignKeyField(
         "directories.Nomenclature", related_name='ingredient_of', on_delete=fields.RESTRICT
     )
-    recipe: Union["RecipeCard", fields.ForeignKeyRelation["RecipeCard"]] = fields.ForeignKeyField(
-        "directories.RecipeCard", related_name="ingredients", on_delete=fields.CASCADE
-    )
+    count: float = orm_fields.FloatField(min_value=0)
 
     class Meta:
         table = "dir__recipe_cards__ingredients"

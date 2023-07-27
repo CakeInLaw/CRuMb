@@ -3,10 +3,11 @@ from typing import TYPE_CHECKING, Callable
 from flet import Row, TapEvent
 
 from core.orm import BaseModel
+from core.constants import UndefinedValue
 from admin.components.table import Table, TableHeader, TableHeaderCell, TableBody, TableRow, TableCell
 from . import Form
 from .. import Primitive, WidgetSchemaCreator
-from ..widgets import UserInput, UndefinedValue
+from ..widgets import UserInput
 
 if TYPE_CHECKING:
     from admin.layout import BOX
@@ -86,8 +87,7 @@ class BaseListForm(Form):
         pass
 
     def initial_for(self, item: BaseModel, field_name: str):
-        field_name = self.resource.repository.get_field_name_for_value(field_name)
-        return getattr(item, field_name, UndefinedValue)
+        return self.resource.repository.get_instance_value(item, field_name)
 
     async def close(self):
         await self.box.close()

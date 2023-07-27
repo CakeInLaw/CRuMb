@@ -2,16 +2,16 @@ from admin.forms import Primitive
 from admin.resource import Resource
 from ..repositories import CustomerRepository
 from configuration.admin import CakeInLawAdmin
-from configuration.menu_groups import Sells
+from configuration.menu_groups import Directories
 
 
 @CakeInLawAdmin.register(
-    present_in=(Sells, )
+    present_in=(Directories, )
 )
 class CustomerResource(Resource):
     repository = CustomerRepository
     datagrid_columns = ['name', 'register_address', 'price_group_id']
-    list_primitive = Primitive('name', 'register_address', 'price_group_id')
+    list_form_primitive = Primitive('name', 'register_address', 'price_group_id')
 
     form_primitive = Primitive(
         'name',
@@ -23,7 +23,6 @@ class CustomerResource(Resource):
                     ('ordering', {"width": 40}),
                     ('name', {"width": 200}),
                     ('delivery_address', {"width": 220}),
-                    ('user_id', {"width": 150}),
                 )
             },
         }),

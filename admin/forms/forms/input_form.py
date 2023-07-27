@@ -2,10 +2,11 @@ from typing import TYPE_CHECKING, Optional, Any
 
 from flet import Control, Column, Row
 
+from core.constants import UndefinedValue
 from core.exceptions import ObjectErrors
 from .form import Form
 from admin.forms.schema import FormSchema, InputGroup
-from admin.forms.widgets import UserInputWidget, UserInput, UndefinedValue
+from admin.forms.widgets import UserInputWidget, UserInput
 from admin.forms.widget_containers import SimpleWidgetContainer, BaseWidgetContainer
 
 if TYPE_CHECKING:
@@ -80,7 +81,13 @@ class InputForm(Form):
 
     @property
     def dirty_data(self):
-        return {name: field.final_value for name, field in self.fields_map.items()}
+        result = {}
+        for name, widget in self.fields_map.items():
+            value = widget.final_value
+            if value is None and widget.ignore_if_none:
+                continue
+            result[name] = value
+        return result
 
     def cleaned_data(self):
         return self.dirty_data

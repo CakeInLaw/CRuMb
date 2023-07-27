@@ -18,5 +18,5 @@ class NomenclatureUnits(StrEnum):
     METERS = "M"
 
 
-class Operations(IntEnum):
+class OperationTypes(IntEnum):
     WRITE_OFF = 1

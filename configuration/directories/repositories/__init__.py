@@ -2,6 +2,7 @@ from .customer_locations import *
 from .customers import *
 from .employees import *
 from .nomenclature import *
+from .nomenclature_categories import *
 from .operation_reasons import *
 from .positions import *
 from .price_groups import *

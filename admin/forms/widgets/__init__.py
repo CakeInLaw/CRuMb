@@ -1,4 +1,4 @@
-from .user_input import UserInputWidget, UserInput, UndefinedValue
+from .user_input import UserInputWidget, UserInput
 from .input import InputWidget, Input
 
 from .int_input import IntInputWidget, IntInput

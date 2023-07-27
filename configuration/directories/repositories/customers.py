@@ -1,6 +1,6 @@
 from core.repository import default_repository
 from core.entities.directories import DirectoryRepository
-from core.translations import TranslationRu, TranslationEn
+from core.translations import Translation
 
 from ..models import Customer
 
@@ -12,14 +12,14 @@ __all__ = ["CustomerRepository"]
 class CustomerRepository(DirectoryRepository):
     model = Customer
 
-    _TRANSLATION_DEFAULT = _TRANSLATION_RU = TranslationRu(
+    _TRANSLATION_DEFAULT = _TRANSLATION_RU = Translation.Ru(
         name='Покупатель',
         name_plural='Покупатели',
         fields={
             'register_address': 'Адрес регистрации',
         },
     )
-    _TRANSLATION_EN = TranslationEn(
+    _TRANSLATION_EN = Translation.En(
         name='Customer',
         name_plural='Customers',
         fields={

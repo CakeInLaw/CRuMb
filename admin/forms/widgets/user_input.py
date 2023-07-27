@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, TypeVar, Optional, Any, Generic, Type, Union, 
 from flet import Control
 from flet_core.event_handler import EventHandler
 
+from core.constants import UndefinedValue
 from admin.exceptions import InputValidationError
 from ..widget_containers import BaseWidgetContainer, SimpleWidgetContainer
 
@@ -44,6 +45,7 @@ class UserInputWidget(Generic[T]):
             null: bool = False,
             required: bool = False,
             editable: bool = True,
+            ignore_if_none: bool = False,
             initial_value: T = None,
             parent: Union["Form", "UserInputWidget"] = None,
             on_value_change: Callable[["UserInputWidget"], Coroutine[Any, Any, None] | None] = None,
@@ -56,6 +58,7 @@ class UserInputWidget(Generic[T]):
         self.null = null
         self.required = required
         self.editable = editable
+        self.ignore_if_none = ignore_if_none
         self.container_width = width
         self.container_height = height
         self.initial_value = initial_value
@@ -175,10 +178,6 @@ class UserInputWidget(Generic[T]):
         await self.form.update_async()
 
 
-class UndefinedValue:
-    pass
-
-
 _I = TypeVar('_I', bound=Union[Control, UserInputWidget])
 
 
@@ -189,6 +188,7 @@ class UserInput(Generic[_I]):
     null: bool = False
     required: bool = False
     editable: bool = True
+    ignore_if_none: bool = False
     on_value_change: Callable[[UserInputWidget], Coroutine[Any, Any, None]] = None
     helper_text: str = None
     width: int | float = 350

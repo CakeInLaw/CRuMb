@@ -18,11 +18,11 @@ class CakeInLawAdmin(CRuMbAdmin):
     async def on_shutdown(cls):
         await Tortoise.close_connections()
 
-    @classmethod
-    async def run_target(cls, page):
-        page.title = cls.title
-        page.padding = 0
-        app = cls(page)
-        await page.add_async(app)
-        from admin.layout import PayloadInfo
-        await app.open(PayloadInfo('directories.Customer', 'create'))
+    # @classmethod
+    # async def run_target(cls, page):
+    #     page.title = cls.title
+    #     page.padding = 0
+    #     app = cls(page)
+    #     await page.add_async(app)
+    #     from admin.layout import PayloadInfo
+    #     await app.open(PayloadInfo('directories.Customer', 'create'))

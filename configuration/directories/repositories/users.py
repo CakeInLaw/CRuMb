@@ -9,7 +9,7 @@ from passlib.context import CryptContext
 from core.exceptions import AnyFieldError
 from core.repository import default_repository
 from core.entities.directories import DirectoryRepository
-from core.translations import TranslationRu, TranslationEn
+from core.translations import Translation
 from core.types import DATA, MODEL
 
 from ..models import User
@@ -34,7 +34,7 @@ class UserRepository(DirectoryRepository):
     password_pattern = re.compile('^(?=.*[A-Za-z])(?=.*[1-9])[A-Za-z1-9!@#$%^&*-_=+]{8,30}$')
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-    _TRANSLATION_DEFAULT = _TRANSLATION_RU = TranslationRu(
+    _TRANSLATION_DEFAULT = _TRANSLATION_RU = Translation.Ru(
         name='Пользователь',
         name_plural='Пользователи',
         fields={
@@ -47,7 +47,7 @@ class UserRepository(DirectoryRepository):
         },
     )
 
-    _TRANSLATION_EN = TranslationEn(
+    _TRANSLATION_EN = Translation.En(
         name='User',
         name_plural='Users',
         fields={
