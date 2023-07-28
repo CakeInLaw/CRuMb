@@ -1,14 +1,14 @@
 import asyncio
-from typing import Type, TypeVar, Any
+from typing import Type, TypeVar, Any, Callable, Coroutine
 
 from flet import (
     Page, UserControl, Control, Column, Row, Text,
-    SnackBar,
+    SnackBar, ControlEvent,
     app as flet_app
 )
 
 from core.enums import NotifyStatus
-from admin.layout import Header, TabsBar, PayloadInfo, Sidebar, MenuGroup, ContentsBoxContainer
+from admin.layout import Header, TabsBar, PayloadInfo, Sidebar, MenuGroup, ContentsBoxContainer, Popover, Popup
 
 from .resource import Resource
 
@@ -33,8 +33,6 @@ class CRuMbAdmin(UserControl):
         self.tabs_bar = TabsBar(app=self)
         self.sidebar = Sidebar(app=self)
         self.content_box_container = ContentsBoxContainer(app=self)
-
-        # self.page.appbar = self.appbar
 
     def _init_resources(self) -> None:
         self._inited_resources = {entity: res(self) for entity, res in self._resources.items()}
@@ -135,7 +133,10 @@ class CRuMbAdmin(UserControl):
     async def notify(
             self,
             content: Control | str,
-            status: NotifyStatus = NotifyStatus.INFO
+            status: NotifyStatus = NotifyStatus.INFO,
+            action: str = None,
+            action_color: str = 'white',
+            on_action: Callable[[ControlEvent], Coroutine[Any, Any, None] | None] = None
     ) -> None:
         if isinstance(content, str):
             content = Text(content)
@@ -151,7 +152,53 @@ class CRuMbAdmin(UserControl):
         await self.page.show_snack_bar_async(SnackBar(
             content=content,
             bgcolor=bgcolor,
+            show_close_icon=True,
+            action=action,
+            action_color=action_color,
+            on_action=on_action
         ))
 
     async def dashboard(self):
         return Text('Тут будет дэшборд')
+
+    async def add_popup(
+            self,
+            content: Control,
+            title: str = None,
+            on_close: Callable[[], Coroutine[..., ..., None]] = None,
+    ) -> Popup:
+        popup = Popup(
+            app=self,
+            content=content,
+            title=title,
+            on_close=on_close,
+        )
+        self.controls.append(popup)
+        await self.update_async()
+        return popup
+
+    async def close_popup(self, popup: Popup) -> None:
+        if popup not in self.controls:
+            return
+        self.controls.remove(popup)
+        await self.update_async()
+
+    async def add_popover(
+            self,
+            content: Control,
+            on_close: Callable[[], Coroutine[..., ..., None]] = None,
+    ) -> Popover:
+        popover = Popover(
+            app=self,
+            content=content,
+            on_close=on_close,
+        )
+        self.controls.append(popover)
+        await self.update_async()
+        return popover
+
+    async def close_popover(self, popover: Popover) -> None:
+        if popover not in self.controls:
+            return
+        self.controls.remove(popover)
+        await self.update_async()

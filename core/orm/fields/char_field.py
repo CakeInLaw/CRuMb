@@ -15,9 +15,11 @@ class CharField(fields.CharField):
         self.min_length = min_length
         self.editable = editable
         if self.min_length is not None:
-            if min_length < 1:
+            if self.min_length < 1:
                 raise ConfigurationError("'min_length' must be >= 1")
             self.validators.append(MinLengthValidator(self.min_length))
+        if self.min_length and self.max_length and self.min_length > self.max_length:
+            raise ConfigurationError("'max_length' must be >= 'min_length'")
 
     @property
     def constraints(self) -> dict:

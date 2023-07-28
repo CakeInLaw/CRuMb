@@ -57,7 +57,7 @@ class BaseListForm(Form):
 
     async def get_next_items(self):
         new_items, total_count = await self.resource.repository(
-            by='admin',
+            by='__admin__',
             extra={'target': 'list'}
         ).get_all(
             skip=self.current_total,

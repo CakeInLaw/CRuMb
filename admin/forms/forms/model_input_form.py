@@ -10,6 +10,7 @@ from admin.layout import PayloadInfo
 from admin.forms.widgets import UserInput
 from admin.forms import Primitive, FormSchema, WidgetSchemaCreator
 from .input_form import InputForm
+from ...components.errors import ObjectErrorsContainer
 
 if TYPE_CHECKING:
     from core.repository import Repository
@@ -84,7 +85,7 @@ class ModelInputForm(InputForm):
             return
         try:
             instance = await self.repository(
-                by='admin',
+                by='__admin__',
                 extra={'target': 'create'}
             ).create(self.cleaned_data())
             await self.app.notify('Создан 1 элемент', NotifyStatus.SUCCESS)
@@ -92,7 +93,12 @@ class ModelInputForm(InputForm):
         except ObjectErrors as err:
             self.set_object_errors(err)
             await self.update_async()
-            await self.app.notify('Исправьте ошибки', NotifyStatus.ERROR)
+            await self.app.notify(
+                'Исправьте ошибки',
+                NotifyStatus.ERROR,
+                action='Детали',
+                on_action=self.show_object_error_details(err)
+            )
             await self.on_error(form=self, error=err)
 
     def create_btn(self) -> ElevatedButton:
@@ -104,7 +110,7 @@ class ModelInputForm(InputForm):
             return
         try:
             instance = await self.repository(
-                by='admin',
+                by='__admin__',
                 extra={'target': 'create'}
             ).edit(self.instance, self.cleaned_data())
             await self.app.notify('Элемент изменен', NotifyStatus.SUCCESS)
@@ -112,7 +118,12 @@ class ModelInputForm(InputForm):
         except ObjectErrors as err:
             self.set_object_errors(err)
             await self.update_async()
-            await self.app.notify('Исправьте ошибки', NotifyStatus.ERROR)
+            await self.app.notify(
+                'Исправьте ошибки',
+                NotifyStatus.ERROR,
+                action='Детали',
+                on_action=self.show_object_error_details(err)
+            )
             await self.on_error(form=self, error=err)
 
     def edit_btn(self) -> ElevatedButton:
@@ -122,3 +133,8 @@ class ModelInputForm(InputForm):
         action_bar = super().get_action_bar()
         action_bar.controls.append(self.create_btn() if self.create else self.edit_btn())
         return action_bar
+
+    def show_object_error_details(self, error: ObjectErrors):
+        async def wrapper(e=None):
+            await ObjectErrorsContainer.open_in_popup(error, self.app)
+        return wrapper

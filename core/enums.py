@@ -19,7 +19,6 @@ class FieldTypes(StrEnum):
     FK_PK = 'fk_pk'
     BACK_O2O = 'back_o2o'
     BACK_FK = 'back_fk'
-    M2M = 'm2m'
     HIDDEN = 'hidden'
 
     @classmethod
@@ -51,7 +50,6 @@ class FieldTypes(StrEnum):
             cls.FK_PK,
             cls.BACK_O2O,
             cls.BACK_FK,
-            cls.M2M,
         )
 
     @classmethod
@@ -68,7 +66,6 @@ class FieldTypes(StrEnum):
             cls.FK,
             cls.BACK_O2O,
             cls.BACK_FK,
-            cls.M2M,
         )
 
     @classmethod
@@ -85,7 +82,6 @@ class FieldTypes(StrEnum):
     def multiple_relation(cls):
         return (
             cls.BACK_FK,
-            cls.M2M,
         )
 
 

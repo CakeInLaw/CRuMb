@@ -55,8 +55,10 @@ class ChoiceForm(BaseListForm):
         await self.close()
 
     def get_action_bar(self) -> Row:
-        return Row([
+        buttons = [
             ElevatedButton('Выбрать', on_click=self.on_confirm),
             ElevatedButton('Очистить', on_click=self.on_clean),
-            ElevatedButton('Создать', on_click=self.on_click_create),
-        ])
+        ]
+        if 'create' in self.resource.methods:
+            buttons.append(ElevatedButton('Создать', on_click=self.on_click_create))
+        return Row(buttons)

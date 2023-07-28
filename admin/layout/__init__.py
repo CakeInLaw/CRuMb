@@ -6,6 +6,7 @@ from .sidebar import Sidebar
 from .payload import PayloadInfo, Box
 from .tabs_bar import TabsBar, Tab
 from .popover import Popover
+from .popup import Popup
 from .modal_box import ModalBox
 from .content_box import ContentsBoxContainer, ContentBox
 

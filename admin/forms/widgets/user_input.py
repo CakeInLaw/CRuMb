@@ -133,16 +133,12 @@ class UserInputWidget(Generic[T]):
         except InputValidationError:
             return False
 
-    def _transform_value(self):
-        pass
-
     async def handle_value_change_and_update(self, widget: "UserInputWidget"):
         self.handle_value_change(widget=widget)
         await self.form.update_async()
 
     def handle_value_change(self, widget: "UserInputWidget"):
         if self is widget:
-            self._transform_value()
             if not self.is_valid():
                 return
         if self.on_value_change:

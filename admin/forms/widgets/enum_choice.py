@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Type, Optional, TypeVar, Literal, Callable, Coroutine, Sequence, TYPE_CHECKING
 
-from flet import Container, Row, Text, Icon, ListView as FletListView, ListTile,\
+from flet import Container, Row, Text, Icon, ListView as FletListView,\
     icons, TextOverflow, alignment, padding, MainAxisAlignment, ControlEvent, TapEvent
 
 from core.utils import default_if_none
@@ -77,7 +77,7 @@ class EnumChoiceWidget(UserInputWidget[E], Container):
         self.dropdown.top = e.global_y - e.local_y - 2
         self.dropdown.left = e.global_x - e.local_x - 2
         self.dropdown.width = self.container.get_width()
-        popover = await self.form.box.add_popover(
+        popover = await self.form.box.app.add_popover(
             self.dropdown,
             on_close=self.end_change_event_handler,
         )

@@ -44,24 +44,26 @@ class FloatInputWidget(InputWidget[float]):
         if self.max_value is not None and num > self.max_value:
             raise InputValidationError(f'Максимум {self.max_value}')
 
-    def set_value(self, value: float, initial: bool = False):
-        assert value is None or isinstance(value, float)
-        self.value = '' if value is None else str(value)
-
-    def _transform_value(self):
-        super()._transform_value()
-        value = self.value.replace(',', '.') if ',' in self.value else self.value
-        try:
+    def set_value(self, value: float | str, initial: bool = False):
+        if isinstance(value, str):
+            value = value.replace(',', '.') if ',' in value else value
+            try:
+                value = float(value)
+            except ValueError:
+                self.value = value
+                return
+        assert value is None or isinstance(value, float), f'value is {value}'
+        if value is None:
+            self.value = ''
+        else:
             self.value = f'{float(value):.{self.decimal_places}f}'
-        except ValueError:
-            pass
 
 
 @dataclass
 class FloatInput(Input[FloatInputWidget]):
     min_value: Optional[float | int] = None
     max_value: Optional[float | int] = None
-    decimal_places: int = 2
+    decimal_places: int = 3
 
     @property
     def widget_type(self):
@@ -70,7 +72,7 @@ class FloatInput(Input[FloatInputWidget]):
     @property
     def default_initial(self) -> Optional[float]:
         if self.required:
-            return 0.0
+            return 0.00
 
     @property
     def is_numeric(self):

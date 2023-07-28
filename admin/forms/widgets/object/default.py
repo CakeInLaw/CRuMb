@@ -12,7 +12,7 @@ class ObjectWidget(ObjectBaseWidget[SimpleWidgetContainer], Container):
     child_container = SimpleWidgetContainer
 
     def __init__(self, variant: str = 'row', **kwargs):
-        Container.__init__(self)
+        Container.__init__(self, padding=20)
         ObjectBaseWidget.__init__(self, **kwargs)
         self.variant = variant
         self.content = self.create_content()
@@ -49,6 +49,8 @@ class ObjectWidget(ObjectBaseWidget[SimpleWidgetContainer], Container):
 @dataclass
 class Object(ObjectBase[ObjectWidget]):
     variant: str = 'row'
+    width: int | float = None
+    height: int | float = None
 
     @property
     def widget_type(self):

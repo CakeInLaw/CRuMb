@@ -20,18 +20,23 @@ class InputWidget(UserInputWidget[T], Container):
             on_blur=self.end_change_event_handler,
         )
         self.text = Text(size=14, no_wrap=True, overflow=TextOverflow.ELLIPSIS)
+        self._stack = Stack(controls=[self.text, self.input])
         Container.__init__(
             self,
-            content=Stack(controls=[self.text, self.input]),
+            content=self._stack,
             alignment=alignment.center_left
         )
 
         UserInputWidget.__init__(self, **kwargs)
 
         self.on_start_changing = self.focus_on_start_changing
+        self.on_end_changing = self.set_value_on_end_changing
 
-    async def focus_on_start_changing(self, e):
+    async def focus_on_start_changing(self, e=None):
         await self.input.focus_async()
+
+    def set_value_on_end_changing(self, e=None):
+        self.set_value(self.input.value)
 
     def apply_container(self, container: BaseWidgetContainer):
         super().apply_container(container)
@@ -46,9 +51,6 @@ class InputWidget(UserInputWidget[T], Container):
         else:
             self.text.visible = False
             self.input.visible = True
-
-    def _transform_value(self):
-        self.value = self.input.value
 
     @property
     def value(self):

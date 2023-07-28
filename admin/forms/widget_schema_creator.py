@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Union, overload, Callable
+from typing import TYPE_CHECKING, Any, Union, overload, Callable, Type
 
 from tortoise import fields
 from core.orm import fields as orm_fields
@@ -24,8 +24,27 @@ class WidgetSchemaCreator:
         self.all_read_only = all_read_only
         self.allow_groups = allow_groups
 
+    @classmethod
+    def _widget_schema_classes(cls):
+        return {
+            FieldTypes.INT: widgets.IntInput,
+            FieldTypes.FLOAT: widgets.FloatInput,
+            FieldTypes.STR: widgets.StrInput,
+            FieldTypes.TEXT: widgets.TextInput,
+            FieldTypes.BOOL: widgets.Checkbox,
+            FieldTypes.ENUM: widgets.EnumChoice,
+            FieldTypes.DATE: widgets.DateInput,
+            FieldTypes.DATETIME: widgets.DatetimeInput,
+            FieldTypes.O2O: widgets.Object,
+            FieldTypes.O2O_PK: widgets.RelatedChoice,
+            FieldTypes.FK: widgets.Object,
+            FieldTypes.FK_PK: widgets.RelatedChoice,
+            FieldTypes.BACK_O2O: widgets.Object,
+            FieldTypes.BACK_FK: widgets.TableInput,
+        }
+
     def _creators(self):
-        return {  # type: ignore
+        return {
             FieldTypes.INT: self.int,
             FieldTypes.FLOAT: self.float,
             FieldTypes.STR: self.str,
@@ -38,9 +57,8 @@ class WidgetSchemaCreator:
             FieldTypes.O2O_PK: self.related_choice,
             FieldTypes.FK: self.object,
             FieldTypes.FK_PK: self.related_choice,
-            FieldTypes.BACK_O2O: self.related_choice,
+            FieldTypes.BACK_O2O: self.object,
             FieldTypes.BACK_FK: self.table_input,
-            # FieldTypes.M2M: self.input_creator,
         }
 
     @property
@@ -48,6 +66,12 @@ class WidgetSchemaCreator:
         if not hasattr(self, '_cached_creators'):
             setattr(self, '_cached_creators', self._creators())
         return getattr(self, '_cached_creators')
+
+    @property
+    def widget_schema_classes(self) -> dict[FieldTypes, Type[widgets.UserInput]]:
+        if not hasattr(self, '_cached_widget_schema_classes'):
+            setattr(self, '_cached_widget_schema_classes', self._widget_schema_classes())
+        return getattr(self, '_cached_widget_schema_classes')
 
     def from_primitive_item(self, item: PRIMITIVE_ITEM) -> widgets.UserInput | InputGroup:
         if Primitive.is_schema(item):
@@ -59,13 +83,17 @@ class WidgetSchemaCreator:
             for f in group_field:
                 group.add_field(self.from_primitive_item(f))
             return group
-        elif Primitive.is_field_name(item):
-            field_name, extra = item, {}
         elif Primitive.is_field_with_extra(item):
             field_name, extra = item
         else:
             raise ValueError(f'{type(item)}({item}) не подходит ни под какой из типов:)')
+        if field_name in self.repository.calculated:
+            label = self.resource.translate_field(field_name)
+            extra = {'label': label, **extra, 'name': field_name, 'editable': False}
+            return self.widget_schema_classes[self.repository.calculated[field_name]](**extra)
         field_type, field = self.repository.get_field_type_and_instance(field_name)
+        if field_type is FieldTypes.HIDDEN:
+            raise ValueError(f'{field_name} in {self.repository} is hidden')
         creator = self.creators[field_type]
         return creator(field, **extra)
 
@@ -212,7 +240,7 @@ class WidgetSchemaCreator:
             **extra,
     ) -> widgets.Object | widgets.ObjectTableRow:
         allowed_keys = ['fields']
-        if isinstance(field, fields.relational.BackwardFKRelation):
+        if field.__class__ is fields.relational.BackwardFKRelation:
             widget_class = widgets.ObjectTableRow
         else:
             widget_class = widgets.Object
@@ -223,9 +251,10 @@ class WidgetSchemaCreator:
         else:
             kwargs['resource'] = relative_resource = self.resource.relative_resource(field_name=kwargs['name'])
 
-        assert 'primitive' in extra or 'fields' in extra
+        assert 'primitive' in extra or 'fields' in extra, f'{kwargs["name"]} must have primitive or fields'
         if 'fields' not in extra:
             primitive = extra.pop('primitive')
+            assert isinstance(primitive, Primitive)
             relative_creator = WidgetSchemaCreator(
                 resource=relative_resource,
                 all_read_only=self.all_read_only
@@ -245,7 +274,8 @@ class WidgetSchemaCreator:
             **extra
     ) -> widgets.RelatedChoice:
         kwargs = self.base_kwargs(field, extra)
-        kwargs['entity'] = self.resource.relative_resource(field.model_field_name).entity()
+        if 'entity' not in extra:
+            kwargs['entity'] = self.resource.relative_resource(field.model_field_name).entity()
         kwargs.update(self.pop_allowed_extra(extra, 'entity', 'method', 'query'))
         self.raise_if_unexpected_extra(field, extra)
         return widgets.RelatedChoice(**kwargs)

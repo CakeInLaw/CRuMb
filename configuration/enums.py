@@ -2,7 +2,6 @@ from enum import IntEnum, StrEnum
 
 
 class NomenclatureTypes(StrEnum):
-    EQUIPMENT = "E"
     HOZ = "H"
     INVENTORY = "I"
     RAWS = "R"

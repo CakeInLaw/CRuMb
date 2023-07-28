@@ -1,15 +1,15 @@
-from typing import TYPE_CHECKING, Callable, Coroutine
+from typing import TYPE_CHECKING
 
 from flet import Control, Column, Container, Stack, BoxShadow, ClipBehavior, ScrollMode
 
 from .loader import Loader
 from .payload import Box
 from .modal_box import ModalBox
-from .popover import Popover
 
 if TYPE_CHECKING:
     from admin.app import CRuMbAdmin
     from admin.layout import Tab, PayloadInfo
+
 
 __all__ = ["ContentsBoxContainer", "ContentBox"]
 
@@ -88,26 +88,6 @@ class ContentBox(Container, Box):
             return
         self._stack_controls.remove(modal)
         await self.update_async()
-
-    async def add_popover(
-            self,
-            content: Control,
-            on_close: Callable[[], Coroutine[..., ..., None]] = None,
-    ) -> Popover:
-        popover = Popover(
-            box=self,
-            content=content,
-            on_close=on_close,
-        )
-        self.app.controls.append(popover)
-        await self.app.update_async()
-        return popover
-
-    async def close_popover(self, popover: Popover) -> None:
-        if popover not in self.app.controls:
-            return
-        self.app.controls.remove(popover)
-        await self.app.update_async()
 
 
 class ContentsBoxContainer(Container):

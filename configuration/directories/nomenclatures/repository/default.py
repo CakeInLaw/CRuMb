@@ -1,0 +1,74 @@
+from typing import Any, Optional, cast
+
+from configuration.enums import NomenclatureTypes
+from core.enums import FieldTypes
+from core.exceptions import AnyFieldError
+from core.repository import default_repository
+from core.entities.directories import DirectoryRepository
+from core.types import DATA, PK, MODEL
+
+from ...models import NomenclatureCategory, Nomenclature
+from ..translations import NomenclatureTranslation
+
+
+__all__ = ["NomenclatureRepository", "NomenclatureTypeBaseRepository"]
+
+
+@default_repository
+class NomenclatureRepository(DirectoryRepository[Nomenclature]):
+    READ_ONLY_REPOSITORY = True
+    model = Nomenclature
+
+    _TRANSLATION_DEFAULT = _TRANSLATION_RU = NomenclatureTranslation.Ru(
+        name='Номенклатура',
+        name_plural='Номенклатура',
+    )
+    _TRANSLATION_EN = NomenclatureTranslation.En(
+        name='Nomenclature',
+        name_plural='Nomenclature',
+    )
+
+    def qs_select_related(self) -> set[str]:
+        return {'category'}
+
+
+InvalidCategoryType = AnyFieldError(
+    'invalid_category_type',
+    'Вид номенклатуры категории не совпадает с таковым для номенклатуры'
+)
+
+
+class NomenclatureTypeBaseRepository(DirectoryRepository[Nomenclature]):
+    type: NomenclatureTypes
+    model = Nomenclature
+    hidden_fields = {'type'}
+
+    def qs_default_filters(self) -> dict[str, Any]:
+        return {'type': self.type}
+
+    def qs_select_related(self) -> set[str]:
+        return {'category'}
+
+    @classmethod
+    def entity(cls):
+        return f'{super().entity()}.{cls.type.name.title()}'
+
+    async def get_create_defaults(self, data: DATA, user_defaults: Optional[DATA]) -> DATA:
+        defaults = user_defaults or {}
+        defaults['type'] = self.type
+        return defaults
+
+    async def _validate_category_id(
+            self,
+            value: PK,
+            data: DATA,
+            instance: Optional[MODEL]
+    ) -> None:
+        category = cast(NomenclatureCategory, await self.validate_fk_pk(
+            field_name='category_id',
+            value=value,
+            data=data,
+            instance=instance,
+        ))
+        if category and category.type != self.type:
+            raise InvalidCategoryType

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from admin.layout import BOX
 
 
-__all__ = ["Resource"]
+__all__ = ["Resource", "ListValueResource"]
 
 C = TypeVar('C', bound=Control)
 
@@ -60,18 +60,26 @@ class Resource(Generic[REPOSITORY]):
     async def get_edit_model_form(self):
         return self.edit_model_form or self.model_form
 
-    async def get_list_form(self, box: "BOX") -> ListForm:
-        view = ListForm(box=box, primitive=self.list_form_primitive)
+    async def get_list_form(
+            self,
+            box: "BOX",
+            primitive: "Primitive" = None,
+    ) -> ListForm:
+        view = ListForm(
+            box=box,
+            primitive=primitive or await self.get_list_primitive()
+        )
         return self.with_tab_title(view, 'list')
 
     async def get_choice_view(
             self,
             box: "BOX",
             make_choice: Callable[[Optional[BaseModel]], Coroutine[Any, Any, None]],
+            primitive: "Primitive" = None,
     ) -> ChoiceForm:
         view = ChoiceForm(
             box=box,
-            primitive=self.choice_form_primitive or self.list_form_primitive,
+            primitive=primitive or await self.get_choice_primitive(),
             make_choice=make_choice
         )
         return self.with_tab_title(view, 'choice')
@@ -101,7 +109,7 @@ class Resource(Generic[REPOSITORY]):
     ) -> ModelInputForm | Control:
         try:
             instance = await self.repository(
-                by='admin',
+                by='__admin__',
                 extra={'target': 'edit'}
             ).get_one(pk)
         except ItemNotFound:
@@ -129,6 +137,11 @@ class Resource(Generic[REPOSITORY]):
         return 'list'
 
     def _methods(self) -> dict[str, Callable[["BOX", ...], Control | Coroutine[Any, Any, Control]]]:
+        if self.repository.READ_ONLY_REPOSITORY:
+            return {
+                'list': self.get_list_form,
+                'choice': self.get_choice_view,
+            }
         return {
             'list': self.get_list_form,
             'choice': self.get_choice_view,
@@ -205,3 +218,12 @@ class Resource(Generic[REPOSITORY]):
 
     def _compare_tab_edit(self, query1: dict[str, Any], query2: dict[str, Any]) -> bool:
         return query1['pk'] == query2['pk']
+
+
+class ListValueResource(Resource):
+    @classmethod
+    def default_method(cls) -> str:
+        raise AttributeError(f'{cls} используется только для списка')
+
+    def _methods(self) -> dict[str, Callable[["BOX", ...], Control | Coroutine[Any, Any, Control]]]:
+        return {}

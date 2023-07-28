@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class InputGroup:
+    name: str
     fields: list[Union["UserInput", "InputGroup"], ...] = field(default_factory=list)
     label: Optional[str] = field(default=None)
     direction: Literal['horizontal', 'vertical'] = field(default='horizontal')

@@ -1,30 +1,46 @@
-from typing import Any, Optional
+from typing import Any
 
 from . import widgets, InputGroup
 
 
-PRIMITIVE_ITEM = str | tuple[str, dict[str, Any]] | dict[str, Any] | widgets.UserInput | InputGroup
+PRIMITIVE_ITEM = tuple[str, dict[str, Any]] | dict[str, Any] | widgets.UserInput | InputGroup
 
 
 class Primitive:
-    values: list[PRIMITIVE_ITEM]
-
-    def __init__(self, *values: PRIMITIVE_ITEM):
-        self.values = list(values)
+    def __init__(self, *items: str | PRIMITIVE_ITEM, allow_groups: bool = True):
+        self.items: list[PRIMITIVE_ITEM] = []
+        for v in items:
+            self.add(v)
 
     def __iter__(self):
-        return self.values.__iter__()
+        return self.items.__iter__()
 
-    def add(self, item: PRIMITIVE_ITEM):
-        self.values.append(item)
+    def add(self, item: str | PRIMITIVE_ITEM) -> "Primitive":
+        if isinstance(item, str):
+            self.items.append((item, {}))
+        else:
+            self.items.append(item)
+        return self
 
-    @staticmethod
-    def describe(item: str | tuple[str, dict[str, Any]]) -> tuple[str, Optional[dict[str, Any]]]:
-        pass
+    def get(self, name: str) -> PRIMITIVE_ITEM:
+        for item in self.items:
+            if self.is_schema(item):
+                item_name = item.name
+            elif self.is_group(item):
+                item_name = item['name']
+            else:
+                item_name = item[0]
+            if item_name == name:
+                return item
 
-    @staticmethod
-    def is_field_name(item: PRIMITIVE_ITEM) -> bool:
-        return isinstance(item, str)
+    def remove(self, name: str) -> "Primitive":
+        item = self.get(name)
+        if item:
+            self.items.remove(item)
+        return self
+
+    def copy(self):
+        return Primitive(*self.items)
 
     @staticmethod
     def is_field_with_extra(item: PRIMITIVE_ITEM) -> bool:

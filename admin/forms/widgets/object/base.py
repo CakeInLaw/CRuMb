@@ -1,13 +1,15 @@
 from dataclasses import dataclass, field
-from typing import Any, TypeVar, Generic, Type
+from typing import TYPE_CHECKING, Any, TypeVar, Generic, Type
 
 from core.constants import UndefinedValue
 from core.orm import BaseModel
-from admin.resource import Resource
 from ..user_input import UserInputWidget, UserInput
 from ... import InputGroup
 
 from ...widget_containers import BaseWidgetContainer
+
+if TYPE_CHECKING:
+    from admin.resource import Resource
 
 
 C = TypeVar('C', bound=BaseWidgetContainer)
@@ -29,7 +31,7 @@ class ObjectBaseWidget(Generic[C], UserInputWidget[dict[str, Any]]):
     def __init__(
             self,
             fields: list[UserInput | InputGroup],
-            resource: Resource = None,
+            resource: "Resource" = None,
             **kwargs
     ):
         super().__init__(**kwargs)
@@ -87,7 +89,7 @@ _OI = TypeVar('_OI', bound=ObjectBaseWidget)
 @dataclass
 class ObjectBase(UserInput[_OI]):
     fields: list[UserInput] = field(default_factory=list)
-    resource: Resource = None
+    resource: "Resource" = None
 
     def add_field(self, item: UserInput | InputGroup) -> None:
         self.fields.append(item)

@@ -22,11 +22,6 @@ FK_TYPE = orm_fields.IntField | orm_fields.SmallIntField | orm_fields.BigIntFiel
 BackFKData = list[DATA]
 
 
-class M2MData(TypedDict, total=False):
-    add: list[PK]
-    remove: list[PK]
-
-
 @dataclass
 class SortedData:
     db_field: dict[str, Any] = field(default_factory=dict)
@@ -37,7 +32,6 @@ class SortedData:
     fk_pk: dict[str, int] = field(default_factory=dict)
     back_o2o: dict[str, DATA] = field(default_factory=dict)
     back_fk: dict[str, BackFKData] = field(default_factory=dict)
-    m2m: dict[str, M2MData] = field(default_factory=dict)
 
 
 @dataclass
@@ -50,5 +44,4 @@ class RepositoryDescription:
     fk_pk: dict[str, FK_TYPE] = field(default_factory=dict)
     back_o2o: dict[str, fields.relational.BackwardOneToOneRelation] = field(default_factory=dict)
     back_fk: dict[str, fields.relational.BackwardFKRelation] = field(default_factory=dict)
-    m2m: dict[str, fields.relational.ManyToManyFieldInstance] = field(default_factory=dict)
     hidden: dict[str, fields.Field] = field(default_factory=dict)

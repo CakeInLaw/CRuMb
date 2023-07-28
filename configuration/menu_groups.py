@@ -3,9 +3,15 @@ from flet import icons
 from admin.layout import MenuGroup
 
 
+class Nomenclature(MenuGroup):
+    icon = icons.LIBRARY_BOOKS_OUTLINED
+    label = 'Номенклатура'
+
+
 class Directories(MenuGroup):
     icon = icons.LIBRARY_BOOKS_OUTLINED
     label = 'Справочники'
+    subgroups = [Nomenclature]
 
 
 class Documents(MenuGroup):
