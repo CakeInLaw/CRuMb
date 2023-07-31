@@ -1,7 +1,7 @@
 from typing import TypeVar
 
-from admin.forms import Primitive
-from admin.resource import Resource
+from core.admin.forms import Primitive
+from core.admin.resource import Resource
 
 from configuration.admin import CakeInLawAdmin
 from ..repository import NomenclatureRepository
@@ -18,6 +18,20 @@ nom_type_list_form_primitive = Primitive('name', 'category_id', 'units')
 nom_type_choice_form_primitive = Primitive('name', 'category_id', 'units')
 nom_type_create_form_primitive = Primitive('name', 'category_id', 'units')
 nom_type_edit_form_primitive = Primitive('name', 'category_id', 'units')
+RecipeInputSchema = ('recipe', {
+    'primitive': Primitive(
+        ('ingredients', {
+            'object_schema': {
+                'primitive': Primitive(
+                    ('ordering', {'width': 40}),
+                    ('product_id', {'width': 300}),
+                    ('count', {'width': 100})
+                )
+            }
+        }),
+        ('text', {'height': 170}),
+    ),
+})
 R = TypeVar('R', bound=NomenclatureTypeBaseRepository)
 
 

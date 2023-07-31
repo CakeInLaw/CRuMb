@@ -1,6 +1,6 @@
 from flet import icons
 
-from admin.layout import MenuGroup
+from core.admin.layout import MenuGroup
 
 
 class Nomenclature(MenuGroup):

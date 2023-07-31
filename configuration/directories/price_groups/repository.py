@@ -1,5 +1,5 @@
 from core.repository import register_repository
-from core.translations import Translation
+from core.translations.langs import ru, en
 from core.entities.directories import DirectoryRepository
 
 from .model import PriceGroup
@@ -12,12 +12,12 @@ __all__ = ["PriceGroupRepository"]
 class PriceGroupRepository(DirectoryRepository):
     model = PriceGroup
 
-    _TRANSLATION_DEFAULT = _TRANSLATION_RU = Translation.Ru(
+    _t_ru = ru.Entity(
         name='Ценовая группа',
         name_plural='Ценовые группы',
     )
 
-    _TRANSLATION_EN = Translation.En(
+    _t_en = en.Entity(
         name='Price group',
         name_plural='Price groups',
     )

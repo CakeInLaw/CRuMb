@@ -12,7 +12,6 @@ from core.exceptions import ItemNotFound, ObjectErrors, UnexpectedDataKey, Field
     FieldRequired, NotFoundFK, RequiredMissed, InvalidType, AnyFieldError, ListFieldError
 from core.enums import FieldTypes
 from core.maps import field_instance_to_type
-from core.translations import BaseTranslation
 
 from core.types import MODEL, PK, SORT, FILTERS, DATA, SortedData, RepositoryDescription, BackFKData
 
@@ -30,8 +29,6 @@ class Repository(Generic[MODEL]):
     extra_allowed: set[str] = set()
     calculated: dict[str, FieldTypes] = dict()  # заменить на mutable?
     related_repositories: dict[str, str] = dict()  # заменить на mutable?
-
-    _TRANSLATION_DEFAULT: BaseTranslation
 
     def __init__(
             self,
@@ -826,10 +823,6 @@ class Repository(Generic[MODEL]):
         if repo_name != '__default__':
             return f'{cls.opts().full_name}.{repo_name}'
         return cls.opts().full_name
-
-    @classmethod
-    def get_translation(cls, lang: str) -> BaseTranslation:
-        return getattr(cls, f'_TRANSLATION_{lang.upper()}', getattr(cls, f'_TRANSLATION_DEFAULT'))
 
     @classmethod
     def get_field_name_for_value(cls, name: str) -> str:

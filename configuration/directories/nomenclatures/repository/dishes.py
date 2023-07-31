@@ -1,5 +1,6 @@
 from configuration.enums import NomenclatureTypes
 from core.enums import FieldTypes
+from core.repository import register_repository
 from .default import NomenclatureTypeBaseRepository
 from ..translations import NomenclatureTranslation
 
@@ -7,15 +8,15 @@ from ..translations import NomenclatureTranslation
 __all__ = ["DishesRepository"]
 
 
+@register_repository
 class DishesRepository(NomenclatureTypeBaseRepository):
     type = NomenclatureTypes.DISHES
-    calculated = {'has_recipe': FieldTypes.BOOL}
 
-    _TRANSLATION_DEFAULT = _TRANSLATION_RU = NomenclatureTranslation.Ru(
+    _t_ru = NomenclatureTranslation.Ru(
         name='Блюдо',
         name_plural='Блюда',
     )
-    _TRANSLATION_EN = NomenclatureTranslation.En(
+    _t_en = NomenclatureTranslation.En(
         name='Dish',
         name_plural='Dishes',
     )

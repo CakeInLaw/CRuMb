@@ -1,9 +1,6 @@
-from admin.forms import Primitive
-from admin.resource import Resource, ListValueResource
+from core.admin.resource import Resource, ListValueResource
 from .repository import RecipeCardRepository, RecipeCardIngredientsRepository
 from configuration.admin import CakeInLawAdmin
-from configuration.menu_groups import Directories
-
 
 __all__ = ["RecipeCardResource", "RecipeCardIngredientsResource"]
 

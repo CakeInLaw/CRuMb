@@ -10,12 +10,15 @@ class EntityTranslation:
     name: str
     name_plural: str
 
-    fields: dict[str, str]
-
-    choice_template: str = '{self.name_plural}: Выбор'
-    create_template: str = '{self.name}: Создание'
+    _choice: str
+    _creation: str
+    choice_template: str = '{self.name_plural}: {self._choice}'
+    create_template: str = '{self.name}: {self._creation}'
     edit_template: str = '{self.name}: {instance}'
-    interface: InterfaceTranslation = field(init=False)
+
+    fields: dict[str, str] = field(default_factory=dict)
+
+    interface: "InterfaceTranslation" = field(init=False)
 
     def choice(self, **kwargs):
         return self.choice_template.format(self=self, **kwargs)
@@ -27,4 +30,7 @@ class EntityTranslation:
         return self.edit_template.format(self=self, **kwargs)
 
     def field(self, name: str) -> Optional[str]:
-        return self.fields.get(name)
+        res = self.fields.get(name)
+        if res is None:
+            return self.interface.common_fields.get(name)
+        return res

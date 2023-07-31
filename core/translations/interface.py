@@ -1,4 +1,7 @@
 from dataclasses import dataclass, field
+from enum import Enum
+from typing import Type
+
 from .entity import EntityTranslation
 
 
@@ -11,6 +14,7 @@ class InterfaceTranslation:
 
     common_fields: dict[str, str]
     entities: dict[str, EntityTranslation] = field(default_factory=dict)
+    enums: dict[Type[Enum], dict[Enum, str]] = field(default_factory=dict)
 
     def add_common_fields(self, **fields: str):
         self.common_fields.update(**fields)
@@ -25,10 +29,11 @@ class InterfaceTranslation:
             raise KeyError(f'Нет перевода для {key}')
         return res
 
-    def translate_field(self, entity_name: str, field_name: str):
-        res = self.entities[entity_name].field(field_name)
-        if res is None:
-            res = self.common_fields.get(field_name)
-        if res is None:
-            res = field_name
-        return res
+    def get_entity(self, name: str):
+        return self.entities[name]
+
+    def add_enum(self, enum_type: Type[Enum], translates: dict[Enum, str]):
+        self.enums[enum_type] = translates
+
+    def get_enum_translations(self, enum_type: Type[Enum]):
+        return self.enums[enum_type]

@@ -1,6 +1,6 @@
 from core.repository import register_repository
 from core.entities.directories import DirectoryRepository
-from core.translations import Translation
+from core.translations.langs import ru, en
 
 from .model import Employee
 
@@ -12,7 +12,7 @@ __all__ = ["EmployeeRepository"]
 class EmployeeRepository(DirectoryRepository):
     model = Employee
 
-    _TRANSLATION_DEFAULT = _TRANSLATION_RU = Translation.Ru(
+    _t_ru = ru.Entity(
         name='Сотрудник',
         name_plural='Сотрудники',
         fields={
@@ -21,7 +21,7 @@ class EmployeeRepository(DirectoryRepository):
             'fathers_name': 'Отчество',
         },
     )
-    _TRANSLATION_EN = Translation.En(
+    _t_en = en.Entity(
         name='Employee',
         name_plural='Employees',
         fields={

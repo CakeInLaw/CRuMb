@@ -1,4 +1,5 @@
 from configuration.enums import NomenclatureTypes
+from core.repository import register_repository
 from .default import NomenclatureTypeBaseRepository
 from ..translations import NomenclatureTranslation
 
@@ -6,14 +7,15 @@ from ..translations import NomenclatureTranslation
 __all__ = ["HozRepository"]
 
 
+@register_repository
 class HozRepository(NomenclatureTypeBaseRepository):
     type = NomenclatureTypes.HOZ
 
-    _TRANSLATION_DEFAULT = _TRANSLATION_RU = NomenclatureTranslation.Ru(
+    _t_ru = NomenclatureTranslation.Ru(
         name='Хозтовар',
         name_plural='Хозтовары',
     )
-    _TRANSLATION_EN = NomenclatureTranslation.En(
+    _t_en = NomenclatureTranslation.En(
         name='household good',
         name_plural='household goods',
     )

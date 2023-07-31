@@ -1,7 +1,6 @@
 from typing import Any, Optional, cast
 
 from configuration.enums import NomenclatureTypes
-from core.enums import FieldTypes
 from core.exceptions import AnyFieldError
 from core.repository import register_repository
 from core.entities.directories import DirectoryRepository
@@ -19,11 +18,11 @@ class NomenclatureRepository(DirectoryRepository[Nomenclature]):
     READ_ONLY_REPOSITORY = True
     model = Nomenclature
 
-    _TRANSLATION_DEFAULT = _TRANSLATION_RU = NomenclatureTranslation.Ru(
+    _t_ru = NomenclatureTranslation.Ru(
         name='Номенклатура',
         name_plural='Номенклатура',
     )
-    _TRANSLATION_EN = NomenclatureTranslation.En(
+    _t_en = NomenclatureTranslation.En(
         name='Nomenclature',
         name_plural='Nomenclature',
     )

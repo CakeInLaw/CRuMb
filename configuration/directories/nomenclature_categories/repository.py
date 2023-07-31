@@ -1,6 +1,6 @@
 from core.repository import register_repository
 from core.entities.directories import DirectoryRepository
-from core.translations import Translation
+from core.translations.langs import ru, en
 
 from .model import NomenclatureCategory
 
@@ -12,14 +12,14 @@ __all__ = ["NomenclatureCategoryRepository"]
 class NomenclatureCategoryRepository(DirectoryRepository):
     model = NomenclatureCategory
 
-    _TRANSLATION_DEFAULT = _TRANSLATION_RU = Translation.Ru(
+    _t_ru = ru.Entity(
         name='Категория номенклатуры',
         name_plural='Категории номенклатуры',
         fields={
             'type': 'Вид номенклатуры',
         },
     )
-    _TRANSLATION_EN = Translation.En(
+    _t_en = en.Entity(
         name='Nomenclature category',
         name_plural='Nomenclature categories',
         fields={

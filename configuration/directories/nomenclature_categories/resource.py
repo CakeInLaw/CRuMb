@@ -1,5 +1,5 @@
-from admin.forms import Primitive
-from admin.resource import Resource
+from core.admin.forms import Primitive
+from core.admin.resource import Resource
 
 from configuration.admin import CakeInLawAdmin
 from configuration.menu_groups import Directories

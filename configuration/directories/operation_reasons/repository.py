@@ -2,7 +2,7 @@ from typing import Optional
 
 from core.repository import register_repository
 from core.entities.directories import DirectoryRepository
-from core.translations import Translation
+from core.translations.langs import ru, en
 from core.types import DATA
 
 from .model import OperationReason
@@ -17,14 +17,14 @@ from ...enums import OperationTypes
 class OperationReasonRepository(DirectoryRepository):
     model = OperationReason
 
-    _TRANSLATION_DEFAULT = _TRANSLATION_RU = Translation.Ru(
+    _t_ru = ru.Entity(
         name='Причина операции',
         name_plural='Причины операций',
         fields={
             'operation_type': 'Вид операции'
         },
     )
-    _TRANSLATION_EN = Translation.En(
+    _t_en = en.Entity(
         name='Operation reason',
         name_plural='Operation reasons',
         fields={
