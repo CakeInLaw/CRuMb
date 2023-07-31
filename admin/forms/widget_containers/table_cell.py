@@ -5,7 +5,7 @@ from .base import W, BaseWidgetContainer
 class TableCellWidgetContainer(BaseWidgetContainer[W], TableCell):
     def __init__(self, widget: W):
         BaseWidgetContainer.__init__(self, widget=widget)
-        TableCell.__init__(self, content=self.widget_tooltip)
+        TableCell.__init__(self, content=self.widget_with_tooltip)
         if self.widget.editable:
             self.on_double_click = self.widget.start_change_event_handler
         self.widget.apply_container(self)

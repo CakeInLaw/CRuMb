@@ -1,4 +1,4 @@
-from core.repository import default_repository
+from core.repository import register_repository
 from core.entities.directories import DirectoryRepository
 from core.translations import Translation
 
@@ -8,7 +8,7 @@ from .model import Customer
 __all__ = ["CustomerRepository"]
 
 
-@default_repository
+@register_repository
 class CustomerRepository(DirectoryRepository):
     model = Customer
 

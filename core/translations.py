@@ -1,20 +1,6 @@
 from typing import Optional
 
 
-class Fstr:
-    def __init__(self, template: str):
-        self.template = template
-
-    def __get__(self, instance, owner):
-        if instance is None:
-            return self
-
-        def formatter(**kwargs):
-            return self.template.format(self=instance, **kwargs)
-
-        return formatter
-
-
 class BaseTranslation:
     name: str
     name_plural: str

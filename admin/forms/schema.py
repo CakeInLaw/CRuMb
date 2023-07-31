@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Union, Optional, Literal
 from dataclasses import dataclass, field
 
-from flet import Control, Row, Column
+from flet import Control, Row, Column, CrossAxisAlignment
 
 if TYPE_CHECKING:
     from .widgets import UserInput
@@ -19,7 +19,7 @@ class InputGroup:
 
     def to_control(self, children: list[Control]) -> Row | Column:
         if self.direction == 'horizontal':
-            return Row(controls=children, spacing=30)
+            return Row(controls=children, spacing=30, vertical_alignment=CrossAxisAlignment.START)
         else:
             return Column(controls=children)
 

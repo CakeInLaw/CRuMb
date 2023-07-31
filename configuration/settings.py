@@ -12,31 +12,11 @@ DATABASE = {
         }
     },
     'apps': {
-        'aerich': {
-            'models': [
-                'aerich.models',
-            ],
-        },
-        'accum_registers': {
-            'models': [
-                'configuration.accum_registers.models',
-            ],
-        },
-        'directories': {
-            'models': [
-                'configuration.directories.models',
-            ]
-        },
-        'documents': {
-            'models': [
-                'configuration.documents.models',
-            ]
-        },
-        'info_registers': {
-            'models': [
-                'configuration.info_registers.models',
-            ]
-        },
+        'aerich': {'models': ['aerich.models']},
+        'accum_registers': {'models': ['configuration.accum_registers.models']},
+        'directories': {'models': ['configuration.directories.models']},
+        'documents': {'models': ['configuration.documents.models']},
+        'info_registers': {'models': ['configuration.info_registers.models']},
     },
     'use_tz': True,
     'timezone': 'Europe/Moscow'

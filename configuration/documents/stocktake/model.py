@@ -3,7 +3,7 @@ from typing import Union
 from tortoise import fields
 from core.orm import fields as orm_fields
 
-from .nomenclature_move_documents import MoveDocument, MoveDocumentValue
+from ..base_nomenclature_move_documents.model import MoveDocument, MoveDocumentValue
 
 
 __all__ = ["Stocktake", "StocktakeValue"]

@@ -1,16 +1,17 @@
 from dataclasses import dataclass, field
-from typing import TypeVar, Any, TypedDict
+from typing import TypeVar, Any
 from uuid import UUID
 
 from tortoise import fields
 from core.orm import fields as orm_fields
 
-from core.orm.base_model import BaseModel
+from core.orm.base_model import BaseModel, ListValueModel
 from .enums import FieldTypes
 from .filters import Filter
 
 
 MODEL = TypeVar('MODEL', bound=BaseModel)
+LIST_VALUE_MODEL = TypeVar('LIST_VALUE_MODEL', bound=ListValueModel)
 PK = TypeVar('PK', int, str, UUID)
 SORT = list[str]
 FILTERS = list[Filter]

@@ -7,17 +7,15 @@ from tortoise.transactions import in_transaction
 from tortoise.exceptions import ValidationError
 
 from core.orm.base_model import BaseModel
-from .constants import EMPTY_TUPLE, UndefinedValue
-from .exceptions import ItemNotFound, ObjectErrors, UnexpectedDataKey, FieldError, NotUnique, \
-    FieldRequired, NotFoundFK, RequiredMissed, InvalidType, AnyFieldError, NoDefaultRepository, ListFieldError
-from .enums import FieldTypes
-from .maps import field_instance_to_type
-from .translations import BaseTranslation
+from core.constants import EMPTY_TUPLE, UndefinedValue
+from core.exceptions import ItemNotFound, ObjectErrors, UnexpectedDataKey, FieldError, NotUnique, \
+    FieldRequired, NotFoundFK, RequiredMissed, InvalidType, AnyFieldError, ListFieldError
+from core.enums import FieldTypes
+from core.maps import field_instance_to_type
+from core.translations import BaseTranslation
 
-from .types import MODEL, PK, SORT, FILTERS, DATA, SortedData, RepositoryDescription, BackFKData
+from core.types import MODEL, PK, SORT, FILTERS, DATA, SortedData, RepositoryDescription, BackFKData
 
-
-__all__ = ["Repository", "ListValueRepository", "default_repository", "REPOSITORY"]
 
 T = TypeVar('T')
 descriptions = {}
@@ -27,9 +25,11 @@ class Repository(Generic[MODEL]):
     model: Type[MODEL]
 
     READ_ONLY_REPOSITORY = False
+    _REPOSITORY_NAME: str = '__default__'
     hidden_fields: set[str] = set()
     extra_allowed: set[str] = set()
-    calculated: dict[str, FieldTypes] = dict()
+    calculated: dict[str, FieldTypes] = dict()  # заменить на mutable?
+    related_repositories: dict[str, str] = dict()  # заменить на mutable?
 
     _TRANSLATION_DEFAULT: BaseTranslation
 
@@ -797,34 +797,34 @@ class Repository(Generic[MODEL]):
         return {**required}, {**pairs}
 
     @classmethod
-    @overload
-    def repository_of(cls, field_name: str) -> Type["Repository"]: ...
-
-    @classmethod
-    @overload
-    def repository_of(cls, field_name: str, *, raise_if_none: bool = True) -> Optional[Type["Repository"]]: ...
-
-    @classmethod
-    def repository_of(cls, field_name, *, raise_if_none: bool = True) -> Optional[Type["Repository"]]:
+    def repository_of(cls, field_name: str) -> Type["Repository"]:
         field_type, field = cls.get_field_type_and_instance(field_name)
         if field_type in FieldTypes.no_pk_relation():
             reference = cast(fields.relational.RelationalField, field)
         elif field_type in FieldTypes.pk_relation():
             reference = cast(fields.relational.RelationalField, field.reference)
         else:
-            raise NoDefaultRepository(
+            raise ValueError(
                 f'Поле {cls.model}.{field_name} с типом {cls.get_field_type(field_name)} не может иметь репозиторий'
             )
-        related_model = reference.related_model
-        default_repo: Type["Repository"] = getattr(related_model, 'DEFAULT_REPOSITORY', None)
-        if default_repo is None and raise_if_none:
-            raise NoDefaultRepository(
-                f'У поля {cls.model}.{field_name} ({related_model}) нет репозитория по умолчанию'
+        related_model: BaseModel = reference.related_model
+        repo_name = cls.related_repositories.get(field_name, '__default__')
+        repo = related_model.REPOSITORIES.get(repo_name)
+        if repo is None:
+            raise ValueError(
+                f'У поля {cls.model}.{field_name} ({related_model}) нет репозитория {repo_name}'
             )
-        return default_repo
+        return repo
+
+    @classmethod
+    def get_repo_name(cls) -> str:
+        return cls._REPOSITORY_NAME
 
     @classmethod
     def entity(cls):
+        repo_name = cls.get_repo_name()
+        if repo_name != '__default__':
+            return f'{cls.opts().full_name}.{repo_name}'
         return cls.opts().full_name
 
     @classmethod
@@ -845,29 +845,3 @@ class Repository(Generic[MODEL]):
     def get_instance_value(cls, instance: MODEL, name: str) -> str:
         field_name = cls.get_field_name_for_value(name)
         return getattr(instance, field_name, UndefinedValue)
-
-
-REPOSITORY = TypeVar('REPOSITORY', bound=Type[Repository])
-
-
-def default_repository(cls: REPOSITORY) -> REPOSITORY:
-    """
-    Декоратор, который устанавливает в класс модели репозиторий как дефолтный, чтобы другие репозитории могли
-    пользоваться им для создания и редактирования вложенных моделей
-
-    @default_repository
-    class NomenclatureRepository(Repository):
-        model = Nomenclature
-        ...
-    """
-
-    cls.model.DEFAULT_REPOSITORY = cls
-    return cls
-
-
-class ListValueRepository(Repository[MODEL]):
-    async def _delete_many(self, item_pk_list: list[PK]) -> int:
-        return await self._get_many_queryset(item_pk_list).delete()
-
-    async def _delete_one(self, instance: MODEL) -> None:
-        await instance.delete()

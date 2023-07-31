@@ -4,7 +4,7 @@ from typing import Union
 from tortoise import fields
 from core.orm import fields as orm_fields
 
-from core.orm.base_model import BaseModel, RelatedListValueModel
+from core.orm.base_model import BaseModel, ListValueModel
 
 
 __all__ = ["Document", "DocumentValue"]
@@ -23,7 +23,7 @@ class Document(BaseModel):
         abstract = True
 
 
-class DocumentValue(RelatedListValueModel):
+class DocumentValue(ListValueModel):
     """Базовая модель списка для документов"""
     doc: Union["Document", fields.ForeignKeyRelation["Document"]]
 

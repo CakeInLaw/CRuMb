@@ -51,6 +51,12 @@ class UserInputWidget(Generic[T]):
             on_value_change: Callable[["UserInputWidget"], Coroutine[Any, Any, None] | None] = None,
             width: int | float = 250,
             height: int | float = 40,
+            resize_width: bool = False,
+            resize_height: bool = False,
+            min_width: int = None,
+            max_width: int = None,
+            min_height: int = None,
+            max_height: int = None,
     ):
         self.name = name
         self.label_text = label
@@ -61,6 +67,13 @@ class UserInputWidget(Generic[T]):
         self.ignore_if_none = ignore_if_none
         self.container_width = width
         self.container_height = height
+        self.resize_width = resize_width
+        self.resize_height = resize_height
+        self.min_width = min_width
+        self.max_width = max_width
+        self.min_height = min_height
+        self.max_height = max_height
+
         self.initial_value = initial_value
 
         self.has_error = False
@@ -189,6 +202,12 @@ class UserInput(Generic[_I]):
     helper_text: str = None
     width: int | float = 350
     height: int | float = 40
+    resize_width: bool = False
+    resize_height: bool = False
+    min_width: int = None
+    max_width: int = None
+    min_height: int = None
+    max_height: int = None
 
     def widget(
             self,

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from flet import Container, Row, Column, Control
+from flet import Container, Row, Column, Control, CrossAxisAlignment
 
 from .base import ObjectBaseWidget, ObjectBase
 from .. import UserInput
@@ -39,7 +39,7 @@ class ObjectWidget(ObjectBaseWidget[SimpleWidgetContainer], Container):
         controls = self.get_controls()
         match self.variant:
             case 'row':
-                return Row(controls, wrap=True)
+                return Row(controls, wrap=True, vertical_alignment=CrossAxisAlignment.START)
             case 'column':
                 return Column(controls)
             case _:

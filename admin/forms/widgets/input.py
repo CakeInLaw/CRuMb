@@ -18,12 +18,12 @@ class InputWidget(UserInputWidget[T], Container):
             dense=True,
             border=InputBorder.NONE,
             on_blur=self.end_change_event_handler,
+            content_padding=0
         )
         self.text = Text(size=14, no_wrap=True, overflow=TextOverflow.ELLIPSIS)
-        self._stack = Stack(controls=[self.text, self.input])
         Container.__init__(
             self,
-            content=self._stack,
+            content=Stack(controls=[self.text, self.input]),
             alignment=alignment.center_left
         )
 

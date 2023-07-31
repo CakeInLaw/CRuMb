@@ -13,11 +13,6 @@ class InvalidType(ValueError):
     """Выбрасывается, когда в репозиторий передано значение не того типа"""
 
 
-class NoDefaultRepository(AttributeError):
-    """Выбрасывается, когда неродивый программист пытается работать со связанной моделью,
-    которая не имеет репозитория по умолчанию"""
-
-
 class FieldError(Exception):
     key: str
     msg: str

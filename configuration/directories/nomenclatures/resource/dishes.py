@@ -18,7 +18,6 @@ class DishesResource(NomenclatureTypeBaseResource[DishesRepository]):
     create_form_primitive = nom_type_create_form_primitive.copy().add(
         ('recipe', {
             'primitive': Primitive(
-                ('text', {'height': 170}),
                 ('ingredients', {
                     'object_schema': {
                         'primitive': Primitive(
@@ -27,8 +26,9 @@ class DishesResource(NomenclatureTypeBaseResource[DishesRepository]):
                             ('count', {'width': 100})
                         )
                     }
-                })
+                }),
+                ('text', {'height': 170}),
             ),
-            'variant': 'column',
+            # 'variant': 'column',
         })
     )

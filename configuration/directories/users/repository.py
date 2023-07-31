@@ -7,7 +7,7 @@ from tortoise import timezone
 from passlib.context import CryptContext
 
 from core.exceptions import AnyFieldError
-from core.repository import default_repository
+from core.repository import register_repository
 from core.entities.directories import DirectoryRepository
 from core.translations import Translation
 from core.types import DATA, MODEL
@@ -23,7 +23,7 @@ PasswordMismatch = AnyFieldError('password_mismatch', 'Пароли не сов�
 UNUSED_PASSWORD_PREFIX = '!'
 
 
-@default_repository
+@register_repository
 class UserRepository(DirectoryRepository):
     model = User
 

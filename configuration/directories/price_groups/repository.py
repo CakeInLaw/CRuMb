@@ -1,4 +1,4 @@
-from core.repository import default_repository
+from core.repository import register_repository
 from core.translations import Translation
 from core.entities.directories import DirectoryRepository
 
@@ -8,7 +8,7 @@ from .model import PriceGroup
 __all__ = ["PriceGroupRepository"]
 
 
-@default_repository
+@register_repository
 class PriceGroupRepository(DirectoryRepository):
     model = PriceGroup
 

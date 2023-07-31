@@ -11,8 +11,8 @@ class CakeInLawAdmin(CRuMbAdmin):
     @classmethod
     async def on_startup(cls):
         await Tortoise.init(config=settings.DATABASE)
-        import configuration.directories.repositories
-        import configuration.directories.resources
+        import configuration.repositories
+        import configuration.resources
 
     @classmethod
     async def on_shutdown(cls):

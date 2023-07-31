@@ -3,7 +3,7 @@ from typing import Any, Optional, cast
 from configuration.enums import NomenclatureTypes
 from core.enums import FieldTypes
 from core.exceptions import AnyFieldError
-from core.repository import default_repository
+from core.repository import register_repository
 from core.entities.directories import DirectoryRepository
 from core.types import DATA, PK, MODEL
 
@@ -14,7 +14,7 @@ from ..translations import NomenclatureTranslation
 __all__ = ["NomenclatureRepository", "NomenclatureTypeBaseRepository"]
 
 
-@default_repository
+@register_repository
 class NomenclatureRepository(DirectoryRepository[Nomenclature]):
     READ_ONLY_REPOSITORY = True
     model = Nomenclature
@@ -50,8 +50,8 @@ class NomenclatureTypeBaseRepository(DirectoryRepository[Nomenclature]):
         return {'category'}
 
     @classmethod
-    def entity(cls):
-        return f'{super().entity()}.{cls.type.name.title()}'
+    def get_repo_name(cls):
+        return cls.type.name.title()
 
     async def get_create_defaults(self, data: DATA, user_defaults: Optional[DATA]) -> DATA:
         defaults = user_defaults or {}

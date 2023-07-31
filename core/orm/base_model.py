@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from core.repository import Repository
 
 
-__all__ = ["BaseModel", "RelatedListValueModel"]
+__all__ = ["BaseModel", "ListValueModel"]
 
 
 class BaseModel(Model):
@@ -15,13 +15,13 @@ class BaseModel(Model):
     EXTRA_PERMISSIONS: tuple[str, ...] = ()
     IEXACT_FIELDS: tuple[str, ...] = ()
 
-    DEFAULT_REPOSITORY: Optional[Type["Repository"]]
+    REPOSITORIES: dict[str, Type["Repository"]]
 
     class Meta:
         abstract = True
 
 
-class RelatedListValueModel(BaseModel):
+class ListValueModel(BaseModel):
     """Модель для строк табличной части"""
     id: int = orm_fields.BigIntField(pk=True)
     ordering: int = orm_fields.SmallIntField(editable=True)

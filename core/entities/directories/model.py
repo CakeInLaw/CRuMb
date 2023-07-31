@@ -1,4 +1,4 @@
-from core.orm.base_model import BaseModel, RelatedListValueModel
+from core.orm.base_model import BaseModel, ListValueModel
 
 
 __all__ = ["Directory", "DirectoryListValue"]
@@ -9,6 +9,6 @@ class Directory(BaseModel):
         abstract = True
 
 
-class DirectoryListValue(RelatedListValueModel):
+class DirectoryListValue(ListValueModel):
     class Meta:
         abstract = True
