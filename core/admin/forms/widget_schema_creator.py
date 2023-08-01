@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Any, Union, overload, Callable, Type
 
 from tortoise import fields
+
 from core.orm import fields as orm_fields
 from core.enums import FieldTypes
 from core.types import FK_TYPE
@@ -92,7 +93,7 @@ class WidgetSchemaCreator:
             extra = {'label': label, **extra, 'name': field_name, 'editable': False}
             return self.widget_schema_classes[self.repository.calculated[field_name]](**extra)
         field_type, field = self.repository.get_field_type_and_instance(field_name)
-        if field_type is FieldTypes.HIDDEN:
+        if field_type.is_hidden():
             raise ValueError(f'{field_name} in {self.repository} is hidden')
         creator = self.creators[field_type]
         return creator(field, **extra)
@@ -246,10 +247,7 @@ class WidgetSchemaCreator:
             widget_class = widgets.Object
             allowed_keys.append('variant')
         kwargs = self.base_kwargs(field, extra)
-        if 'resource' in extra:
-            kwargs['resource'] = relative_resource = extra.pop('resource')
-        else:
-            kwargs['resource'] = relative_resource = self.resource.relative_resource(field_name=kwargs['name'])
+        kwargs['resource'] = relative_resource = self.resource.relative_resource(kwargs['name'])
 
         assert 'primitive' in extra or 'fields' in extra, f'{kwargs["name"]} must have primitive or fields'
         if 'fields' not in extra:

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Generic, Type, Callable, Coroutine, Optional, 
 
 from flet import Control, Text, icons
 
-from core.enums import FieldTypes
+from core.constants import EMPTY_TUPLE
 from core.types import PK
 from core.orm.base_model import BaseModel
 from core.exceptions import ItemNotFound, ObjectErrors
@@ -22,7 +22,6 @@ C = TypeVar('C', bound=Control)
 
 class Resource(Generic[REPOSITORY]):
     repository: Type[REPOSITORY]
-    app: "CRuMbAdmin"
     ICON = icons.SPORTS_GYMNASTICS
 
     list_form_primitive: Primitive = None
@@ -34,6 +33,13 @@ class Resource(Generic[REPOSITORY]):
     create_form_primitive: Primitive = None
     edit_model_form: Optional[Type[ModelInputForm]] = None
     edit_form_primitive: Primitive = None
+
+    list_select_related: tuple[str, ...] = EMPTY_TUPLE
+    list_prefetch_related: tuple[str, ...] = EMPTY_TUPLE
+    choice_select_related: tuple[str, ...] = EMPTY_TUPLE
+    choice_prefetch_related: tuple[str, ...] = EMPTY_TUPLE
+    edit_select_related: tuple[str, ...] = EMPTY_TUPLE
+    edit_prefetch_related: tuple[str, ...] = EMPTY_TUPLE
 
     def __init__(self, app: "CRuMbAdmin") -> None:
         self.app = app
@@ -48,8 +54,20 @@ class Resource(Generic[REPOSITORY]):
     async def get_list_primitive(self):
         return self.list_form_primitive
 
+    async def get_list_select_related(self) -> tuple[str, ...]:
+        return self.list_select_related
+
+    async def get_list_prefetch_related(self) -> tuple[str, ...]:
+        return self.list_prefetch_related
+
     async def get_choice_primitive(self):
         return self.choice_form_primitive or self.list_form_primitive
+
+    async def get_choice_select_related(self) -> tuple[str, ...]:
+        return self.choice_select_related or self.list_select_related
+
+    async def get_choice_prefetch_related(self) -> tuple[str, ...]:
+        return self.choice_prefetch_related or self.list_prefetch_related
 
     async def get_create_form_primitive(self):
         return self.create_form_primitive or self.form_primitive
@@ -63,6 +81,12 @@ class Resource(Generic[REPOSITORY]):
     async def get_edit_model_form(self):
         return self.edit_model_form or self.model_form
 
+    async def get_edit_select_related(self) -> tuple[str, ...]:
+        return self.edit_select_related
+
+    async def get_edit_prefetch_related(self) -> tuple[str, ...]:
+        return self.edit_prefetch_related
+
     async def get_list_form(
             self,
             box: "BOX",
@@ -70,7 +94,9 @@ class Resource(Generic[REPOSITORY]):
     ) -> ListForm:
         view = ListForm(
             box=box,
-            primitive=primitive or await self.get_list_primitive()
+            primitive=primitive or await self.get_list_primitive(),
+            select_related=await self.get_list_select_related(),
+            prefetch_related=await self.get_list_prefetch_related(),
         )
         return self.with_tab_title(view, 'list')
 
@@ -83,7 +109,9 @@ class Resource(Generic[REPOSITORY]):
         view = ChoiceForm(
             box=box,
             primitive=primitive or await self.get_choice_primitive(),
-            make_choice=make_choice
+            make_choice=make_choice,
+            select_related=await self.get_list_select_related(),
+            prefetch_related=await self.get_list_prefetch_related(),
         )
         return self.with_tab_title(view, 'choice')
 
@@ -112,8 +140,8 @@ class Resource(Generic[REPOSITORY]):
     ) -> ModelInputForm | Control:
         try:
             instance = await self.repository(
-                by='__admin__',
-                extra={'target': 'edit'}
+                select_related=await self.get_edit_select_related(),
+                prefetch_related=await self.get_edit_prefetch_related(),
             ).get_one(pk)
         except ItemNotFound:
             error = Text('Объект не найден')
@@ -125,7 +153,7 @@ class Resource(Generic[REPOSITORY]):
             resource=self,
             box=box,
             primitive=primitive,
-            instance=instance,
+            initial=instance,
             on_success=on_success,
             on_error=on_error,
         )
@@ -179,9 +207,9 @@ class Resource(Generic[REPOSITORY]):
         translation = self.translation.field(field_name)
         if translation is None:
             field_type = self.repository.get_field_type(field_name)
-            if field_type in FieldTypes.single_relation():
+            if field_type.is_single_relation():
                 translation = self.app.translation.get_entity(self.relative_entity(field_name)).name
-            elif field_type in FieldTypes.multiple_relation():
+            elif field_type.is_multiple_relation():
                 translation = self.app.translation.get_entity(self.relative_entity(field_name)).name_plural
             else:
                 translation = field_name
@@ -193,10 +221,10 @@ class Resource(Generic[REPOSITORY]):
         return control
 
     def _tab_title_list(self) -> str:
-        return self.name_plural
+        return self.translation.list()
 
     def _tab_title_choice(self) -> str:
-        return self.name_plural
+        return self.translation.choice()
 
     def _tab_title_create(self) -> str:
         return self.translation.create()

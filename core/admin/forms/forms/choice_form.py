@@ -1,7 +1,8 @@
 from typing import TYPE_CHECKING, Callable, Optional, Coroutine, cast
 
-from flet import ElevatedButton, Row, TapEvent
+from flet import Row, IconButton, icons, TapEvent
 
+from core.constants import EMPTY_TUPLE
 from core.orm import BaseModel
 from core.admin.layout import PayloadInfo
 from .base_list_form import BaseListForm, ListRecordRow
@@ -18,12 +19,16 @@ class ChoiceForm(BaseListForm):
             box: "BOX",
             primitive: "Primitive",
             make_choice: Callable[[Optional[BaseModel]], Coroutine[..., ..., None]],
-            request_limit: int = 50,
+            request_limit: int = None,
+            select_related: tuple[str] = EMPTY_TUPLE,
+            prefetch_related: tuple[str] = EMPTY_TUPLE,
     ):
         super().__init__(
             box=box,
             primitive=primitive,
-            request_limit=request_limit
+            request_limit=request_limit,
+            select_related=select_related,
+            prefetch_related=prefetch_related,
         )
         self.make_choice = make_choice
 
@@ -56,9 +61,11 @@ class ChoiceForm(BaseListForm):
 
     def get_action_bar(self) -> Row:
         buttons = [
-            ElevatedButton('Выбрать', on_click=self.on_confirm),
-            ElevatedButton('Очистить', on_click=self.on_clean),
+            IconButton(icons.CHECK_CIRCLE_OUTLINE_ROUNDED, on_click=self.on_confirm, tooltip='Выбрать'),
+            IconButton(icons.CLEANING_SERVICES_ROUNDED, on_click=self.on_clean, tooltip='Очистить'),
         ]
         if 'create' in self.resource.methods:
-            buttons.append(ElevatedButton('Создать', on_click=self.on_click_create))
+            buttons.append(
+                IconButton(icons.ADD_CIRCLE_OUTLINE_ROUNDED, on_click=self.on_click_create, tooltip='Создать'),
+            )
         return Row(buttons)

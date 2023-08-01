@@ -50,11 +50,8 @@ class StrInput(Input[S]):
     min_length: Optional[int] = None
     empty_as_none: bool = False
     is_password: bool = False
+    default: str = ''
 
     @property
     def widget_type(self):
         return StrInputWidget
-
-    @property
-    def default_initial(self) -> str:
-        return ''

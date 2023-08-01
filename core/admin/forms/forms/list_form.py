@@ -1,4 +1,4 @@
-from flet import Row, ElevatedButton, TapEvent
+from flet import Row, IconButton, icons, TapEvent
 
 from core.admin.layout import PayloadInfo
 from .base_list_form import BaseListForm, ListRecordRow
@@ -17,7 +17,8 @@ class ListForm(BaseListForm):
 
     def get_action_bar(self) -> Row:
         return Row([
-            ElevatedButton('Создать', on_click=self.open_create_form)
+            IconButton(icons.ADD_CIRCLE_OUTLINE_ROUNDED, on_click=self.open_create_form, tooltip='Создать'),
+            IconButton(icons.REPLAY_OUTLINED, on_click=self.box.reload_content, tooltip='Обновить'),
         ])
 
     async def open_create_form(self, e=None):

@@ -1,8 +1,9 @@
-from dataclasses import dataclass
-from typing import Any, Optional
+from dataclasses import dataclass, field
+from typing import Any
 
 from flet import Container, Column, Row, IconButton, icons, ScrollMode
 
+from core.constants import UndefinedValue
 from core.orm import BaseModel
 from core.types import BackFKData
 from core.admin.components.table import Table, TableHeader, TableHeaderCell, TableBody
@@ -19,7 +20,7 @@ class TableInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
             if widget.initial_value is None:
                 result.append(widget.final_value)
             else:
-                result.append({'pk': widget.initial_value, **widget.final_value})
+                result.append({'pk': widget.initial_value.pk, **widget.final_value})
         return result
 
     def __init__(
@@ -35,16 +36,33 @@ class TableInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
         self.object_schema = object_schema
         self.variant = variant
         self.rows_count = rows_count
-        self.objects_list: list[ObjectTableRowWidget] = [
-            self.create_table_row(initial=initial)
-            for initial in self.initial_value
-        ]
+        self.objects_list: list[ObjectTableRowWidget] = []
 
         self.actions = Row([
-            IconButton(icons.ADD_CIRCLE_OUTLINE_OUTLINED, on_click=self.handle_add_row),
-            IconButton(icons.REMOVE_CIRCLE_OUTLINE_OUTLINED, on_click=self.handle_delete_row),
-            IconButton(icons.ARROW_CIRCLE_UP_OUTLINED, on_click=self.handle_move_row_up),
-            IconButton(icons.ARROW_CIRCLE_DOWN_OUTLINED, on_click=self.handle_move_row_down),
+            IconButton(
+                icons.ADD_CIRCLE_OUTLINE_OUTLINED,
+                on_click=self.handle_add_row,
+                icon_color='green',
+                tooltip='Добавить'
+            ),
+            IconButton(
+                icons.REMOVE_CIRCLE_OUTLINE_OUTLINED,
+                on_click=self.handle_delete_row,
+                icon_color='error',
+                tooltip='Удалить'
+            ),
+            IconButton(
+                icons.ARROW_CIRCLE_UP_OUTLINED,
+                on_click=self.handle_move_row_up,
+                icon_color='primary',
+                tooltip='Переместить вверх'
+            ),
+            IconButton(
+                icons.ARROW_CIRCLE_DOWN_OUTLINED,
+                on_click=self.handle_move_row_down,
+                icon_color='primary',
+                tooltip='Переместить вниз'
+            ),
         ], scroll=ScrollMode.AUTO)
         self.table = self.create_table()
         self.content = Column([
@@ -68,14 +86,15 @@ class TableInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
             ),
         )
 
-    def create_table_row(self, initial: Optional[BaseModel | dict[str, Any]] = None) -> ObjectTableRowWidget:
-        return self.object_schema.widget(parent=self, initial=initial)
+    def create_table_row(self, initial: BaseModel | dict[str, Any] = UndefinedValue) -> ObjectTableRowWidget:
+        widget = self.object_schema.widget(parent=self, initial=initial)
+        self.table.add_row(widget)
+        return widget
 
     async def handle_add_row(self, e):
         widget = self.create_table_row()
         if self.has_ordering:
             widget.set_value({'ordering': self.table.body.length + 1})
-        self.table.add_row(widget)
         self.table.body.active_row = widget
         await self.table.body.scroll_to_async(offset=-1, duration=10)
 
@@ -131,11 +150,11 @@ class TableInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
         rows[idx], rows[idx + 1] = row_down, active_row
         await self.table.body.update_async()
 
-    def has_changed(self) -> bool:
-        return any(widget.has_changed() for widget in self.objects_list)
-
     def set_value(self, value: Any, initial: bool = False):
         if initial:
+            assert all(isinstance(v, BaseModel) for v in value)
+            for v in value:
+                self.create_table_row(initial=v)
             return
         assert isinstance(value, dict) and all(isinstance(k, int) for k in value)
         for k, v in value.items():
@@ -166,6 +185,7 @@ class TableInput(UserInput[TableInputWidget]):
     width: int = None
     height: int = None
     rows_count: int = 11
+    default: list = field(default_factory=list)
 
     @property
     def widget_type(self):
@@ -173,7 +193,3 @@ class TableInput(UserInput[TableInputWidget]):
 
     def add_field(self, item: UserInput) -> None:
         self.object_schema.fields.append(item)
-
-    @property
-    def default_initial(self) -> list[BaseModel] | list[dict[str, Any]]:
-        return []

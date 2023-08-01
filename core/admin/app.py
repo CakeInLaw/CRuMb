@@ -113,9 +113,7 @@ class CRuMbAdmin(UserControl):
     @classmethod
     def run_app(cls, **kwargs):
         kwargs.setdefault('target', cls.run_target)
-        global APP
         cls._init_translations()
-        APP = cls
         asyncio.get_event_loop().run_until_complete(cls.on_startup())
         importlib.import_module('configuration.repositories')
         importlib.import_module('configuration.resources')
@@ -216,6 +214,3 @@ class CRuMbAdmin(UserControl):
             return
         self.controls.remove(popover)
         await self.update_async()
-
-
-APP: Type[CRuMbAdmin] = None

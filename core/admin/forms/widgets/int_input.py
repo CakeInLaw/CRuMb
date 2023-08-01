@@ -53,15 +53,11 @@ class IntInputWidget(InputWidget[int]):
 class IntInput(Input[IntInputWidget]):
     min_value: Optional[int] = None
     max_value: Optional[int] = None
+    default: int = 0
 
     @property
     def widget_type(self):
         return IntInputWidget
-
-    @property
-    def default_initial(self) -> Optional[int]:
-        if self.required:
-            return 0
 
     @property
     def is_numeric(self):

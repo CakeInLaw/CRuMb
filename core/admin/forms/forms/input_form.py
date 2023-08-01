@@ -26,11 +26,11 @@ class InputForm(Form):
             self,
             box: "BOX",
             *,
-            initial_data: Optional[dict] = None,
+            initial: dict[str, Any] = None
     ):
         super().__init__(box=box)
         self.fields_map = {}
-        self.initial_data = initial_data or {}
+        self.initial = initial
 
     def build_body(self) -> Column:
         return Column(controls=self.build_input_form())
@@ -39,7 +39,7 @@ class InputForm(Form):
         return [self._build_item(item=item) for item in self.get_form_schema()]
 
     def _create_widget_in_container(self, item: UserInput):
-        widget = item.widget(parent=self, initial=self.initial_for(item))
+        widget = item.widget(parent=self, initial=self.initial_for(item.name))
         self.fields_map[item.name] = widget
         return SimpleWidgetContainer(widget)
 
@@ -92,8 +92,14 @@ class InputForm(Form):
     def cleaned_data(self):
         return self.dirty_data
 
-    def initial_for(self, item: UserInput) -> Any:
-        return self.initial_data.get(item.name, UndefinedValue)
+    def initial_for(self, name: str):
+        if self.initial:
+            return self.initial.get(name, UndefinedValue)
+        return UndefinedValue
+
+    def set_values(self, data: dict[str, Any]):
+        for name, value in data.items():
+            self.fields_map[name].set_value(value)
 
     def handle_value_change(self, widget: UserInputWidget):
         pass

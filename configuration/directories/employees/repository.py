@@ -31,5 +31,5 @@ class EmployeeRepository(DirectoryRepository):
         },
     )
 
-    def qs_select_related(self) -> set[str]:
-        return {'position'}
+    def qs_select_related(self) -> tuple[str]:
+        return 'position',

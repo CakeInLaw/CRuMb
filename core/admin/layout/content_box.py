@@ -55,7 +55,7 @@ class ContentBox(Container, Box):
     async def did_mount_async(self):
         await self.load_content()
 
-    async def load_content(self):
+    async def load_content(self, e=None):
         self.payload = await self.resource.get_payload(
             box=self,
             method=self.tab.info.method,
@@ -66,8 +66,8 @@ class ContentBox(Container, Box):
             await self.tab.update_async()
         await self.update_async()
 
-    async def reload_content(self):
-        await self.load_content()
+    async def reload_content(self, e=None):
+        await self.load_content(e)
 
     def change_title(self, title: str):
         self.tab.title = title

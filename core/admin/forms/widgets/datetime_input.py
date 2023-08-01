@@ -35,9 +35,6 @@ class DatetimeInputWidget(InputWidget[datetime]):
             return
         return timezone.make_aware(datetime.strptime(self.value, self.dt_fmt))
 
-    def has_changed(self) -> bool:
-        return self.to_datetime() == self.initial_value
-
     def _validate(self) -> None:
         empty = self.value == ''
         if self.required and empty:
@@ -69,8 +66,3 @@ class DatetimeInput(Input[DatetimeInputWidget]):
     @property
     def widget_type(self):
         return DatetimeInputWidget
-
-    @property
-    def default_initial(self) -> Optional[datetime]:
-        if self.required:
-            return timezone.now()

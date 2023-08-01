@@ -64,15 +64,11 @@ class FloatInput(Input[FloatInputWidget]):
     min_value: Optional[float | int] = None
     max_value: Optional[float | int] = None
     decimal_places: int = 3
+    default: float = 0.0
 
     @property
     def widget_type(self):
         return FloatInputWidget
-
-    @property
-    def default_initial(self) -> Optional[float]:
-        if self.required:
-            return 0.00
 
     @property
     def is_numeric(self):

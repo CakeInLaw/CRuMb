@@ -1,3 +1,4 @@
+import importlib
 from typing import TypeVar, Type
 
 from core.repository.repository import Repository
@@ -13,6 +14,5 @@ def register_repository(repo_cls: REPOSITORY) -> REPOSITORY:
     if repo_name in repo_cls.model.REPOSITORIES:
         raise ValueError(f'{repo_cls.model} уже имеет репозиторий с именем {repo_name}')
     repo_cls.model.REPOSITORIES[repo_name] = repo_cls
-    from core.admin.app import APP
-    APP.translations.add_repository(repo_cls)
+    importlib.import_module('configuration.translations').app_translations.add_repository(repo_cls)
     return repo_cls

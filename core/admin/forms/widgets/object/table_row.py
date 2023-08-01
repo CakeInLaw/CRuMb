@@ -10,12 +10,13 @@ class ObjectTableRowWidget(ObjectBaseWidget[TableCellWidgetContainer], TableRow)
     child_container = TableCellWidgetContainer
 
     def __init__(self, **kwargs):
-        TableRow.__init__(self)
         ObjectBaseWidget.__init__(self, **kwargs)
+        TableRow.__init__(self)
         assert all(isinstance(f, UserInput) for f in self.fields), "Можно устанавливать только виджеты, не группы"
-        self.create_cells()
+        self.build_cells()
+        self.__finalize_init__()
 
-    def create_cells(self) -> None:
+    def build_cells(self) -> None:
         for widget_container in self.get_controls():
             self.add_cell(widget_container)
 

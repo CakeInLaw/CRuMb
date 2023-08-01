@@ -20,7 +20,9 @@ class BaseListForm(Form):
             self,
             box: "BOX",
             primitive: Primitive,
-            request_limit: int = 50,
+            request_limit: int = None,
+            select_related: tuple[str] = None,
+            prefetch_related: tuple[str] = None,
     ):
         super().__init__(box=box)
         self.resource = self.box.resource
@@ -32,6 +34,8 @@ class BaseListForm(Form):
         self.request_limit = request_limit
         self.current_total = 0
         self.has_next = True
+        self.select_related = select_related
+        self.prefetch_related = prefetch_related
 
     async def did_mount_async(self):
         await self.get_next_items()
@@ -56,13 +60,13 @@ class BaseListForm(Form):
 
     async def get_next_items(self):
         new_items, total_count = await self.resource.repository(
-            by='__admin__',
-            extra={'target': 'list'}
+            select_related=self.select_related,
+            prefetch_related=self.prefetch_related,
         ).get_all(
             skip=self.current_total,
             limit=self.request_limit,
             sort=[],
-            filters=[]
+            filters=[],
         )
         self.current_total += len(new_items)
         self.has_next = total_count != self.current_total
@@ -100,4 +104,3 @@ class ListRecordRow(TableRow):
     ):
         super().__init__(cells=cells)
         self.instance = instance
-

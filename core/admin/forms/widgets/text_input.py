@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from flet import TextOverflow, ClipBehavior
+from flet import TextOverflow
 
 from . import StrInputWidget, StrInput
 

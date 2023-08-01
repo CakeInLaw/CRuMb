@@ -17,6 +17,8 @@ class CustomerResource(Resource):
     datagrid_columns = ['name', 'register_address', 'price_group_id']
     list_form_primitive = Primitive('name', 'register_address', 'price_group_id')
 
+    edit_prefetch_related = ('customer_locations',)
+
     form_primitive = Primitive(
         'name',
         'register_address',

@@ -6,16 +6,15 @@ from core.exceptions import ObjectErrors
 from core.enums import NotifyStatus
 
 from core.admin.layout import PayloadInfo
-from core.admin.forms.widgets import UserInput
+from core.repository import Repository
+from core.orm import BaseModel
 from core.admin.forms import Primitive, FormSchema, WidgetSchemaCreator
 from .input_form import InputForm
 from ...components.errors import ObjectErrorsContainer
 
 if TYPE_CHECKING:
-    from core.repository import Repository
     from core.admin.resource import Resource
     from core.admin.layout import BOX
-    from core.orm import BaseModel
 
 
 class ModelInputForm(InputForm):
@@ -26,14 +25,16 @@ class ModelInputForm(InputForm):
             box: "BOX",
             primitive: Primitive,
             *,
-            instance: Optional["BaseModel"] = None,
+            initial: Optional["BaseModel"] | dict[str, Any] = None,
             on_success: Callable[["ModelInputForm", "BaseModel"], Coroutine[Any, Any, None]] = None,
             on_error: Callable[["ModelInputForm", ObjectErrors], Coroutine[Any, Any, None]] = None,
-            **kwargs
     ):
-        super().__init__(box=box, **kwargs)
+        if isinstance(initial, BaseModel):
+            self.instance, initial = initial, None
+        else:
+            self.instance = None
+        super().__init__(box=box, initial=initial)
         self.resource = resource
-        self.instance = instance
         self.primitive = primitive
         self.on_success = on_success or self.on_success_default
         self.on_error = on_error or self.on_error_default
@@ -46,11 +47,11 @@ class ModelInputForm(InputForm):
     def create(self) -> bool:
         return self.instance is None
 
-    def initial_for(self, item: UserInput) -> Any:
+    def initial_for(self, name: str):
         if self.create:
-            return super().initial_for(item=item)
+            return super().initial_for(name=name)
         else:
-            return self.repository.get_instance_value(self.instance, item.name)
+            return self.repository.get_instance_value(self.instance, name=name)
 
     def get_form_schema(self) -> FormSchema:
         return self.schema or self._generate_form_schema()
@@ -83,10 +84,7 @@ class ModelInputForm(InputForm):
             await self.update_async()
             return
         try:
-            instance = await self.repository(
-                by='__admin__',
-                extra={'target': 'create'}
-            ).create(self.cleaned_data())
+            instance = await self.repository().create(self.cleaned_data())
             await self.app.notify('Создан 1 элемент', NotifyStatus.SUCCESS)
             await self.on_success(form=self, instance=instance)
         except ObjectErrors as err:
@@ -108,10 +106,7 @@ class ModelInputForm(InputForm):
             await self.update_async()
             return
         try:
-            instance = await self.repository(
-                by='__admin__',
-                extra={'target': 'create'}
-            ).edit(self.instance, self.cleaned_data())
+            instance = await self.repository().edit(self.instance, self.cleaned_data())
             await self.app.notify('Элемент изменен', NotifyStatus.SUCCESS)
             await self.on_success(form=self, instance=instance)
         except ObjectErrors as err:

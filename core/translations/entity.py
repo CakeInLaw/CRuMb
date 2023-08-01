@@ -10,8 +10,10 @@ class EntityTranslation:
     name: str
     name_plural: str
 
+    _list: str
     _choice: str
     _creation: str
+    list_template: str = '{self.name_plural}: {self._list}'
     choice_template: str = '{self.name_plural}: {self._choice}'
     create_template: str = '{self.name}: {self._creation}'
     edit_template: str = '{self.name}: {instance}'
@@ -19,6 +21,9 @@ class EntityTranslation:
     fields: dict[str, str] = field(default_factory=dict)
 
     interface: "InterfaceTranslation" = field(init=False)
+
+    def list(self, **kwargs):
+        return self.list_template.format(self=self, **kwargs)
 
     def choice(self, **kwargs):
         return self.choice_template.format(self=self, **kwargs)

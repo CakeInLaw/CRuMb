@@ -15,7 +15,8 @@ class ObjectWidget(ObjectBaseWidget[SimpleWidgetContainer], Container):
         Container.__init__(self, padding=20)
         ObjectBaseWidget.__init__(self, **kwargs)
         self.variant = variant
-        self.content = self.create_content()
+        self.content = self.build_content()
+        self.__finalize_init__()
 
     def get_controls(self) -> list[Control]:
         controls = []
@@ -35,7 +36,7 @@ class ObjectWidget(ObjectBaseWidget[SimpleWidgetContainer], Container):
                 controls.append(self._create_widget_in_container(subgroup_or_input))
         return group.to_control(controls)
 
-    def create_content(self) -> Row | Column:
+    def build_content(self) -> Row | Column:
         controls = self.get_controls()
         match self.variant:
             case 'row':

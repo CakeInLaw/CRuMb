@@ -27,10 +27,5 @@ class CustomerRepository(DirectoryRepository):
         },
     )
 
-    def qs_select_related(self) -> set[str]:
-        return {'price_group'}
-
-    def qs_prefetch_related(self) -> set[str]:
-        if self.extra.get('target') == 'edit':
-            return {'customer_locations'}
-        return set()
+    def qs_select_related(self) -> tuple[str]:
+        return 'price_group',

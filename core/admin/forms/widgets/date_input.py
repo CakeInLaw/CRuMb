@@ -35,9 +35,6 @@ class DateInputWidget(InputWidget[date]):
             return
         return datetime.strptime(self.value, self.date_fmt).date()
 
-    def has_changed(self) -> bool:
-        return self.to_date() == self.initial_value
-
     def _validate(self) -> None:
         empty = self.value == ''
         if self.required and empty:
@@ -69,8 +66,3 @@ class DateInput(Input[DateInputWidget]):
     @property
     def widget_type(self):
         return DateInputWidget
-
-    @property
-    def default_initial(self) -> Optional[date]:
-        if self.required:
-            return date.today()

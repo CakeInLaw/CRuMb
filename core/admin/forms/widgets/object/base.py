@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, TypeVar, Generic, Type
 
-from core.constants import UndefinedValue
 from core.orm import BaseModel
 from ..user_input import UserInputWidget, UserInput
 from ... import InputGroup
@@ -17,6 +16,7 @@ C = TypeVar('C', bound=BaseWidgetContainer)
 
 class ObjectBaseWidget(Generic[C], UserInputWidget[dict[str, Any]]):
     child_container: Type[C]
+    initial_value = None
 
     @property
     def final_value(self) -> dict[str, Any]:
@@ -41,32 +41,30 @@ class ObjectBaseWidget(Generic[C], UserInputWidget[dict[str, Any]]):
         self.editable = False
 
     def _create_widget_in_container(self, item: UserInput) -> C:
-        widget = item.widget(parent=self, initial=self.initial_for(item))
+        widget = item.widget(parent=self)
         self.fields_map[item.name] = widget
         return self.child_container(widget)
 
-    def initial_for(self, item: UserInput) -> Any:
-        if self.initial_value is None:
-            return UndefinedValue
-        if isinstance(self.initial_value, dict):
-            return self.initial_value.get(item.name, UndefinedValue)
-        elif isinstance(self.initial_value, BaseModel):
-            self.resource.repository.get_instance_value(instance=self.initial_value, name=item.name)
+    def set_value_from_dict(self, data: dict[str, Any], initial: bool = False):
+        for name, value in data.items():
+            self.fields_map[name].set_value(value, initial=initial)
+
+    def set_value_from_instance(self, instance: BaseModel, initial: bool = False):
+        for f in self.fields:
+            self.fields_map[f.name].set_value(
+                self.resource.repository.get_instance_value(instance=instance, name=f.name),
+                initial=initial
+            )
+
+    def set_value(self, value: dict[str, Any] | BaseModel, initial: bool = False):
+        if initial and isinstance(value, BaseModel):
+            self.initial_value = value
+            assert self.resource is not None, f'{self.full_name} не имеет ресурса, но {value} - orm модель'
+            assert self.resource.repository.model is value.__class__
+            self.set_value_from_instance(value, initial=initial)
         else:
-            raise TypeError(f'Почему initial_value={type(self.initial_value)}, ({self.initial_value})?')
-
-    def set_value(self, value: dict[str, Any], initial: bool = False):
-        if initial:
-            if isinstance(value, BaseModel):
-                assert self.resource is not None, f'{self.full_name} не имеет ресурса, но {value} - orm модель'
-                assert self.resource.repository.model is value.__class__
-            return
-        assert isinstance(value, dict) and all(n in self.fields_map for n in value)
-        for n, v in value.items():
-            self.fields_map[n].set_value(v)
-
-    def has_changed(self) -> bool:
-        return any(widget.has_changed() for widget in self.fields_map.values())
+            assert isinstance(value, dict) and all(n in self.fields_map for n in value)
+            self.set_value_from_dict(value, initial=initial)
 
     def is_valid(self) -> bool:
         valid = True
@@ -90,10 +88,7 @@ _OI = TypeVar('_OI', bound=ObjectBaseWidget)
 class ObjectBase(UserInput[_OI]):
     fields: list[UserInput] = field(default_factory=list)
     resource: "Resource" = None
+    default: dict[str, Any] = field(default_factory=dict)
 
     def add_field(self, item: UserInput | InputGroup) -> None:
         self.fields.append(item)
-
-    @property
-    def default_initial(self) -> dict[str, Any]:
-        return {}

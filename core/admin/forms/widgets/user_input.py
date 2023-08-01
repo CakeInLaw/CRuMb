@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from typing import TYPE_CHECKING, TypeVar, Optional, Any, Generic, Type, Union, Callable, Coroutine, Literal
 
 from flet import Control
@@ -46,7 +46,6 @@ class UserInputWidget(Generic[T]):
             required: bool = False,
             editable: bool = True,
             ignore_if_none: bool = False,
-            initial_value: T = None,
             parent: Union["Form", "UserInputWidget"] = None,
             on_value_change: Callable[["UserInputWidget"], Coroutine[Any, Any, None] | None] = None,
             width: int | float = 250,
@@ -74,19 +73,16 @@ class UserInputWidget(Generic[T]):
         self.min_height = min_height
         self.max_height = max_height
 
-        self.initial_value = initial_value
-
         self.has_error = False
         self.parent = parent
         self.on_value_change = on_value_change
         self.__on_start_changing = EventHandler()
         self.__on_end_changing = EventHandler()
+        self.on_end_changing = self.handle_value_change_and_update
 
     def __finalize_init__(self):
         """Для вызова в последних наследниках виджетов"""
-        self.set_value(self.initial_value, initial=True)
         self.set_mode('read')
-        self.on_end_changing = self.handle_value_change_and_update
 
     def set_mode(self, v: Literal['read', 'write']):
         assert v in ('read', 'write')
@@ -106,9 +102,6 @@ class UserInputWidget(Generic[T]):
 
     def set_value(self, value: T, initial: bool = False):
         raise NotImplementedError
-
-    def has_changed(self) -> bool:
-        return self.initial_value == self.final_value
 
     def _validate(self) -> None:
         pass
@@ -198,6 +191,7 @@ class UserInput(Generic[_I]):
     required: bool = False
     editable: bool = True
     ignore_if_none: bool = False
+    default: Any = None
     on_value_change: Callable[[UserInputWidget], Coroutine[Any, Any, None]] = None
     helper_text: str = None
     width: int | float = 350
@@ -215,14 +209,13 @@ class UserInput(Generic[_I]):
             initial: Any = UndefinedValue,
             **extra
     ) -> _I:
-        if initial is UndefinedValue:
-            initial = self.default_initial
         kwargs = {**self.__dict__, **extra}
-        return self.widget_type(parent=parent, initial_value=initial, **kwargs)
-
-    @property
-    def default_initial(self) -> Any:
-        return None
+        default = kwargs.pop('default')
+        widget = self.widget_type(parent=parent, **kwargs)
+        if initial is UndefinedValue:
+            initial = default
+        widget.set_value(initial, initial=True)
+        return widget
 
     @property
     def widget_type(self) -> Type[_I]:

@@ -68,11 +68,8 @@ class CheckboxWidget(UserInputWidget[bool], Row):
 
 @dataclass
 class Checkbox(UserInput[CheckboxWidget]):
+    default: bool = False
 
     @property
     def widget_type(self):
         return CheckboxWidget
-
-    @property
-    def default_initial(self) -> bool:
-        return False

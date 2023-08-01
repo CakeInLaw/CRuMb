@@ -18,3 +18,5 @@ class ProvisionResource(NomenclatureTypeBaseResource[ProvisionRepository]):
     list_form_primitive = nom_type_list_form_primitive.copy()
     create_form_primitive = nom_type_create_form_primitive.copy().add(RecipeInputSchema)
     edit_form_primitive = nom_type_edit_form_primitive.copy().add(RecipeInputSchema)
+
+    edit_prefetch_related = ('recipe__ingredients', )

@@ -42,7 +42,7 @@ class RelatedChoiceWidget(UserInputWidget[PK], Container):
             self.padding = padding.symmetric(horizontal=12)
 
     def set_value(self, value: Optional[BaseModel], initial: bool = False):
-        assert value is None or isinstance(value, BaseModel), value
+        assert value is None or isinstance(value, BaseModel), f'{self.name}, {value}'
         self.real_value = value
         self.text.value = str(self.real_value) if self.real_value else ''
 
@@ -77,7 +77,3 @@ class RelatedChoice(UserInput[RelatedChoiceWidget]):
     @property
     def widget_type(self):
         return RelatedChoiceWidget
-
-    @property
-    def default_initial(self) -> Optional[BaseModel]:
-        return None

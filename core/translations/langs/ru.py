@@ -22,5 +22,6 @@ interface = InterfaceTranslation(
 
 @dataclass
 class Entity(EntityTranslation):
+    _list: str = 'Список'
     _choice: str = 'Выбор'
     _creation: str = 'Создание'

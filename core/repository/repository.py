@@ -32,14 +32,14 @@ class Repository(Generic[MODEL]):
 
     def __init__(
             self,
-            by: str = '',
-            extra: dict[str, Any] = None,
+            by: str = None,
+            target: str = None,
             instance: MODEL = None,
             select_related: tuple[str] = EMPTY_TUPLE,
             prefetch_related: tuple[str] = EMPTY_TUPLE,
     ):
         self.by = by
-        self.extra = extra or {}
+        self.target = target
         self.instance = instance
         self.select_related = select_related
         self.prefetch_related = prefetch_related
@@ -62,11 +62,11 @@ class Repository(Generic[MODEL]):
     def qs_annotate_fields(self) -> dict[str, Any]:
         return {}
 
-    def qs_select_related(self) -> set[str]:
-        return set()
+    def qs_select_related(self) -> tuple[str]:
+        return EMPTY_TUPLE
 
-    def qs_prefetch_related(self) -> set[str]:
-        return set()
+    def qs_prefetch_related(self) -> tuple[str]:
+        return EMPTY_TUPLE
 
     @classmethod
     def opts(cls) -> models.MetaInfo:
@@ -174,10 +174,7 @@ class Repository(Generic[MODEL]):
             for t in ('o2o', 'fk'):
                 t: Literal["o2o", "fk"]
                 for field_name, value in getattr(sorted_data, t).items():
-                    direct_related[field_name] = await self.repository_of(field_name)(
-                        by=f'{self.by}__{self.model.__name__}',
-                        extra=self.extra
-                    ).create(value, is_root=False)
+                    direct_related[field_name] = await self.repository_of(field_name)().create(value, is_root=False)
 
             for t in ('o2o_pk', 'fk_pk'):
                 t: Literal["o2o_pk", "fk_pk"]
@@ -193,18 +190,14 @@ class Repository(Generic[MODEL]):
 
             for field_name, value in sorted_data.back_o2o.items():
                 relation_field = self.get_field_instance(field_name).relation_source_field  # type: ignore
-                await self.repository_of(field_name)(
-                    by=f'{self.by}__{self.model.__name__}',
-                    extra=self.extra
-                ).create(value, defaults={relation_field: instance.pk}, is_root=False)
+                await self.repository_of(field_name)()\
+                    .create(value, defaults={relation_field: instance.pk}, is_root=False)
 
             for field_name, bfk_data in sorted_data.back_fk.items():
                 relation_field = self.get_field_instance(field_name).relation_source_field  # type: ignore
                 for value in bfk_data:
-                    await self.repository_of(field_name)(
-                        by=f'{self.by}__{self.model.__name__}',
-                        extra=self.extra
-                    ).create(value, defaults={relation_field: instance.pk}, is_root=False)
+                    await self.repository_of(field_name)()\
+                        .create(value, defaults={relation_field: instance.pk}, is_root=False)
 
             await self.post_create(instance)
             return instance
@@ -269,14 +262,12 @@ class Repository(Generic[MODEL]):
             for t in ('o2o', 'fk'):
                 for field_name, value in getattr(sorted_data, t).items():
                     rel_instance = await self.get_relational(field_name, instance=instance)
-                    remote_repository = self.repository_of(field_name)(
-                        by=f'{self.by}__{self.model.__name__}',
-                        extra=self.extra
-                    )
                     if rel_instance:
-                        await remote_repository.edit(rel_instance, value, is_root=False)
+                        await self.repository_of(field_name)()\
+                            .edit(rel_instance, value, is_root=False)
                     else:
-                        direct_related[field_name] = await remote_repository.create(value, is_root=False)
+                        direct_related[field_name] = await self.repository_of(field_name)()\
+                            .create(value, is_root=False)
 
             for t in ('o2o_pk', 'fk_pk'):
                 for field_name, value in getattr(sorted_data, t).items():
@@ -289,41 +280,36 @@ class Repository(Generic[MODEL]):
             )
 
             for field_name, value in sorted_data.back_o2o.items():
-                remote_repository = self.repository_of(field_name)(
-                    by=f'{self.by}__{self.model.__name__}',
-                    extra=self.extra
-                )
                 rel_instance = await self.get_relational(field_name, instance=instance)
                 if rel_instance:
-                    await remote_repository.edit(rel_instance, value, is_root=False)
+                    await self.repository_of(field_name)()\
+                        .edit(rel_instance, value, is_root=False)
                 else:
                     relation_field = self.get_field_instance(field_name).relation_source_field  # type: ignore
-                    await remote_repository.create(value, defaults={relation_field: instance.pk}, is_root=False)
+                    await self.repository_of(field_name)()\
+                        .create(value, defaults={relation_field: instance.pk}, is_root=False)
 
             for field_name, bfk_data in sorted_data.back_fk.items():
-                remote_repository = self.repository_of(field_name)(
-                    by=f'{self.by}__{self.model.__name__}',
-                    extra=self.extra
-                )
+                remote_repository_cls = self.repository_of(field_name)
                 relation_field = self.get_field_instance(field_name).relation_source_field  # type: ignore
                 rel_instances_map = await self.get_relational_list(field_name, in_map=True, instance=instance)
 
                 for value in bfk_data:
                     if 'pk' in value:
                         rel_instance = rel_instances_map.pop(value['pk'])
-                        await remote_repository.edit(
+                        await remote_repository_cls().edit(
                             rel_instance,
                             {k: v for k, v in value.items() if k != 'pk'},
                             is_root=False
                         )
                     else:
-                        await remote_repository.create(
+                        await remote_repository_cls().create(
                             value,
                             defaults={relation_field: instance.pk},
                             is_root=False
                         )
                 if rel_instances_map:
-                    await remote_repository.delete_many([v.pk for v in rel_instances_map.values()])
+                    await remote_repository_cls().delete_many([v.pk for v in rel_instances_map.values()])
 
             await self.post_edit(instance)
             return instance
@@ -356,9 +342,9 @@ class Repository(Generic[MODEL]):
     async def check_fk_exists(self, field_name: str, item_pk: PK) -> BaseModel:
         field_type, field = self.get_field_type_and_instance(field_name)
 
-        if field_type in FieldTypes.no_pk_relation():
+        if field_type.is_no_pk_relation():
             related_field = cast(fields.relational.RelationalField, field)
-        elif field_type in FieldTypes.pk_relation():
+        elif field_type.is_pk_relation():
             related_field = cast(fields.relational.ForeignKeyFieldInstance, field.reference)
         else:
             raise Exception(f'{self.model}.{field_name} не относится к o2o, o2o_pk, fk, fk_pk, back_o2o, back_fk')
@@ -410,7 +396,7 @@ class Repository(Generic[MODEL]):
                     sorted_data.extra[key] = value
                     continue
                 raise UnexpectedDataKey(f'`{key}` не представлен в `{cls.model}`')
-            if field_type == FieldTypes.HIDDEN:
+            if field_type.is_hidden():
                 raise UnexpectedDataKey(f'`{key}` скрыт в `{cls.model}`')
             field_type_value = cast(str, field_type.value)
             if field_type_value in sorted_data.__dict__:
@@ -424,6 +410,9 @@ class Repository(Generic[MODEL]):
 
         required, pairs = self.required_and_pairs()
         required = required if instance is None else {}
+        if self.by and self.by in required:
+            related = required.pop(self.by)
+            del required[related]
 
         sorted_data = self.sort_data_by_field_types(data)
 
@@ -464,7 +453,6 @@ class Repository(Generic[MODEL]):
         return default_validator(field_name, value, data, instance)
 
     async def get_relational(self, field_name: str, instance: MODEL = None) -> Optional[BaseModel]:
-        instance = instance or self.instance
         rel_instance = getattr(instance, field_name)
         if isinstance(rel_instance, QuerySet):
             await instance.fetch_related(field_name)
@@ -485,7 +473,6 @@ class Repository(Generic[MODEL]):
             in_map: bool = False,
             instance: MODEL = None,
     ) -> list[BaseModel] | dict[PK, BaseModel]:
-        instance = instance or self.instance
         rel_instances: list[BaseModel] = getattr(instance, field_name)
         if isinstance(rel_instances, QuerySet):
             await instance.fetch_related(field_name)
@@ -503,8 +490,7 @@ class Repository(Generic[MODEL]):
     ):
         rel_instance = await self.get_relational(field_name, instance=instance) if instance else None
         await self.repository_of(field_name)(
-            by=f'{self.by}__{self.model.__name__}',
-            extra=self.extra
+            by=self.get_reverse_name(field_name),
         ).validate(value, rel_instance)
 
     async def validate_o2o(
@@ -593,8 +579,7 @@ class Repository(Generic[MODEL]):
     ) -> None:
         values_list = value
         remote_repository = self.repository_of(field_name)(
-            by=f'{self.by}__{self.model.__name__}',
-            extra=self.extra
+            by=self.get_reverse_name(field_name),
         )
         list_errors = ListFieldError()
 
@@ -796,22 +781,33 @@ class Repository(Generic[MODEL]):
     @classmethod
     def repository_of(cls, field_name: str) -> Type["Repository"]:
         field_type, field = cls.get_field_type_and_instance(field_name)
-        if field_type in FieldTypes.no_pk_relation():
+        if field_type.is_no_pk_relation():
             reference = cast(fields.relational.RelationalField, field)
-        elif field_type in FieldTypes.pk_relation():
+        elif field_type.is_pk_relation():
             reference = cast(fields.relational.RelationalField, field.reference)
         else:
             raise ValueError(
                 f'Поле {cls.model}.{field_name} с типом {cls.get_field_type(field_name)} не может иметь репозиторий'
             )
         related_model: BaseModel = reference.related_model
-        repo_name = cls.related_repositories.get(field_name, '__default__')
+        repo_name = cls.related_repositories.get(reference.model_field_name, '__default__')
         repo = related_model.REPOSITORIES.get(repo_name)
         if repo is None:
             raise ValueError(
                 f'У поля {cls.model}.{field_name} ({related_model}) нет репозитория {repo_name}'
             )
         return repo
+
+    @classmethod
+    def get_reverse_name(cls, field_name: str):
+        field_type, field = cls.get_field_type_and_instance(field_name)
+        assert field_type.is_relational(), f'{cls}, {field_name}, {field_type}'
+        if field_type.is_pk_relation():
+            return field.reference.related_name
+        elif field_type.is_back_relation():
+            return field.relation_field
+        else:
+            return field.related_name
 
     @classmethod
     def get_repo_name(cls) -> str:
@@ -829,7 +825,7 @@ class Repository(Generic[MODEL]):
         if name in cls.calculated:
             return name
         field_type = cls.get_field_type(name)
-        if field_type in FieldTypes.pk_relation():
+        if field_type.is_pk_relation():
             field = cls.get_field_instance(name)
             name = field.reference.model_field_name
         return name

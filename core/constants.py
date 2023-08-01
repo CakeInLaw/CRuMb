@@ -1,4 +1,4 @@
-EMPTY_TUPLE = ()
+EMPTY_TUPLE: tuple = ()
 
 
 class UndefinedValue:

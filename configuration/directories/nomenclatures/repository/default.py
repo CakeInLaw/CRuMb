@@ -27,8 +27,8 @@ class NomenclatureRepository(DirectoryRepository[Nomenclature]):
         name_plural='Nomenclature',
     )
 
-    def qs_select_related(self) -> set[str]:
-        return {'category'}
+    def qs_select_related(self) -> tuple[str]:
+        return 'category',
 
 
 InvalidCategoryType = AnyFieldError(
