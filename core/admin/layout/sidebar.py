@@ -38,7 +38,6 @@ class Sidebar(Container):
         self.content = Column([
             Container(
                 content=Column(self.children, scroll=ft.ScrollMode.ADAPTIVE, expand=True, spacing=0),
-                on_hover=self.toggle_size,
                 expand=True,
                 animate=100
             ),
@@ -48,10 +47,9 @@ class Sidebar(Container):
         self.active = None
         self.expanded = False
 
-    async def toggle_size(self, e: ft.ControlEvent):
-        if not self.btn_pin.pinned:
-            self.expanded = e.data == 'true'
-            await self.update_async()
+    @property
+    def pinned(self) -> bool:
+        return self.btn_pin.pinned
 
     def minimize(self):
         self.width = 50
@@ -75,3 +73,7 @@ class Sidebar(Container):
             return
         self._expanded = v
         self.maximize() if self.expanded else self.minimize()
+
+    def extend_groups(self):
+        for group in self.children:
+            group.extended = False

@@ -59,9 +59,12 @@ class MenuGroup(Column):
 
         self.extended = False
 
-    async def handle_click(self, e):
+    async def handle_click(self, e=None):
         self.extended = not self.extended
-        await self.update_async()
+        sidebar = self.app.sidebar
+        if not sidebar.expanded and not sidebar.pinned:
+            sidebar.expanded = True
+        await sidebar.update_async()
 
     @classmethod
     def add_item_info(cls, info: "PayloadInfo"):

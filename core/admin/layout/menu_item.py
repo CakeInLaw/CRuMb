@@ -28,12 +28,14 @@ class MenuItem(ListTile):
         extra = self.info.extra or {}
         icon = extra.get('icon', resource.ICON)
         label = extra.get('label', resource.name_plural)
-        if isinstance(label, dict):
-            label = label.get(self.app.LANG, label['DEFAULT'])
         self.leading = Icon(icon, size=24)
         self.title = Text(label, no_wrap=True, size=14)
 
     async def handle_click(self, e: ControlEvent):
+        sidebar = self.app.sidebar
+        if sidebar.expanded and not sidebar.pinned:
+            sidebar.expanded = False
+            sidebar.extend_groups()
         await self.app.open(self.info)
 
     def minimize(self):
