@@ -24,7 +24,7 @@ class BaseModel(Model):
 class ListValueModel(BaseModel):
     """Модель для строк табличной части"""
     id: int = orm_fields.BigIntField(pk=True)
-    ordering: int = orm_fields.SmallIntField(editable=True)
+    ordering: int = orm_fields.SmallIntField(editable=False)
 
     class Meta:
         abstract = True

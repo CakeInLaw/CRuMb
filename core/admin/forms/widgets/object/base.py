@@ -58,7 +58,7 @@ class ObjectBaseWidget(Generic[C], UserInputWidget[dict[str, Any]]):
     def set_value(self, value: dict[str, Any], initial: bool = False):
         if initial:
             if isinstance(value, BaseModel):
-                assert self.resource is not None, f'{self.full_name} не имеет ресурса, но {value} orm модель'
+                assert self.resource is not None, f'{self.full_name} не имеет ресурса, но {value} - orm модель'
                 assert self.resource.repository.model is value.__class__
             return
         assert isinstance(value, dict) and all(n in self.fields_map for n in value)

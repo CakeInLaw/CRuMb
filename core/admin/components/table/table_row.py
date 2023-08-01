@@ -58,6 +58,10 @@ class TableRow(Container):
             cell.change_bgcolor()
 
     @property
+    def index(self):
+        return self.body.rows.index(self)
+
+    @property
     def is_active(self):
         return self.body.active_row is self
 
