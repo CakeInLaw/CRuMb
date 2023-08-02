@@ -1,2 +1,2 @@
-from .model import InfoRegister
-from .repository import DocumentRepository
+from .model import InfoRegister, InfoRegisterResult
+from .repository import InfoRegisterRepository, InfoRegisterResultRepository

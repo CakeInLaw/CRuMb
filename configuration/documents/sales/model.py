@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Union
 from tortoise import fields
 from core.orm import fields as orm_fields
 
-from ..base_nomenclature_move_documents.model import MoveDocument, MoveDocumentValue
+from ..base_nomenclature_move_documents.model import MoveDocument, MoveDocumentListValue
 
 if TYPE_CHECKING:
     from configuration.directories.models import Customer
@@ -29,7 +29,7 @@ class Sale(MoveDocument):
         ordering = ('dt',)
 
 
-class SaleValue(MoveDocumentValue):
+class SaleValue(MoveDocumentListValue):
     count: float = orm_fields.FloatField(min_value=0)
     price: float = orm_fields.FloatField(min_value=0)
     doc: Union["Sale", fields.ForeignKeyRelation["Sale"]] = fields.ForeignKeyField(

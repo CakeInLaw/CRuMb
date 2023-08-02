@@ -3,7 +3,7 @@ from typing import Union
 from tortoise import fields
 from core.orm import fields as orm_fields
 
-from ..base_nomenclature_move_documents.model import MoveDocument, MoveDocumentValue
+from ..base_nomenclature_move_documents.model import MoveDocument, MoveDocumentListValue
 
 
 __all__ = ["Stocktake", "StocktakeValue"]
@@ -23,7 +23,7 @@ class Stocktake(MoveDocument):
         ordering = ("dt",)
 
 
-class StocktakeValue(MoveDocumentValue):
+class StocktakeValue(MoveDocumentListValue):
     count: float = orm_fields.FloatField()
     doc: Union["Stocktake", fields.ForeignKeyRelation["Stocktake"]] = fields.ForeignKeyField(
         'documents.Stocktake', related_name='values_list', on_delete=fields.CASCADE

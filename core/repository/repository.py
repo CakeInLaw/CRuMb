@@ -24,6 +24,11 @@ class Repository(Generic[MODEL]):
     model: Type[MODEL]
 
     READ_ONLY_REPOSITORY = False
+    HAS_CREATE = True
+    HAS_EDIT = True
+    HAS_DELETE_ONE = True
+    HAS_DELETE_MANY = True
+
     _REPOSITORY_NAME: str = '__default__'
     hidden_fields: set[str] = set()
     extra_allowed: set[str] = set()
@@ -133,9 +138,12 @@ class Repository(Generic[MODEL]):
     async def get_create_defaults(self, data: DATA, user_defaults: Optional[DATA]) -> DATA:
         return user_defaults or {}
 
-    def raise_if_read_only_repository(self):
-        if self.READ_ONLY_REPOSITORY:
-            raise Exception(f'{self} is read_only')
+    @classmethod
+    def raise_if_method_unavailable(cls, method: str):
+        if cls.READ_ONLY_REPOSITORY:
+            raise Exception(f'{cls} is read_only')
+        elif not getattr(cls, f'HAS_{method.upper()}'):
+            raise Exception(f'{cls}.{method} is unavailable')
 
     async def create(
             self,
@@ -159,7 +167,7 @@ class Repository(Generic[MODEL]):
                          Стоит вручную передавать False, если передаются валидированные данные. Автоматически False
                          передается вместе с is_root, когда Repository.create вызывается из другой функции.
         """
-        self.raise_if_read_only_repository()
+        self.raise_if_method_unavailable('create')
 
         validate = is_root if validate is None else validate
         run_in_transaction = is_root if run_in_transaction is None else run_in_transaction
@@ -246,7 +254,7 @@ class Repository(Generic[MODEL]):
                          Стоит вручную передавать False, если передаются валидированные данные. Автоматически False
                          передается вместе с is_root, когда Repository.create вызывается из другой функции.
         """
-        self.raise_if_read_only_repository()
+        self.raise_if_method_unavailable('edit')
 
         validate = is_root if validate is None else validate
         run_in_transaction = is_root if run_in_transaction is None else run_in_transaction
@@ -326,14 +334,14 @@ class Repository(Generic[MODEL]):
         pass
 
     async def delete_many(self, item_pk_list: list[PK]) -> int:
-        self.raise_if_read_only_repository()
+        self.raise_if_method_unavailable('delete_many')
         return await self._delete_many(item_pk_list)
 
     async def _delete_many(self, item_pk_list: list[PK]) -> int:
         raise NotImplementedError('Для этой модели не определено множественное удаление')
 
     async def delete_one(self, instance: MODEL) -> None:
-        self.raise_if_read_only_repository()
+        self.raise_if_method_unavailable('delete_one')
         await self._delete_many(instance)
 
     async def _delete_one(self, instance: MODEL) -> None:

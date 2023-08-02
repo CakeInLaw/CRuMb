@@ -1,2 +1,2 @@
 from .model import Directory, DirectoryListValue
-from .repository import DirectoryRepository, DirectoryValueRepository
+from .repository import DirectoryRepository, DirectoryListValueRepository

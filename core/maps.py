@@ -17,5 +17,5 @@ field_instance_to_type: dict[Type[fields.Field], FieldTypes] = {
     orm_fields.CharEnumFieldInstance:  FieldTypes.ENUM,
     orm_fields.IntEnumFieldInstance:   FieldTypes.ENUM,
     orm_fields.DateField:              FieldTypes.DATE,
-    fields.DatetimeField:              FieldTypes.DATETIME,
+    orm_fields.DatetimeField:          FieldTypes.DATETIME,
 }

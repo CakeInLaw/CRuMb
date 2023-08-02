@@ -206,7 +206,7 @@ class WidgetSchemaCreator:
         self.raise_if_unexpected_extra(field, extra)
         return widgets.DateInput(**kwargs)
 
-    def datetime(self, field: "fields.DatetimeField", **extra) -> widgets.DatetimeInput:
+    def datetime(self, field: orm_fields.DatetimeField, **extra) -> widgets.DatetimeInput:
         kwargs = self.input_kwargs(field, extra)
         kwargs.update(self.pop_allowed_extra(extra, 'min_dt', 'max_dt'))
         self.raise_if_unexpected_extra(field, extra)

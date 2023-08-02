@@ -1,5 +1,5 @@
 from core.repository import register_repository
-from core.entities.directories import DirectoryRepository, DirectoryValueRepository
+from core.entities.directories import DirectoryRepository, DirectoryListValueRepository
 from core.translations.langs import ru, en
 
 from .model import RecipeCard, RecipeCardIngredients
@@ -29,7 +29,7 @@ class RecipeCardRepository(DirectoryRepository):
 
 
 @register_repository
-class RecipeCardIngredientsRepository(DirectoryValueRepository):
+class RecipeCardIngredientsRepository(DirectoryListValueRepository):
     model = RecipeCardIngredients
 
     _t_ru = ru.Entity(

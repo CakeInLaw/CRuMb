@@ -4,7 +4,7 @@ from core.repository import Repository, ListValueRepository
 from core.entities.directories import Directory, DirectoryListValue
 
 
-__all__ = ["DirectoryRepository", "DirectoryValueRepository"]
+__all__ = ["DirectoryRepository", "DirectoryListValueRepository"]
 
 
 DirectoryModel = TypeVar('DirectoryModel', bound=Directory)
@@ -15,5 +15,5 @@ class DirectoryRepository(Repository[DirectoryModel]):
     pass
 
 
-class DirectoryValueRepository(ListValueRepository[DirectoryListValueModel]):
+class DirectoryListValueRepository(ListValueRepository[DirectoryListValueModel]):
     pass

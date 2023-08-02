@@ -1,13 +1,13 @@
 from typing import TYPE_CHECKING, Union
 
 from tortoise import fields
-from core.entities.documents.model import Document, DocumentValue
+from core.entities.documents.model import Document, DocumentListValue
 
 if TYPE_CHECKING:
     from configuration.directories.models import Employee, Nomenclature
 
 
-__all__ = ["MoveDocument", "MoveDocumentValue"]
+__all__ = ["MoveDocument", "MoveDocumentListValue"]
 
 
 class MoveDocument(Document):
@@ -21,7 +21,7 @@ class MoveDocument(Document):
         abstract = True
 
 
-class MoveDocumentValue(DocumentValue):
+class MoveDocumentListValue(DocumentListValue):
     """Базовая модель списка для документов движения номенклатуры"""
 
     nomenclature: Union["Nomenclature", fields.ForeignKeyRelation["Nomenclature"]] = fields.ForeignKeyField(
