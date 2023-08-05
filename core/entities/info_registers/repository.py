@@ -25,7 +25,7 @@ class InfoRegisterRepository(BaseRegisterRepository[IR, IRR]):
                 f'FROM ('
                 f'    SELECT '
                 f'        {partition_by}, '
-                f'        "count" as "result", '
+                f'        "{cls.main_field}" as "result", '
                 f'        ROW_NUMBER() OVER (PARTITION BY {partition_by} ORDER BY "dt" DESC) as "rn" '
                 f'    FROM {cls.opts().db_table} '
                 f') sub '

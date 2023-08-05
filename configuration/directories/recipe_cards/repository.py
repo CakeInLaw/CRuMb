@@ -1,11 +1,14 @@
+from core.enums import FieldTypes
 from core.repository import register_repository, ValuesListRepository
 from core.entities.directories import DirectoryRepository
 from core.translations.langs import ru, en
 
 from .model import RecipeCard, RecipeCardValuesList
+from configuration.enums import NomenclatureUnits
 
 
 __all__ = ["RecipeCardRepository", "RecipeCardValuesListRepository"]
+
 
 
 @register_repository

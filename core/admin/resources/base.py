@@ -1,5 +1,5 @@
 import inspect
-from typing import TYPE_CHECKING, Generic, Type, Callable, Coroutine, Optional, Any, TypeVar
+from typing import TYPE_CHECKING, Generic, Type, Callable, Coroutine, Any, TypeVar
 
 from flet import Control, icons
 

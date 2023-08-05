@@ -45,6 +45,7 @@ class UserInputWidget(Generic[T]):
             null: bool = False,
             required: bool = False,
             editable: bool = True,
+            ignore: bool = False,
             ignore_if_none: bool = False,
             parent: Union["Form", "UserInputWidget"] = None,
             on_value_change: Callable[["UserInputWidget"], Coroutine[Any, Any, None] | None] = None,
@@ -63,6 +64,7 @@ class UserInputWidget(Generic[T]):
         self.null = null
         self.required = required
         self.editable = editable
+        self.ignore = ignore
         self.ignore_if_none = ignore_if_none
         self.container_width = width
         self.container_height = height
@@ -190,6 +192,7 @@ class UserInput(Generic[_I]):
     null: bool = False
     required: bool = False
     editable: bool = True
+    ignore: bool = False
     ignore_if_none: bool = False
     default: Any = None
     on_value_change: Callable[[UserInputWidget], Coroutine[Any, Any, None]] = None

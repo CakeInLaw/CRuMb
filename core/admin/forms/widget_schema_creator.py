@@ -91,8 +91,17 @@ class WidgetSchemaCreator:
             raise ValueError(f'{type(item)}({item}) не подходит ни под какой из типов:)')
         if field_name in self.repository.calculated:
             label = self.resource.translate_field(field_name)
-            extra = {'label': label, **extra, 'name': field_name, 'editable': False}
-            return self.widget_schema_classes[self.repository.calculated[field_name]](**extra)
+            field_type = self.repository.calculated[field_name]
+            if isinstance(field_type, tuple):
+                field_type, common_extra = field_type
+                extra = {**common_extra, **extra}
+            return self.widget_schema_classes[field_type](**{  # type: ignore
+                'label': label,
+                'editable': False,
+                'ignore': True,
+                'name': field_name,
+                **extra,
+            })
         field_type, field = self.repository.get_field_type_and_instance(field_name)
         if field_type.is_hidden():
             raise ValueError(f'{field_name} in {self.repository} is hidden')

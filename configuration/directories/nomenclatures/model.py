@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union, Optional
 
 from tortoise import fields
 from core.orm import fields as orm_fields
@@ -8,8 +8,8 @@ from configuration.enums import NomenclatureTypes, NomenclatureUnits
 
 if TYPE_CHECKING:
     from configuration.directories.models import RecipeCard, NomenclatureCategory
-    from configuration.accum_registers.models import NomenclatureStock, NomenclatureStockResult
-    from configuration.info_registers.models import NomenclatureCost, NomenclaturePrice
+    from configuration.accum_registers.models import NomenclatureStockResult
+    from configuration.info_registers.models import NomenclatureCostResult
 
 
 __all__ = ["Nomenclature"]
@@ -29,17 +29,19 @@ class Nomenclature(Directory):
 
     recipe: Union["RecipeCard", fields.BackwardOneToOneRelation["RecipeCard"]]
 
-    stock_history: list["NomenclatureStock"] | fields.BackwardFKRelation["NomenclatureStock"]
     stock: Union["NomenclatureStockResult", fields.BackwardOneToOneRelation["NomenclatureStockResult"]]
-    stock_count: float  # annotated
-
-    costs: list["NomenclatureCost"] | fields.BackwardFKRelation["NomenclatureCost"]
-    cost: float  # annotated
-    prices: list["NomenclaturePrice"] | fields.BackwardFKRelation["NomenclaturePrice"]
-    price: float  # annotated
+    cost: Union["NomenclatureCostResult", fields.BackwardOneToOneRelation["NomenclatureCostResult"]]
 
     class Meta:
         table = "dir__nomenclature"
 
     def __str__(self) -> str:
         return self.name
+
+    @property
+    def cost_value(self) -> Optional[float]:
+        return self.cost.cost if self.cost else None
+
+    @property
+    def stock_value(self) -> Optional[float]:
+        return self.stock.count if self.stock else None

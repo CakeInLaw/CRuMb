@@ -3,10 +3,11 @@ from typing import Optional, cast
 from tortoise.queryset import Q
 
 from configuration.enums import NomenclatureTypes
+from core.enums import FieldTypes
 from core.exceptions import AnyFieldError
 from core.repository import register_repository
 from core.entities.directories import DirectoryRepository
-from core.types import DATA, PK, MODEL
+from core.types import DATA, PK
 
 from ...models import NomenclatureCategory, Nomenclature
 from ..translations import NomenclatureTranslation
@@ -14,11 +15,17 @@ from ..translations import NomenclatureTranslation
 
 __all__ = ["NomenclatureRepository", "NomenclatureTypeBaseRepository"]
 
+calculated_nom_fields = {
+    'stock_value': FieldTypes.FLOAT,
+    'cost_value': FieldTypes.FLOAT
+}
+
 
 @register_repository
 class NomenclatureRepository(DirectoryRepository[Nomenclature]):
     READ_ONLY_REPOSITORY = True
     model = Nomenclature
+    calculated = calculated_nom_fields
 
     _t_ru = NomenclatureTranslation.Ru(
         name='Номенклатура',
@@ -40,6 +47,7 @@ class NomenclatureTypeBaseRepository(DirectoryRepository[Nomenclature]):
     type: NomenclatureTypes
     model = Nomenclature
     hidden_fields = {'type'}
+    calculated = calculated_nom_fields
 
     def qs_default_filters(self) -> list[Q]:
         return [Q(type=self.type)]

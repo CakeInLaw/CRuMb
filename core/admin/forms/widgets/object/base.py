@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, TypeVar, Generic, Type
 from core.orm import BaseModel
 from ..user_input import UserInputWidget, UserInput
 from ... import InputGroup
-
 from ...widget_containers import BaseWidgetContainer
 
 if TYPE_CHECKING:
@@ -21,6 +20,8 @@ class ObjectBaseWidget(Generic[C], UserInputWidget[dict[str, Any]]):
     def final_value(self) -> dict[str, Any]:
         result = {}
         for field_name, widget in self.fields_map.items():
+            if widget.ignore:
+                continue
             value = widget.final_value
             if value is None and widget.ignore_if_none:
                 continue

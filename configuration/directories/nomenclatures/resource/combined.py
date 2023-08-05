@@ -2,7 +2,7 @@ from typing import TypeVar
 
 from core.admin.resources import DirectoryResource
 from configuration.admin import CakeInLawAdmin
-from .default import nom_type_list_form_primitive
+from .default import nom_type_list_form_primitive, nom_type_choice_form_primitive
 from ..repository.combined import CombinedNomenclatureTypeRepository
 from ..repository import IngredientRepository, AssembledRepository, ReceivedRepository, SellableRepository
 
@@ -11,7 +11,8 @@ REP = TypeVar('REP', bound=CombinedNomenclatureTypeRepository)
 
 
 class CombinedNomenclatureTypeResource(DirectoryResource[REP]):
-    list_form_primitive = nom_type_list_form_primitive.copy().add('type')
+    list_form_primitive = nom_type_list_form_primitive.copy().add('type', index=0)
+    choice_form_primitive = nom_type_choice_form_primitive.copy().add('type', index=0)
     common_select_related = ('category', )
 
 

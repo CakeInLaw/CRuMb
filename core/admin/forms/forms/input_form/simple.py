@@ -83,6 +83,8 @@ class SimpleInputForm(Form):
     def dirty_data(self):
         result = {}
         for name, widget in self.fields_map.items():
+            if widget.ignore:
+                continue
             value = widget.final_value
             if value is None and widget.ignore_if_none:
                 continue

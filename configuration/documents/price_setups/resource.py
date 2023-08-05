@@ -18,10 +18,9 @@ class PriceSetupResource(DocumentResource[PriceSetupRepository]):
         'unique_number',
         'dt',
         'price_group_id',
-        'responsible_id',
     )
 
-    common_select_related = ('price_group_id', 'responsible_id')
+    common_select_related = ('price_group_id',)
     edit_prefetch_related = ('values_list__nomenclature',)
     form_primitive = Primitive(
         {'name': 'group1', 'primitive': Primitive('price_group_id', 'responsible_id', 'dt')},

@@ -1,10 +1,7 @@
 from configuration.admin import CakeInLawAdmin
 from configuration.menu_groups import Nomenclature
 from .default import (
-    NomenclatureTypeBaseResource,
-    nom_type_list_form_primitive,
-    nom_type_create_form_primitive,
-    nom_type_edit_form_primitive,
+    NomenclatureTypeBaseResource as Parent,
     RecipeInputSchema
 )
 from ..repository import DishesRepository
@@ -13,11 +10,10 @@ from ..repository import DishesRepository
 @CakeInLawAdmin.register(
     present_in=(Nomenclature, )
 )
-class DishesResource(NomenclatureTypeBaseResource[DishesRepository]):
+class DishesResource(Parent[DishesRepository]):
     repository = DishesRepository
-    list_form_primitive = nom_type_list_form_primitive.copy()
-    create_form_primitive = nom_type_create_form_primitive.copy().add(RecipeInputSchema)
-    edit_form_primitive = nom_type_edit_form_primitive.copy().add(RecipeInputSchema)
+    create_form_primitive = Parent.create_form_primitive.copy().add(RecipeInputSchema)
+    edit_form_primitive = Parent.edit_form_primitive.copy().add(RecipeInputSchema)
 
     edit_select_related = ('recipe', )
     edit_prefetch_related = ('recipe__values_list__product',)

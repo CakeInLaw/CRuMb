@@ -9,9 +9,9 @@ class NomenclatureTranslationRu(ru.Entity):
         'type': 'Вид номенклатуры',
         'category': 'Категория',
         'units': 'Ед. измерения',
-        'stock': 'Остаток',
-        'cost': 'Себестоимость',
-        'price': 'Цена',
+        'stock_value': 'Остаток',
+        'cost_value': 'Себестоимость',
+        'price_value': 'Цена',
     })
 
 
@@ -21,9 +21,9 @@ class NomenclatureTranslationEn(en.Entity):
         'type': 'Type',
         'category': 'Category',
         'units': 'Units',
-        'stock': 'Stock',
-        'cost': 'Cost',
-        'price': 'Price',
+        'stock_value': 'Stock',
+        'cost_value': 'Cost',
+        'price_value': 'Price',
     })
 
 

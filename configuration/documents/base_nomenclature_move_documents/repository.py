@@ -22,7 +22,7 @@ class MoveDocumentRepository(DocumentRepository[MD]):
     EFFECT: NomenclatureMoveEffect
 
     @classmethod
-    async def get_stock_change_count(cls, v: float):
+    def get_stock_change_count(cls, v: float):
         if cls.EFFECT == NomenclatureMoveEffect.ADD:
             return abs(v)
         elif cls.EFFECT == NomenclatureMoveEffect.REDUCE:

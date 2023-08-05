@@ -26,12 +26,12 @@ class ProductAssemblyRepository(MoveDocumentRepository[ProductAssembly]):
         await NomenclatureStockRepository.register(registrator=self.instance, records=[
             {'nomenclature_id': self.instance.product_id, 'count': self.instance.count}
         ])
-        results_query = NomenclatureCostRepository.results()\
-            .get_queryset()\
-            .filter(nomenclature_id__in=[rec.nomenclature_id for rec in records])
+        for rec in records:
+            # TODO: оптимизировать
+            await rec.nomenclature.fetch_related('cost')
         await NomenclatureCostRepository.register(registrator=self.instance, records=[{
             'nomenclature_id': self.instance.product_id,
-            'cost': sum(res.cost for res in await results_query),
+            'cost': sum(rec.nomenclature.cost_value * rec.count for rec in records),
             'count': self.instance.count
         }])
 
