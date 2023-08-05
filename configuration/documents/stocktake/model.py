@@ -6,7 +6,7 @@ from core.orm import fields as orm_fields
 from ..base_nomenclature_move_documents.model import MoveDocument, MoveDocumentValuesList
 
 
-__all__ = ["Stocktake", "StocktakeValue"]
+__all__ = ["Stocktake", "StocktakeValuesList"]
 
 
 class Stocktake(MoveDocument):
@@ -16,13 +16,13 @@ class Stocktake(MoveDocument):
 
     PREFIX: str = 'ИН'
 
-    values_list: list["StocktakeValue"] | fields.BackwardFKRelation["StocktakeValue"]
+    values_list: list["StocktakeValuesList"] | fields.BackwardFKRelation["StocktakeValuesList"]
 
     class Meta:
         table = "doc__stocktakes"
 
 
-class StocktakeValue(MoveDocumentValuesList):
+class StocktakeValuesList(MoveDocumentValuesList):
     count: float = orm_fields.FloatField()
     owner: Union["Stocktake", fields.ForeignKeyRelation["Stocktake"]] = fields.ForeignKeyField(
         'documents.Stocktake', related_name='values_list', on_delete=fields.CASCADE

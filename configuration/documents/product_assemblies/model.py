@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from configuration.directories.models import Nomenclature
 
 
-__all__ = ["ProductAssembly", "ProductAssemblyValue"]
+__all__ = ["ProductAssembly", "ProductAssemblyValuesList"]
 
 
 class ProductAssembly(MoveDocument):
@@ -17,18 +17,19 @@ class ProductAssembly(MoveDocument):
 
     PREFIX: str = 'СБ'
 
+    product_id: int
     product: Union["Nomenclature", fields.ForeignKeyRelation["Nomenclature"]] = fields.ForeignKeyField(
         'directories.Nomenclature',
     )
     count: float = orm_fields.FloatField(min_value=0)
 
-    values_list: list["ProductAssemblyValue"] | fields.BackwardFKRelation["ProductAssemblyValue"]
+    values_list: list["ProductAssemblyValuesList"] | fields.BackwardFKRelation["ProductAssemblyValuesList"]
 
     class Meta:
         table = "doc__product_assemblies"
 
 
-class ProductAssemblyValue(MoveDocumentValuesList):
+class ProductAssemblyValuesList(MoveDocumentValuesList):
     owner: Union["ProductAssembly", fields.ForeignKeyRelation["ProductAssembly"]] = fields.ForeignKeyField(
         'documents.ProductAssembly', related_name='values_list', on_delete=fields.CASCADE
     )

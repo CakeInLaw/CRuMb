@@ -32,7 +32,7 @@ class RecipeCardRepository(DirectoryRepository[RecipeCard]):
 class RecipeCardValuesListRepository(ValuesListRepository):
     model = RecipeCardValuesList
     related_repositories = {
-        'product': 'RawsAndProvision'
+        'product': 'Ingredients'
     }
 
     _t_ru = ru.Entity(

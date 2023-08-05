@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from configuration.documents.models import Receive
 
 
-__all__ = ["ProviderReturn", "ProviderReturnValue"]
+__all__ = ["ProviderReturn", "ProviderReturnValuesList"]
 
 
 class ProviderReturn(MoveDocument):
@@ -21,13 +21,13 @@ class ProviderReturn(MoveDocument):
         'documents.Receive', related_name='returns', on_delete=fields.RESTRICT
     )
 
-    values_list: list["ProviderReturnValue"] | fields.BackwardFKRelation["ProviderReturnValue"]
+    values_list: list["ProviderReturnValuesList"] | fields.BackwardFKRelation["ProviderReturnValuesList"]
 
     class Meta:
         table = "doc__provider_returns"
 
 
-class ProviderReturnValue(MoveDocumentValuesList):
+class ProviderReturnValuesList(MoveDocumentValuesList):
     price: float = orm_fields.FloatField(min_value=0)
     owner: Union["ProviderReturn", fields.ForeignKeyRelation["ProviderReturn"]] = fields.ForeignKeyField(
         'documents.ProviderReturn', related_name='values_list', on_delete=fields.CASCADE

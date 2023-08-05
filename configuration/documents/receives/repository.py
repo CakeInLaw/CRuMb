@@ -51,6 +51,9 @@ class ReceiveRepository(MoveDocumentRepository[Receive]):
 @register_repository
 class ReceiveValuesListRepository(ValuesListRepository[ReceiveValuesList]):
     model = ReceiveValuesList
+    related_repositories = {
+        'nomenclature': 'Received'
+    }
 
     _t_ru = ru.Entity(
         name='Товар',

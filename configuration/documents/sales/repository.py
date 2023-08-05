@@ -24,6 +24,9 @@ class SaleRepository(MoveDocumentRepository[Sale]):
 @register_repository
 class SaleValuesListRepository(ValuesListRepository[SaleValuesList]):
     model = SaleValuesList
+    related_repositories = {
+        'nomenclature': 'Sellable'
+    }
 
     _t_ru = ru.Entity(
         name='Товар',

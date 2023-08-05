@@ -12,7 +12,7 @@ from ...models import NomenclatureCategory, Nomenclature
 from ..translations import NomenclatureTranslation
 
 
-__all__ = ["NomenclatureRepository", "RawsAndProvisionRepository", "NomenclatureTypeBaseRepository"]
+__all__ = ["NomenclatureRepository", "NomenclatureTypeBaseRepository"]
 
 
 @register_repository
@@ -27,25 +27,6 @@ class NomenclatureRepository(DirectoryRepository[Nomenclature]):
     _t_en = NomenclatureTranslation.En(
         name='Nomenclature',
         name_plural='Nomenclature',
-    )
-
-
-@register_repository
-class RawsAndProvisionRepository(DirectoryRepository[Nomenclature]):
-    READ_ONLY_REPOSITORY = True
-    _REPOSITORY_NAME = 'RawsAndProvision'
-    model = Nomenclature
-
-    def qs_default_filters(self) -> list[Q]:
-        return [Q(Q(type=NomenclatureTypes.RAWS), Q(type=NomenclatureTypes.PROVISION), join_type=Q.OR)]
-
-    _t_ru = NomenclatureTranslation.Ru(
-        name='Продукт/Заготовка',
-        name_plural='Продукты/Заготовки',
-    )
-    _t_en = NomenclatureTranslation.En(
-        name='Raw/Provision',
-        name_plural='Raws/Provision',
     )
 
 

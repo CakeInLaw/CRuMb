@@ -9,7 +9,7 @@ __all__ = ["CustomerReturnRepository", "CustomerReturnValuesListRepository"]
 @register_repository
 class CustomerReturnRepository(MoveDocumentRepository[CustomerReturn]):
     model = CustomerReturn
-    EFFECT = NomenclatureMoveEffect.REDUCE
+    EFFECT = NomenclatureMoveEffect.ADD
 
     _t_ru = ru.Entity(
         name='Возврат от покупателя',
@@ -24,6 +24,9 @@ class CustomerReturnRepository(MoveDocumentRepository[CustomerReturn]):
 @register_repository
 class CustomerReturnValuesListRepository(ValuesListRepository[CustomerReturnValuesList]):
     model = CustomerReturnValuesList
+    related_repositories = {
+        'nomenclature': 'Sellable'
+    }
 
     _t_ru = ru.Entity(
         name='Товар',

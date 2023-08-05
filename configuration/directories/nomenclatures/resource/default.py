@@ -4,7 +4,7 @@ from core.admin.forms import Primitive
 from core.admin.resources import DirectoryResource
 
 from configuration.admin import CakeInLawAdmin
-from ..repository import NomenclatureRepository, RawsAndProvisionRepository
+from ..repository import NomenclatureRepository, IngredientRepository
 from ..repository.default import NomenclatureTypeBaseRepository
 
 
@@ -31,13 +31,6 @@ RecipeInputSchema = ('recipe', {
 @CakeInLawAdmin.register()
 class NomenclatureResource(DirectoryResource[NomenclatureRepository]):
     repository = NomenclatureRepository
-    list_form_primitive = nom_type_list_form_primitive.copy().add('type')
-    common_select_related = ('category',)
-
-
-@CakeInLawAdmin.register()
-class RawsAndProvisionResource(DirectoryResource[RawsAndProvisionRepository]):
-    repository = RawsAndProvisionRepository
     list_form_primitive = nom_type_list_form_primitive.copy().add('type')
     common_select_related = ('category',)
 

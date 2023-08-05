@@ -3,29 +3,28 @@ from core.admin.resources import DocumentResource, ValuesListResource
 
 from configuration.admin import CakeInLawAdmin
 from configuration.menu_groups import Documents
-from .repository import ReceiveRepository, ReceiveValuesListRepository
+from .repository import ProviderReturnRepository, ProviderReturnValuesListRepository
 
-__all__ = ["ReceiveResource", "ReceiveValuesListResource"]
+__all__ = ["ProviderReturnResource", "ProviderReturnValuesListResource"]
 
 
 @CakeInLawAdmin.register(
     present_in=(Documents, ),
 )
-class ReceiveResource(DocumentResource[ReceiveRepository]):
-    repository = ReceiveRepository
+class ProviderReturnResource(DocumentResource[ProviderReturnRepository]):
+    repository = ProviderReturnRepository
 
     list_form_primitive = Primitive(
         'unique_number',
         'dt',
-        'provider_id',
+        'receive_id',
         'responsible_id',
     )
 
-    common_select_related = ('provider', 'responsible')
+    common_select_related = ('receive', 'responsible')
     edit_prefetch_related = ('values_list__nomenclature', )
     form_primitive = Primitive(
-        {'name': 'group1', 'primitive': Primitive('provider_id', 'responsible_id', 'dt')},
-        {'name': 'group2', 'primitive': Primitive('provider_doc_id', 'provider_doc_dt')},
+        {'name': 'group1', 'primitive': Primitive('receive_id', 'responsible_id', 'dt')},
         ('values_list', {
             'object_schema': {
                 'primitive': Primitive(
@@ -40,5 +39,5 @@ class ReceiveResource(DocumentResource[ReceiveRepository]):
 
 
 @CakeInLawAdmin.register()
-class ReceiveValuesListResource(ValuesListResource):
-    repository = ReceiveValuesListRepository
+class ProviderReturnValuesListResource(ValuesListResource):
+    repository = ProviderReturnValuesListRepository

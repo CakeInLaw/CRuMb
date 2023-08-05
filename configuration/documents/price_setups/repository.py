@@ -4,6 +4,8 @@ from core.translations.langs import ru, en
 
 from .model import PriceSetup, PriceSetupValuesList
 
+__all__ = ["PriceSetupRepository", "PriceSetupValuesListRepository"]
+
 
 @register_repository
 class PriceSetupRepository(DocumentRepository[PriceSetup]):
@@ -41,6 +43,9 @@ class PriceSetupRepository(DocumentRepository[PriceSetup]):
 @register_repository
 class PriceSetupValuesListRepository(ValuesListRepository[PriceSetupValuesList]):
     model = PriceSetupValuesList
+    related_repositories = {
+        'nomenclature': 'Received'
+    }
 
     _t_ru = ru.Entity(
         name='Товар',

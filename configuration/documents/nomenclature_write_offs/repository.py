@@ -24,6 +24,9 @@ class NomenclatureWriteOffRepository(MoveDocumentRepository[NomenclatureWriteOff
 @register_repository
 class NomenclatureWriteOffValuesListRepository(ValuesListRepository[NomenclatureWriteOffValuesList]):
     model = NomenclatureWriteOffValuesList
+    related_repositories = {
+        'nomenclature': '__default__'
+    }
 
     _t_ru = ru.Entity(
         name='Товар',
