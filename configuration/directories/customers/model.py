@@ -24,7 +24,6 @@ class Customer(Directory):
 
     class Meta:
         table = "dir__customers"
-        ordering = ('id',)
 
     def __str__(self) -> str:
         return self.name

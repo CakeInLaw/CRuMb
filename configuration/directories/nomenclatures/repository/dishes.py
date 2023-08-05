@@ -1,5 +1,4 @@
 from configuration.enums import NomenclatureTypes
-from core.enums import FieldTypes
 from core.repository import register_repository
 from .default import NomenclatureTypeBaseRepository
 from ..translations import NomenclatureTranslation

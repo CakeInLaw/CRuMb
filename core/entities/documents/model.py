@@ -1,7 +1,5 @@
 from datetime import datetime
-from typing import Union
 
-from tortoise import fields
 from core.orm import fields as orm_fields
 
 from core.orm.base_model import BaseModel, ListValueModel
@@ -16,7 +14,7 @@ class Document(BaseModel):
     PREFIX: str
     id: int = orm_fields.BigIntField(pk=True)
     conducted: bool = orm_fields.BooleanField(default=False)
-    dt: datetime = orm_fields.DatetimeField()
+    dt: datetime = orm_fields.DatetimeField(auto_now_add=True)
     comment: str = orm_fields.TextField()
 
     @property
@@ -29,7 +27,6 @@ class Document(BaseModel):
 
 class DocumentListValue(ListValueModel):
     """Базовая модель списка для документов"""
-    doc: Union["Document", fields.ForeignKeyRelation["Document"]]
 
     class Meta:
         abstract = True

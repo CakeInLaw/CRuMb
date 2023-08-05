@@ -1,4 +1,4 @@
-from .default import NomenclatureRepository
+from .default import NomenclatureRepository, RawsAndProvisionRepository
 from .dishes import DishesRepository
 from .hoz import HozRepository
 from .inventory import InventoryRepository

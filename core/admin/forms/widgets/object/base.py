@@ -8,7 +8,7 @@ from ... import InputGroup
 from ...widget_containers import BaseWidgetContainer
 
 if TYPE_CHECKING:
-    from core.admin.resource import Resource
+    from core.admin.resources import Resource
 
 
 C = TypeVar('C', bound=BaseWidgetContainer)
@@ -16,7 +16,6 @@ C = TypeVar('C', bound=BaseWidgetContainer)
 
 class ObjectBaseWidget(Generic[C], UserInputWidget[dict[str, Any]]):
     child_container: Type[C]
-    initial_value = None
 
     @property
     def final_value(self) -> dict[str, Any]:
@@ -58,7 +57,6 @@ class ObjectBaseWidget(Generic[C], UserInputWidget[dict[str, Any]]):
 
     def set_value(self, value: dict[str, Any] | BaseModel, initial: bool = False):
         if initial and isinstance(value, BaseModel):
-            self.initial_value = value
             assert self.resource is not None, f'{self.full_name} не имеет ресурса, но {value} - orm модель'
             assert self.resource.repository.model is value.__class__
             self.set_value_from_instance(value, initial=initial)

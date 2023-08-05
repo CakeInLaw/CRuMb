@@ -23,7 +23,6 @@ class CustomerLocation(Directory):
 
     class Meta:
         table = "dir__customer_locations"
-        ordering = ('id',)
 
     def __str__(self) -> str:
         return self.name

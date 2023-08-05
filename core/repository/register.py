@@ -1,10 +1,6 @@
 import importlib
-from typing import TypeVar, Type
 
-from core.repository.repository import Repository
-
-
-REPOSITORY = TypeVar('REPOSITORY', bound=Type[Repository])
+from core.repository.base import REPOSITORY
 
 
 def register_repository(repo_cls: REPOSITORY) -> REPOSITORY:

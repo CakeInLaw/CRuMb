@@ -1,2 +1,2 @@
 from .model import Document, DocumentListValue
-from .repository import DocumentRepository, DocumentListValueRepository
+from .repository import DocumentRepository

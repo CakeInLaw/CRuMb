@@ -9,7 +9,7 @@ __all__ = ["PositionRepository"]
 
 
 @register_repository
-class PositionRepository(DirectoryRepository):
+class PositionRepository(DirectoryRepository[Position]):
     model = Position
 
     _t_ru = ru.Entity(

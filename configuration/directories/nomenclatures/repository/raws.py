@@ -16,6 +16,6 @@ class RawsRepository(NomenclatureTypeBaseRepository):
         name_plural='Продукты',
     )
     _t_en = NomenclatureTranslation.En(
-        name='Raws',
-        name_plural='Raws',
+        name='Product',
+        name_plural='Products',
     )

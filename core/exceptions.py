@@ -72,11 +72,10 @@ class RequiredMissed(FieldError):
 
 
 class ListFieldError(FieldError):
-    objects_map: dict[int, Union["ObjectErrors", "FieldError"]]
 
     def __init__(self,  *args):
         super().__init__(*args)
-        self.objects_map = {}
+        self.objects_map: dict[int, Union["ObjectErrors", "FieldError"]] = {}
 
     def append(self, index: int, err: Union[Type["FieldError"], "FieldError", "ObjectErrors"]):
         self.objects_map[index] = err
@@ -86,6 +85,12 @@ class ListFieldError(FieldError):
 
     def __bool__(self):
         return len(self.objects_map) > 0
+
+    def __contains__(self, item: int):
+        return item in self.objects_map
+
+    def __getitem__(self, item: int):
+        return self.objects_map[item]
 
 
 class ObjectErrors(Exception):

@@ -5,8 +5,8 @@ from flet import Container, Column, Row, IconButton, icons, ScrollMode
 
 from core.constants import UndefinedValue
 from core.orm import BaseModel
-from core.types import BackFKData
 from core.admin.components.table import Table, TableHeader, TableHeaderCell, TableBody
+from core.types import ValuesListData
 from .object import ObjectTableRow, ObjectTableRowWidget
 from .user_input import UserInput, UserInputWidget
 
@@ -14,13 +14,14 @@ from .user_input import UserInput, UserInputWidget
 class TableInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
 
     @property
-    def final_value(self) -> BackFKData:
-        result = []
+    def final_value(self) -> ValuesListData:
+        result = {
+            'head': (head := tuple(schema.name for schema in self.object_schema.fields)),
+            'values': (values := []),
+        }
         for widget in self.objects_list:
-            if widget.initial_value is None:
-                result.append(widget.final_value)
-            else:
-                result.append({'pk': widget.initial_value.pk, **widget.final_value})
+            value = widget.final_value
+            values.append(tuple(value.get(name, UndefinedValue) for name in head))
         return result
 
     def __init__(
@@ -93,8 +94,7 @@ class TableInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
 
     async def handle_add_row(self, e):
         widget = self.create_table_row()
-        if self.has_ordering:
-            widget.set_value({'ordering': self.table.body.length + 1})
+        widget.set_value({'ordering': self.table.body.length})
         self.table.body.active_row = widget
         await self.table.body.scroll_to_async(offset=-1, duration=10)
 
@@ -114,10 +114,9 @@ class TableInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
         else:
             table_body.active_row = table_body.rows[idx + 1]
         table_body.rows.remove(active_row)
-        if self.has_ordering:
-            for i, row in enumerate(table_body.rows[idx:], start=idx + 1):
-                row: ObjectTableRowWidget
-                row.set_value({'ordering': i})
+        for i, row in enumerate(table_body.rows[idx:], start=idx + 1):
+            row: ObjectTableRowWidget
+            row.set_value({'ordering': i})
         await table_body.scroll_to_async(offset=-1, duration=10)
 
     async def handle_move_row_up(self, e):
@@ -129,9 +128,8 @@ class TableInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
             return
         rows = self.table.body.rows
         row_up: ObjectTableRowWidget = rows[idx - 1]  # type: ignore
-        if self.has_ordering:
-            active_row.set_value({'ordering': idx})
-            row_up.set_value({'ordering': idx + 1})
+        active_row.set_value({'ordering': idx})
+        row_up.set_value({'ordering': idx + 1})
         rows[idx], rows[idx - 1] = row_up, active_row
         await self.table.body.update_async()
 
@@ -144,16 +142,15 @@ class TableInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
         if idx == len(rows) - 1:
             return
         row_down: ObjectTableRowWidget = rows[idx + 1]  # type: ignore
-        if self.has_ordering:
-            active_row.set_value({'ordering': idx + 2})
-            row_down.set_value({'ordering': idx + 1})
+        active_row.set_value({'ordering': idx + 2})
+        row_down.set_value({'ordering': idx + 1})
         rows[idx], rows[idx + 1] = row_down, active_row
         await self.table.body.update_async()
 
     def set_value(self, value: Any, initial: bool = False):
         if initial:
             assert all(isinstance(v, BaseModel) for v in value)
-            for v in value:
+            for v in sorted(value, key=lambda x: x.ordering):
                 self.create_table_row(initial=v)
             return
         assert isinstance(value, dict) and all(isinstance(k, int) for k in value)
@@ -170,12 +167,6 @@ class TableInputWidget(UserInputWidget[list[dict[str, Any]]], Container):
             if not widget.is_valid():
                 valid = False
         return valid
-
-    @property
-    def has_ordering(self) -> bool:
-        if not hasattr(self, '_cached_has_order'):
-            setattr(self, '_cached_has_order', any(f.name == 'ordering' for f in self.object_schema.fields))
-        return getattr(self, '_cached_has_order')
 
 
 @dataclass

@@ -1,4 +1,6 @@
-from typing import Any, Optional, cast
+from typing import Optional, cast
+
+from tortoise.queryset import Q
 
 from configuration.enums import NomenclatureTypes
 from core.exceptions import AnyFieldError
@@ -10,7 +12,7 @@ from ...models import NomenclatureCategory, Nomenclature
 from ..translations import NomenclatureTranslation
 
 
-__all__ = ["NomenclatureRepository", "NomenclatureTypeBaseRepository"]
+__all__ = ["NomenclatureRepository", "RawsAndProvisionRepository", "NomenclatureTypeBaseRepository"]
 
 
 @register_repository
@@ -27,8 +29,24 @@ class NomenclatureRepository(DirectoryRepository[Nomenclature]):
         name_plural='Nomenclature',
     )
 
-    def qs_select_related(self) -> tuple[str]:
-        return 'category',
+
+@register_repository
+class RawsAndProvisionRepository(DirectoryRepository[Nomenclature]):
+    READ_ONLY_REPOSITORY = True
+    _REPOSITORY_NAME = 'RawsAndProvision'
+    model = Nomenclature
+
+    def qs_default_filters(self) -> list[Q]:
+        return [Q(Q(type=NomenclatureTypes.RAWS), Q(type=NomenclatureTypes.PROVISION), join_type=Q.OR)]
+
+    _t_ru = NomenclatureTranslation.Ru(
+        name='Продукт/Заготовка',
+        name_plural='Продукты/Заготовки',
+    )
+    _t_en = NomenclatureTranslation.En(
+        name='Raw/Provision',
+        name_plural='Raws/Provision',
+    )
 
 
 InvalidCategoryType = AnyFieldError(
@@ -42,15 +60,16 @@ class NomenclatureTypeBaseRepository(DirectoryRepository[Nomenclature]):
     model = Nomenclature
     hidden_fields = {'type'}
 
-    def qs_default_filters(self) -> dict[str, Any]:
-        return {'type': self.type}
-
-    def qs_select_related(self) -> set[str]:
-        return {'category'}
+    def qs_default_filters(self) -> list[Q]:
+        return [Q(type=self.type)]
 
     @classmethod
     def get_repo_name(cls):
         return cls.type.name.title()
+
+    @classmethod
+    def get_related_repositories(cls) -> dict[str, str]:
+        return {'category': cls.type.name.title()}
 
     async def get_create_defaults(self, data: DATA, user_defaults: Optional[DATA]) -> DATA:
         defaults = user_defaults or {}
@@ -61,13 +80,11 @@ class NomenclatureTypeBaseRepository(DirectoryRepository[Nomenclature]):
             self,
             value: PK,
             data: DATA,
-            instance: Optional[MODEL]
     ) -> None:
         category = cast(NomenclatureCategory, await self.validate_fk_pk(
             field_name='category_id',
             value=value,
             data=data,
-            instance=instance,
         ))
         if category and category.type != self.type:
             raise InvalidCategoryType

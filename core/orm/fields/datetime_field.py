@@ -9,5 +9,6 @@ class DatetimeField(fields.DatetimeField):
     @property
     def constraints(self) -> dict:
         result = super().constraints
+        result['ignore_if_none'] = self.auto_now_add
         result['editable'] = self.editable
         return result

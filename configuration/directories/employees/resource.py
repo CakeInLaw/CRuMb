@@ -1,5 +1,5 @@
 from core.admin.forms import Primitive
-from core.admin.resource import Resource
+from core.admin.resources import DirectoryResource
 
 from configuration.admin import CakeInLawAdmin
 from configuration.menu_groups import Directories
@@ -12,7 +12,7 @@ __all__ = ["EmployeeResource"]
 @CakeInLawAdmin.register(
     present_in=(Directories, )
 )
-class EmployeeResource(Resource):
+class EmployeeResource(DirectoryResource[EmployeeRepository]):
     repository = EmployeeRepository
     list_form_primitive = Primitive(
         'last_name',

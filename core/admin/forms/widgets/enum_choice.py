@@ -19,7 +19,6 @@ E = TypeVar('E', bound=Enum)
 
 
 class EnumChoiceWidget(UserInputWidget[E], Container):
-    enum_type: Type[E]
 
     @property
     def final_value(self) -> Optional[E]:

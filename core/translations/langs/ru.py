@@ -16,6 +16,14 @@ interface = InterfaceTranslation(
         'name': 'Наименование',
         'ordering': '№',
         'count': 'Количество',
+        'price': 'Цена',
+        'dt': 'Дата и время',
+        'date': 'Дата',
+        'time': 'Время',
+        'comment': 'Комментарий',
+        'registrator': 'Регистратор',
+        'responsible': 'Ответственный',
+        'unique_number': 'Номер'
     }
 )
 

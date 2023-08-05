@@ -4,14 +4,14 @@ from typing import TYPE_CHECKING, Union
 from tortoise import fields
 from core.orm import fields as orm_fields
 
-from ..base_nomenclature_move_documents.model import MoveDocument, MoveDocumentListValue
+from ..base_nomenclature_move_documents.model import MoveDocument, MoveDocumentValuesList
 
 if TYPE_CHECKING:
     from configuration.directories.models import Provider
     from configuration.documents.models import ProviderReturn
 
 
-__all__ = ["Receive", "ReceiveValue"]
+__all__ = ["Receive", "ReceiveValuesList"]
 
 
 class Receive(MoveDocument):
@@ -22,23 +22,23 @@ class Receive(MoveDocument):
         'directories.Provider', related_name='receives', on_delete=fields.RESTRICT
     )
     provider_doc_id: str = orm_fields.CharField(max_length=20)
-    provider_doc_dt: datetime = fields.DatetimeField()
+    provider_doc_dt: datetime = orm_fields.DatetimeField(null=True)
 
-    values_list: list["ReceiveValue"] | fields.BackwardFKRelation["ReceiveValue"]
+    values_list: list["ReceiveValuesList"] | fields.BackwardFKRelation["ReceiveValuesList"]
     returns: list["ProviderReturn"] | fields.BackwardFKRelation["ProviderReturn"]
 
     class Meta:
         table = 'doc__receives'
-        ordering = ('dt',)
+
+    def __str__(self):
+        return f'Поступление {self.unique_number}'
 
 
-class ReceiveValue(MoveDocumentListValue):
-    count: float = orm_fields.FloatField(min_value=0)
+class ReceiveValuesList(MoveDocumentValuesList):
     price: float = orm_fields.FloatField(min_value=0)
-    doc: Union["Receive", fields.ForeignKeyRelation["Receive"]] = fields.ForeignKeyField(
+    owner: Union["Receive", fields.ForeignKeyRelation["Receive"]] = fields.ForeignKeyField(
         'documents.Receive', related_name='values_list', on_delete=fields.CASCADE
     )
 
     class Meta:
         table = 'doc__receives__values'
-        ordering = 'ordering',

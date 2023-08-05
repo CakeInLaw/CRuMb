@@ -1,3 +1,4 @@
+from .base import ReadRepository
 from .repository import Repository
-from .list_value_repository import ListValueRepository
+from .values_list_repository import ValuesListRepository
 from .register import register_repository, REPOSITORY

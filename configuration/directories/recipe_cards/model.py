@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from configuration.directories.models import Nomenclature
 
 
-__all__ = ["RecipeCard", "RecipeCardIngredients"]
+__all__ = ["RecipeCard", "RecipeCardValuesList"]
 
 
 class RecipeCard(Directory):
@@ -19,7 +19,7 @@ class RecipeCard(Directory):
     )
     text: str = orm_fields.TextField()
 
-    ingredients: list["RecipeCardIngredients"] | fields.BackwardFKRelation["RecipeCardIngredients"]
+    values_list: list["RecipeCardValuesList"] | fields.BackwardFKRelation["RecipeCardValuesList"]
 
     class Meta:
         table = "dir__recipe_cards"
@@ -28,9 +28,11 @@ class RecipeCard(Directory):
         return str(self.product)
 
 
-class RecipeCardIngredients(DirectoryListValue):
-    card: Union["RecipeCard", fields.ForeignKeyRelation["RecipeCard"]] = fields.ForeignKeyField(
-        "directories.RecipeCard", related_name='ingredients', on_delete=fields.CASCADE
+class RecipeCardValuesList(DirectoryListValue):
+    """Ингредиенты"""
+
+    owner: Union["RecipeCard", fields.ForeignKeyRelation["RecipeCard"]] = fields.ForeignKeyField(
+        "directories.RecipeCard", related_name='values_list', on_delete=fields.CASCADE
     )
     product: Union["Nomenclature", fields.ForeignKeyRelation["Nomenclature"]] = fields.ForeignKeyField(
         "directories.Nomenclature", related_name='ingredient_of', on_delete=fields.RESTRICT
@@ -38,8 +40,7 @@ class RecipeCardIngredients(DirectoryListValue):
     count: float = orm_fields.FloatField(min_value=0)
 
     class Meta:
-        table = "dir__recipe_cards__ingredients"
-        ordering = 'ordering',
+        table = "dir__recipe_cards__values"
 
     def __str__(self) -> str:
         return str(self.product)

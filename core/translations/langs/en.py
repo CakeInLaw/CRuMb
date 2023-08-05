@@ -16,6 +16,14 @@ interface = InterfaceTranslation(
         'name': 'Name',
         'ordering': '№',
         'count': 'Count',
+        'price': 'Price',
+        'dt': 'Date and time',
+        'date': 'Date',
+        'time': 'Time',
+        'comment': 'Comment',
+        'registrator': 'Registrator',
+        'responsible': 'Responsible',
+        'unique_number': 'Number'
     },
 )
 

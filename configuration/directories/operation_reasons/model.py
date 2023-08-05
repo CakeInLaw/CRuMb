@@ -14,7 +14,6 @@ class OperationReason(Directory):
 
     class Meta:
         table = "dir__operation_reasons"
-        ordering = ('id',)
 
     def __str__(self) -> str:
         return self.name

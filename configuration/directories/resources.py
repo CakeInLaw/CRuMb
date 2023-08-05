@@ -5,6 +5,7 @@ from .nomenclature_categories.resource import *
 from .nomenclatures.resource import *
 from .operation_reasons.resource import *
 from .positions.resource import *
+from .providers.resource import *
 from .price_groups.resource import *
 from .recipe_cards.resource import *
 from .users.resource import *

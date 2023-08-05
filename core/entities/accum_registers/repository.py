@@ -1,46 +1,25 @@
-from typing import TypeVar, Any, TYPE_CHECKING
+from datetime import datetime
+from typing import TypeVar, Any
 
-from core.repository import Repository
+from tortoise.functions import Sum
+
+from core.entities.registers import BaseRegisterRepository
 from .model import AccumRegister, AccumRegisterResult
 
-if TYPE_CHECKING:
-    from core.entities.documents import Document
 
-
-__all__ = ["AccumRegisterRepository", "AccumRegisterResultRepository"]
+__all__ = ["AccumRegisterRepository"]
 
 
 AR = TypeVar('AR', bound=AccumRegister)
 ARR = TypeVar('ARR', bound=AccumRegisterResult)
 
 
-class AccumRegisterRepository(Repository[AR]):
-    HAS_CREATE = False
-    HAS_EDIT = False
-    HAS_DELETE_ONE = False
-    HAS_DELETE_MANY = False
+class AccumRegisterRepository(BaseRegisterRepository[AR, ARR]):
+    main_field: str = 'count'
 
-    async def register_records(
-            self,
-            registrator: "Document",
-            records: list[dict[str, Any]],
-    ):
-        reg_number = registrator.unique_number
-        reg_dt = registrator.dt
-        instances: list[AR] = []
-        for rec in records:
-            instances.append(self.model(
-                registrator=reg_number,
-                dt=reg_dt,
-                **rec
-            ))
-        instances = await self.model.bulk_create(instances, batch_size=100)
-        await self.recalc_results(instances)
-
-    async def recalc_results(self, records: list[AR]):
-        raise NotImplementedError
-
-
-class AccumRegisterResultRepository(Repository[ARR]):
-    HAS_DELETE_ONE = False
-    HAS_DELETE_MANY = False
+    @classmethod
+    async def calc_results(cls, time_point: datetime = None) -> list[dict[str, Any]]:
+        query = cls.model.annotate(result=Sum(cls.main_field))
+        if time_point:
+            query = query.filter(dt__le=time_point)
+        return await query.group_by(*cls.group_by).values(*cls.group_by, 'result')

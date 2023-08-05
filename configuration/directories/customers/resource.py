@@ -1,5 +1,5 @@
 from core.admin.forms import Primitive
-from core.admin.resource import Resource
+from core.admin.resources import DirectoryResource
 
 from configuration.admin import CakeInLawAdmin
 from configuration.menu_groups import Directories
@@ -12,24 +12,15 @@ __all__ = ["CustomerResource"]
 @CakeInLawAdmin.register(
     present_in=(Directories, )
 )
-class CustomerResource(Resource):
+class CustomerResource(DirectoryResource[CustomerRepository]):
     repository = CustomerRepository
-    datagrid_columns = ['name', 'register_address', 'price_group_id']
     list_form_primitive = Primitive('name', 'register_address', 'price_group_id')
 
+    common_select_related = ('price_group',)
     edit_prefetch_related = ('customer_locations',)
 
     form_primitive = Primitive(
         'name',
         'register_address',
         'price_group_id',
-        ('customer_locations', {
-            'object_schema': {
-                'primitive': Primitive(
-                    ('ordering', {"width": 40}),
-                    ('name', {"width": 200}),
-                    ('delivery_address', {"width": 220}),
-                )
-            },
-        }),
     )

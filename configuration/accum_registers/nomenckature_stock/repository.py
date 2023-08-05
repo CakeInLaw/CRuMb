@@ -1,53 +1,41 @@
-from tortoise.functions import Sum
-
-from core.entities.accum_registers import AccumRegisterRepository, AccumRegisterResultRepository
+from core.repository import ReadRepository, register_repository
+from core.entities.accum_registers import AccumRegisterRepository
+from core.translations.langs import ru, en
 
 from .model import NomenclatureStock, NomenclatureStockResult
 
 
-class NomenclatureStockRepository(AccumRegisterRepository[NomenclatureStock]):
-    model = NomenclatureStock
-
-    async def recalc_results(self, records: list[NomenclatureStock]):
-        nomenclatures_to_recalc: list[int] = []
-        for rec in records:
-            nomenclatures_to_recalc.append(rec.nomenclature_id)
-        results = await self.model\
-            .annotate(result=Sum('count'))\
-            .filter(nomenclature_id__in=nomenclatures_to_recalc)\
-            .group_by('nomenclature_id')\
-            .values('nomenclature_id', 'result')
-        await NomenclatureStockResultRepository().update_results(
-            [(res['nomenclature_id'], res['result']) for res in results]
-        )
-
-
-class NomenclatureStockResultRepository(AccumRegisterResultRepository[NomenclatureStockResult]):
+@register_repository
+class NomenclatureStockResultRepository(ReadRepository[NomenclatureStockResult]):
     model = NomenclatureStockResult
 
-    async def update_results(self, results: list[tuple[int, float]]):
-        existing_instances = await self.model\
-            .filter(nomenclature_id__in=[res[0] for res in results])
-        existing_instances_map: dict[int, NomenclatureStockResult] = {
-            instance.nomenclature_id: instance for instance in existing_instances
-        }
-        new_instances = []
-        for nomenclature_id, res_count in results:
-            if instance := existing_instances_map.get(nomenclature_id):
-                instance.count = res_count
-            else:
-                new_instances.append(self.model(
-                    nomenclature_id=nomenclature_id,
-                    count=res_count
-                ))
-        if existing_instances:
-            await self.model.bulk_update(
-                objects=existing_instances,
-                fields=('count', 'dt'),
-                batch_size=100,
-            )
-        if new_instances:
-            await self.model.bulk_create(
-                objects=new_instances,
-                batch_size=100,
-            )
+    _t_ru = ru.Entity(
+        name='Актуальный остаток номенклатуры',
+        name_plural='Актуальные остатки номенклатуры',
+    )
+    _t_en = en.Entity(
+        name='Actual stock of nomenclature',
+        name_plural='Actual stock of nomenclature',
+    )
+
+    def qs_select_related(self) -> tuple[str]:
+        return ('nomenclature',)
+
+
+@register_repository
+class NomenclatureStockRepository(AccumRegisterRepository[NomenclatureStock, NomenclatureStockResult]):
+    model = NomenclatureStock
+    group_by = ('nomenclature_id',)
+    results = NomenclatureStockResultRepository
+
+    _t_ru = ru.Entity(
+        name='Остаток номенклатуры',
+        name_plural='Остатки номенклатуры',
+    )
+    _t_en = en.Entity(
+        name='Stock of nomenclature',
+        name_plural='Stock of nomenclature',
+    )
+
+    def qs_select_related(self) -> tuple[str]:
+        return ('nomenclature',)

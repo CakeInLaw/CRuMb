@@ -24,7 +24,6 @@ class Employee(Directory):
 
     class Meta:
         table = "dir__employees"
-        ordering = ('id',)
 
     def __str__(self) -> str:
         return remove_extra_spaces(f'{self.last_name} {self.first_name} {self.fathers_name}')

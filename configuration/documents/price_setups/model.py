@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from configuration.directories.models import Nomenclature, PriceGroup
 
 
-__all__ = ["PriceSetup", "PriceSetupListValue"]
+__all__ = ["PriceSetup", "PriceSetupValuesList"]
 
 
 class PriceSetup(Document):
@@ -17,6 +17,7 @@ class PriceSetup(Document):
 
     PREFIX: str = 'УЦ'
 
+    price_group_id: int
     price_group: Union["PriceGroup", fields.ForeignKeyRelation["PriceGroup"]] = fields.ForeignKeyField(
         'directories.PriceGroup', related_name='setups', on_delete=fields.RESTRICT
     )
@@ -25,11 +26,12 @@ class PriceSetup(Document):
         table = "doc__price_setups"
 
 
-class PriceSetupListValue(DocumentListValue):
+class PriceSetupValuesList(DocumentListValue):
 
-    doc: Union["PriceSetup", fields.ForeignKeyRelation["PriceSetup"]] = fields.ForeignKeyField(
+    owner: Union["PriceSetup", fields.ForeignKeyRelation["PriceSetup"]] = fields.ForeignKeyField(
         'documents.PriceSetup', related_name='values_list', on_delete=fields.CASCADE
     )
+    nomenclature_id: int
     nomenclature: Union["Nomenclature", fields.ForeignKeyRelation["Nomenclature"]] = fields.ForeignKeyField(
         'directories.Nomenclature', on_delete=fields.RESTRICT
     )

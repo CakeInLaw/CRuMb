@@ -1,5 +1,5 @@
 from core.admin.forms import Primitive
-from core.admin.resource import Resource
+from core.admin.resources import DirectoryResource
 
 from configuration.admin import CakeInLawAdmin
 from configuration.menu_groups import Directories
@@ -12,7 +12,7 @@ __all__ = ["CustomerLocationResource"]
 @CakeInLawAdmin.register(
     present_in=(Directories,)
 )
-class CustomerLocationResource(Resource):
+class CustomerLocationResource(DirectoryResource[CustomerLocationRepository]):
     repository = CustomerLocationRepository
     list_form_primitive = Primitive('customer_id', 'name', 'delivery_address')
     form_primitive = Primitive(

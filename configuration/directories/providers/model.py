@@ -21,7 +21,6 @@ class Provider(Directory):
 
     class Meta:
         table = "dir__providers"
-        ordering = ('id',)
 
     def __str__(self) -> str:
         return self.name

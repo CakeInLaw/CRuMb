@@ -1,132 +1,40 @@
 from enum import Enum
-from typing import Generic, TypeVar, Type, Literal, Any, Optional, Coroutine, Callable, overload, cast
+from typing import TypeVar, Literal, Any, Optional, Coroutine, Callable, overload, cast, Type
 
-from tortoise import models, fields
+from tortoise import fields
 from tortoise.queryset import QuerySet
 from tortoise.transactions import in_transaction
 from tortoise.exceptions import ValidationError
 
 from core.orm.base_model import BaseModel
-from core.constants import EMPTY_TUPLE, UndefinedValue
-from core.exceptions import ItemNotFound, ObjectErrors, UnexpectedDataKey, FieldError, NotUnique, \
+from core.types import MODEL, PK, DATA, SortedData, BackFKData, ValuesListData
+from core.constants import EMPTY_TUPLE
+from core.exceptions import ObjectErrors, UnexpectedDataKey, FieldError, NotUnique, \
     FieldRequired, NotFoundFK, RequiredMissed, InvalidType, AnyFieldError, ListFieldError
-from core.enums import FieldTypes
-from core.maps import field_instance_to_type
-
-from core.types import MODEL, PK, SORT, FILTERS, DATA, SortedData, RepositoryDescription, BackFKData
+from .base import ReadRepository
+from .values_list_repository import ValuesListRepository
 
 
 T = TypeVar('T')
-descriptions = {}
 
 
-class Repository(Generic[MODEL]):
-    model: Type[MODEL]
+class Repository(ReadRepository[MODEL]):
 
     READ_ONLY_REPOSITORY = False
-    HAS_CREATE = True
-    HAS_EDIT = True
-    HAS_DELETE_ONE = True
-    HAS_DELETE_MANY = True
-
-    _REPOSITORY_NAME: str = '__default__'
-    hidden_fields: set[str] = set()
-    extra_allowed: set[str] = set()
-    calculated: dict[str, FieldTypes] = dict()  # заменить на mutable?
-    related_repositories: dict[str, str] = dict()  # заменить на mutable?
 
     def __init__(
             self,
             by: str = None,
-            target: str = None,
             instance: MODEL = None,
             select_related: tuple[str] = EMPTY_TUPLE,
             prefetch_related: tuple[str] = EMPTY_TUPLE,
     ):
+        super().__init__(
+            select_related=select_related,
+            prefetch_related=prefetch_related,
+        )
         self.by = by
-        self.target = target
         self.instance = instance
-        self.select_related = select_related
-        self.prefetch_related = prefetch_related
-
-    def get_queryset(self):
-        query = self.model.all()
-        if default_filters := self.qs_default_filters():
-            query = query.filter(**default_filters)
-        if annotate_fields := self.qs_annotate_fields():
-            query = query.annotate(**annotate_fields)
-        if final_select_related := {*self.qs_select_related(), *self.select_related}:
-            query = query.select_related(*final_select_related)
-        if final_prefetch_related := {*self.qs_prefetch_related(), *self.prefetch_related}:
-            query = query.prefetch_related(*final_prefetch_related)
-        return query
-
-    def qs_default_filters(self) -> dict[str, Any]:
-        return {}
-
-    def qs_annotate_fields(self) -> dict[str, Any]:
-        return {}
-
-    def qs_select_related(self) -> tuple[str]:
-        return EMPTY_TUPLE
-
-    def qs_prefetch_related(self) -> tuple[str]:
-        return EMPTY_TUPLE
-
-    @classmethod
-    def opts(cls) -> models.MetaInfo:
-        return cls.model._meta
-
-    @property
-    def pk_field_type(self) -> Type[PK]:
-        return self.opts().pk.field_type  # type: ignore
-
-    @property
-    def pk_attr(self) -> str:
-        return self.opts().pk_attr
-
-    async def get_all(
-            self,
-            skip: Optional[int],
-            limit: Optional[int],
-            sort: SORT,
-            filters: FILTERS,
-    ) -> tuple[list[MODEL], int]:
-        query = self.get_queryset()
-        for f in filters:
-            query = f.filter(query)
-        base_query = query
-        if sort:
-            query = query.order_by(*sort)
-        if skip:
-            query = query.offset(skip)
-        if limit:
-            query = query.limit(limit)
-        async with in_transaction():
-            result = await query
-            count = await base_query.count()
-        return result, count
-
-    def _get_many_queryset(self, item_pk_list: list[PK]) -> QuerySet[MODEL]:
-        return self.get_queryset().filter(pk__in=item_pk_list)
-
-    async def get_many(self, item_pk_list: list[PK]) -> list[MODEL]:
-        return await self._get_many_queryset(item_pk_list)
-
-    @overload
-    async def get_one(self, value: PK) -> Optional[MODEL]: ...
-
-    @overload
-    async def get_one(self, value: Any, *, field_name: str) -> Optional[MODEL]: ...
-
-    async def get_one(self, value, *, field_name='pk') -> Optional[MODEL]:
-        if field_name in self.model.IEXACT_FIELDS:
-            field_name = field_name + '__iexact'
-        instance = await self.get_queryset()\
-            .get_or_none(**{field_name: value})
-        if instance is None:
-            raise ItemNotFound()
-        return instance
 
     async def handle_create(
             self,
@@ -138,12 +46,31 @@ class Repository(Generic[MODEL]):
     async def get_create_defaults(self, data: DATA, user_defaults: Optional[DATA]) -> DATA:
         return user_defaults or {}
 
-    @classmethod
-    def raise_if_method_unavailable(cls, method: str):
-        if cls.READ_ONLY_REPOSITORY:
-            raise Exception(f'{cls} is read_only')
-        elif not getattr(cls, f'HAS_{method.upper()}'):
-            raise Exception(f'{cls}.{method} is unavailable')
+    def raise_if_method_unavailable(self, method: str):
+        if self.__class__.READ_ONLY_REPOSITORY and method not in ('list', 'choice'):
+            raise Exception(f'{self.__class__} is read_only')
+        else:
+            getattr(self, f'can_{method}')()
+
+    def can_create(self):
+        if self.instance:
+            raise Exception('Repository has instance, create new one')
+
+    def can_edit(self):
+        if self.instance is None:
+            raise Exception('No instance to edit in repository')
+
+    def can_delete(self):
+        if self.instance is None:
+            raise Exception('No instance to delete in repository')
+
+    def can_delete_many(self):
+        return True
+
+    async def get_values_list(self, name: str = 'values_list'):
+        repository_cls = self.repository_of(name)
+        assert issubclass(repository_cls, ValuesListRepository)
+        return await repository_cls(owner_instance=self.instance).get_records()
 
     async def create(
             self,
@@ -182,7 +109,9 @@ class Repository(Generic[MODEL]):
             for t in ('o2o', 'fk'):
                 t: Literal["o2o", "fk"]
                 for field_name, value in getattr(sorted_data, t).items():
-                    direct_related[field_name] = await self.repository_of(field_name)().create(value, is_root=False)
+                    direct_related[field_name] = await self.repository_of(field_name)(
+                        by=self.get_reverse_name(field_name)
+                    ).create(value, is_root=False)
 
             for t in ('o2o_pk', 'fk_pk'):
                 t: Literal["o2o_pk", "fk_pk"]
@@ -198,41 +127,39 @@ class Repository(Generic[MODEL]):
 
             for field_name, value in sorted_data.back_o2o.items():
                 relation_field = self.get_field_instance(field_name).relation_source_field  # type: ignore
-                await self.repository_of(field_name)()\
+                await self.repository_of(field_name)(by=relation_field)\
                     .create(value, defaults={relation_field: instance.pk}, is_root=False)
 
             for field_name, bfk_data in sorted_data.back_fk.items():
                 relation_field = self.get_field_instance(field_name).relation_source_field  # type: ignore
+                remote_repository_cls = self.repository_of(field_name)
+                if issubclass(remote_repository_cls, ValuesListRepository):
+                    await remote_repository_cls(owner_instance=instance).create_list(bfk_data)
+                    continue
+                remote_repository_cls = cast(Type[Repository], remote_repository_cls)
                 for value in bfk_data:
-                    await self.repository_of(field_name)()\
+                    await remote_repository_cls(by=relation_field)\
                         .create(value, defaults={relation_field: instance.pk}, is_root=False)
 
-            await self.post_create(instance)
+            self.instance = instance
             return instance
 
         if run_in_transaction:
             async with in_transaction():
-                new_instance = await get_new_instance()
-                return await self.get_one(new_instance.pk)
+                return await self.get_one((await get_new_instance()).pk)
         else:
             return await get_new_instance()
 
-    async def post_create(self, new_instance: MODEL) -> None:
-        """Override this function"""
-        pass
-
     async def handle_edit(
             self,
-            instance: MODEL,
             data: DATA,
             extra_data: DATA
     ):
-        instance.update_from_dict(data)
-        await instance.save(force_update=True)
+        self.instance.update_from_dict(data)
+        await self.instance.save(force_update=True)
 
     async def edit(
             self,
-            instance: MODEL,
             data: DATA,
             *,
             defaults: Optional[DATA] = None,
@@ -241,7 +168,6 @@ class Repository(Generic[MODEL]):
             validate: Optional[bool] = None,
     ) -> MODEL:
         """
-        :param instance: Существующий объект модели для изменения.
         :param data: Данные для вставки в БД, которые соответствуют её структуре.
                      После передачи в функцию данные никак не изменяются.
         :param defaults: Данные, которые вставляются по умолчанию БЕЗ ПРОВЕРКИ. Используется, например, чтобы
@@ -260,7 +186,7 @@ class Repository(Generic[MODEL]):
         run_in_transaction = is_root if run_in_transaction is None else run_in_transaction
 
         if validate:
-            await self.validate(data, instance)
+            await self.validate(data)
         # TODO: clean_edit_data for history
 
         async def get_updated_instance() -> MODEL:
@@ -269,69 +195,72 @@ class Repository(Generic[MODEL]):
 
             for t in ('o2o', 'fk'):
                 for field_name, value in getattr(sorted_data, t).items():
-                    rel_instance = await self.get_relational(field_name, instance=instance)
+                    rel_instance = await self.get_relational(field_name)
                     if rel_instance:
-                        await self.repository_of(field_name)()\
-                            .edit(rel_instance, value, is_root=False)
+                        await self.repository_of(field_name)(
+                            by=self.get_reverse_name(field_name),
+                            instance=rel_instance
+                        ).edit(value, is_root=False)
                     else:
-                        direct_related[field_name] = await self.repository_of(field_name)()\
-                            .create(value, is_root=False)
+                        direct_related[field_name] = await self.repository_of(field_name)(
+                            by=self.get_reverse_name(field_name)
+                        ).create(value, is_root=False)
 
             for t in ('o2o_pk', 'fk_pk'):
                 for field_name, value in getattr(sorted_data, t).items():
                     direct_related[field_name] = value
 
             await self.handle_edit(
-                instance=instance,
                 data={**(defaults or {}), **sorted_data.db_field, **direct_related},
                 extra_data=sorted_data.extra
             )
 
             for field_name, value in sorted_data.back_o2o.items():
-                rel_instance = await self.get_relational(field_name, instance=instance)
+                rel_instance = await self.get_relational(field_name)
+                relation_field = self.get_field_instance(field_name).relation_source_field  # type: ignore
                 if rel_instance:
-                    await self.repository_of(field_name)()\
-                        .edit(rel_instance, value, is_root=False)
+                    await self.repository_of(field_name)(
+                        by=relation_field,
+                        instance=rel_instance
+                    ).edit(value, is_root=False)
                 else:
-                    relation_field = self.get_field_instance(field_name).relation_source_field  # type: ignore
-                    await self.repository_of(field_name)()\
-                        .create(value, defaults={relation_field: instance.pk}, is_root=False)
+                    await self.repository_of(field_name)(
+                        by=relation_field
+                    ).create(value, defaults={relation_field: self.instance.pk}, is_root=False)
 
             for field_name, bfk_data in sorted_data.back_fk.items():
                 remote_repository_cls = self.repository_of(field_name)
+                if issubclass(remote_repository_cls, ValuesListRepository):
+                    await remote_repository_cls(owner_instance=self.instance).edit_list(new_data=bfk_data)
+                    continue
+                remote_repository_cls = cast(Type[Repository], remote_repository_cls)
+                reverse_name = self.get_reverse_name(field_name)
                 relation_field = self.get_field_instance(field_name).relation_source_field  # type: ignore
-                rel_instances_map = await self.get_relational_list(field_name, in_map=True, instance=instance)
-
+                rel_instances_map = await self.get_relational_list(field_name, in_map=True)
                 for value in bfk_data:
                     if 'pk' in value:
                         rel_instance = rel_instances_map.pop(value['pk'])
-                        await remote_repository_cls().edit(
-                            rel_instance,
-                            {k: v for k, v in value.items() if k != 'pk'},
-                            is_root=False
-                        )
+                        await remote_repository_cls(by=reverse_name, instance=rel_instance)\
+                            .edit(
+                                {k: v for k, v in value.items() if k != 'pk'},
+                                is_root=False
+                            )
                     else:
-                        await remote_repository_cls().create(
+                        await remote_repository_cls(by=reverse_name).create(
                             value,
-                            defaults={relation_field: instance.pk},
+                            defaults={relation_field: self.instance.pk},
                             is_root=False
                         )
                 if rel_instances_map:
-                    await remote_repository_cls().delete_many([v.pk for v in rel_instances_map.values()])
+                    await remote_repository_cls(by=reverse_name).delete_many([v.pk for v in rel_instances_map.values()])
 
-            await self.post_edit(instance)
-            return instance
+            return self.instance
 
         if run_in_transaction:
             async with in_transaction():
-                updated_instance = await get_updated_instance()
-                return await self.get_one(updated_instance.pk)
+                return await self.get_one((await get_updated_instance()).pk)
         else:
             return await get_updated_instance()
-
-    async def post_edit(self, instance: MODEL) -> None:
-        """Override this function"""
-        pass
 
     async def delete_many(self, item_pk_list: list[PK]) -> int:
         self.raise_if_method_unavailable('delete_many')
@@ -340,11 +269,11 @@ class Repository(Generic[MODEL]):
     async def _delete_many(self, item_pk_list: list[PK]) -> int:
         raise NotImplementedError('Для этой модели не определено множественное удаление')
 
-    async def delete_one(self, instance: MODEL) -> None:
-        self.raise_if_method_unavailable('delete_one')
-        await self._delete_many(instance)
+    async def delete(self) -> None:
+        self.raise_if_method_unavailable('delete')
+        await self._delete()
 
-    async def _delete_one(self, instance: MODEL) -> None:
+    async def _delete(self) -> None:
         raise NotImplementedError('Для этой модели не определено удаление')
 
     async def check_fk_exists(self, field_name: str, item_pk: PK) -> BaseModel:
@@ -366,9 +295,8 @@ class Repository(Generic[MODEL]):
             field_name: str,
             value: Any,
             data: DATA,
-            instance: Optional[MODEL] = None,
     ) -> None:
-        if instance and getattr(instance, field_name) == value:
+        if self.instance and getattr(self.instance, field_name) == value:
             return
         if await self.model.exists(**{field_name: value}):
             raise NotUnique
@@ -376,7 +304,6 @@ class Repository(Generic[MODEL]):
     async def check_unique_together(
             self,
             data: DATA,
-            instance: Optional[MODEL] = None
     ) -> None:
         """Недоделано"""
         raise NotImplementedError
@@ -394,7 +321,7 @@ class Repository(Generic[MODEL]):
 
     @classmethod
     def sort_data_by_field_types(cls, data: DATA) -> SortedData:
-        _all_fields: dict[str, FieldTypes] = cls.describe().all
+        _all_fields = cls.describe().all
         sorted_data = SortedData()
 
         for key, value in data.items():
@@ -413,11 +340,11 @@ class Repository(Generic[MODEL]):
                 sorted_data.db_field[key] = value
         return sorted_data
 
-    async def validate(self, data: DATA, instance: Optional[MODEL] = None) -> None:
+    async def validate(self, data: DATA) -> None:
         errors = ObjectErrors()
 
         required, pairs = self.required_and_pairs()
-        required = required if instance is None else {}
+        required = required if self.instance is None else {}
         if self.by and self.by in required:
             related = required.pop(self.by)
             del required[related]
@@ -437,7 +364,7 @@ class Repository(Generic[MODEL]):
                     del pairs[name]
                 try:
                     await self.validate_field(
-                        name, value, data, instance, default_validator=getattr(self, f'validate_{t}')
+                        name, value, data, default_validator=getattr(self, f'validate_{t}')
                     )
                 except (FieldError, ObjectErrors) as e:
                     errors.add(name, e)
@@ -452,39 +379,37 @@ class Repository(Generic[MODEL]):
             field_name: str,
             value: T,
             data: DATA,
-            instance: Optional[MODEL],
-            default_validator: Callable[[str, T, DATA, Optional[MODEL]], Coroutine[Any, Any, None]]
+            default_validator: Callable[[str, T, DATA], Coroutine[Any, Any, None]]
     ) -> Optional[Coroutine[Any, Any, None]]:
         validator = getattr(self, f'_validate_{field_name}', None)
         if validator:
-            return validator(value, data, instance)
-        return default_validator(field_name, value, data, instance)
+            return validator(value, data)
+        return default_validator(field_name, value, data)
 
-    async def get_relational(self, field_name: str, instance: MODEL = None) -> Optional[BaseModel]:
-        rel_instance = getattr(instance, field_name)
+    async def get_relational(self, field_name: str) -> Optional[BaseModel]:
+        rel_instance = getattr(self.instance, field_name)
         if isinstance(rel_instance, QuerySet):
-            await instance.fetch_related(field_name)
-            rel_instance = getattr(instance, field_name)
+            await self.instance.fetch_related(field_name)
+            rel_instance = getattr(self.instance, field_name)
         return rel_instance
 
     @overload
-    async def get_relational_list(self, field_name: str, in_map: bool, instance: MODEL = None) -> dict[PK, BaseModel]:
+    async def get_relational_list(self, field_name: str, in_map: bool) -> dict[PK, BaseModel]:
         ...
 
     @overload
-    async def get_relational_list(self, field_name: str, instance: MODEL = None) -> list[BaseModel]:
+    async def get_relational_list(self, field_name: str) -> list[BaseModel]:
         ...
 
     async def get_relational_list(
             self,
             field_name: str,
             in_map: bool = False,
-            instance: MODEL = None,
     ) -> list[BaseModel] | dict[PK, BaseModel]:
-        rel_instances: list[BaseModel] = getattr(instance, field_name)
+        rel_instances: list[BaseModel] = getattr(self.instance, field_name)
         if isinstance(rel_instances, QuerySet):
-            await instance.fetch_related(field_name)
-            rel_instances = getattr(instance, field_name)
+            await self.instance.fetch_related(field_name)
+            rel_instances = getattr(self.instance, field_name)
         if in_map:
             return {i.pk: i for i in rel_instances}
         return rel_instances
@@ -494,30 +419,27 @@ class Repository(Generic[MODEL]):
             field_name: str,
             value: DATA,
             data: DATA,
-            instance: Optional[MODEL]
     ):
-        rel_instance = await self.get_relational(field_name, instance=instance) if instance else None
         await self.repository_of(field_name)(
             by=self.get_reverse_name(field_name),
-        ).validate(value, rel_instance)
+            instance=await self.get_relational(field_name) if self.instance else None
+        ).validate(value)
 
     async def validate_o2o(
             self,
             field_name: str,
             value: DATA,
             data: DATA,
-            instance: Optional[MODEL]
     ) -> None:
         if not isinstance(data, dict):
             raise InvalidType(f'o2o `{self.model}.{field_name}` data must be dict, not {type(value)} ({value})')
-        await self.validate_relational(field_name, value, data, instance)
+        await self.validate_relational(field_name, value, data)
 
     async def validate_o2o_pk(
             self,
             field_name: str,
             value: PK,
             data: DATA,
-            instance: Optional[MODEL]
     ) -> Optional[BaseModel]:
         field = self.get_field_instance(field_name)
 
@@ -532,7 +454,7 @@ class Repository(Generic[MODEL]):
             )
 
         value: PK
-        await self.check_unique(field_name, value, data, instance)
+        await self.check_unique(field_name, value, data)
         return await self.check_fk_exists(field_name, value)
 
     async def validate_fk(
@@ -540,18 +462,16 @@ class Repository(Generic[MODEL]):
             field_name: str,
             value: DATA,
             data: DATA,
-            instance: Optional[MODEL]
     ) -> None:
         if not isinstance(value, dict):
             raise InvalidType(f'fk `{self.model}.{field_name}` data must be dict, not {type(value)} ({value})')
-        await self.validate_relational(field_name, value, data, instance)
+        await self.validate_relational(field_name, value, data)
 
     async def validate_fk_pk(
             self,
             field_name: str,
             value: PK,
             data: DATA,
-            instance: Optional[MODEL]
     ) -> Optional[BaseModel]:
         field = self.get_field_instance(field_name)
 
@@ -572,56 +492,56 @@ class Repository(Generic[MODEL]):
             field_name: str,
             value: DATA,
             data: DATA,
-            instance: Optional[MODEL]
     ) -> None:
         if not isinstance(value, dict):
             raise InvalidType(f'back_o2o `{self.model}.{field_name}` data must be dict, not {type(value)} ({value})')
-        await self.validate_relational(field_name, value, data, instance)
+        await self.validate_relational(field_name, value, data)
 
     async def validate_back_fk(
             self,
             field_name: str,
-            value: BackFKData,
+            value: BackFKData | ValuesListData,
             data: DATA,
-            instance: Optional[MODEL]
     ) -> None:
-        values_list = value
-        remote_repository = self.repository_of(field_name)(
-            by=self.get_reverse_name(field_name),
-        )
+        values = value  # alias
+
+        remote_repository_cls = self.repository_of(field_name)
+        if issubclass(remote_repository_cls, ValuesListRepository):
+            remote_repository_cls = cast(Type[ValuesListRepository], remote_repository_cls)
+            await remote_repository_cls(owner_instance=self.instance).validate_list(values)
+            return
         list_errors = ListFieldError()
 
-        if not isinstance(values_list, list) and all(isinstance(v, dict) for v in values_list):
+        if not isinstance(values, list) and all(isinstance(v, dict) for v in values):
             raise InvalidType(
                 f'back_fk `{self.model}.{field_name}` `data-add` must be list[dict], '
-                f'not {type(values_list)} ({values_list})'
+                f'not {type(values)} ({values})'
             )
 
-        if instance is None:
-            if any(['pk' in v for v in values_list]):
+        if self.instance is None:
+            if any(['pk' in v for v in values]):
                 raise ValueError(f'pk может быть передан только если объект изменяется, а не создается')
             rel_instance_map = {}
         else:
-            rel_instance_map = await self.get_relational_list(field_name, in_map=True, instance=instance)
+            rel_instance_map = await self.get_relational_list(field_name, in_map=True)
 
-        for i, val in enumerate(values_list):
+        remote_repository_cls = cast(Type[Repository], remote_repository_cls)
+        reverse_name = self.get_reverse_name(field_name)
+        for i, val in enumerate(values):
+            rel_instance = None
             if 'pk' in val:
                 rel_instance = rel_instance_map.get(val['pk'])
                 if rel_instance is None:
                     list_errors.append(i, ObjectErrors().add('__root__', NotFoundFK))
                     continue
-                try:
-                    await remote_repository.validate(
-                        {k: v for k, v in val.items() if k != 'pk'},
-                        instance=rel_instance
-                    )
-                except ObjectErrors as err:
-                    list_errors.append(i, err)
-            else:
-                try:
-                    await remote_repository.validate(val)
-                except ObjectErrors as err:
-                    list_errors.append(i, err)
+                val = {k: v for k, v in val.items() if k != 'pk'}
+            try:
+                await remote_repository_cls(
+                    by=reverse_name,
+                    instance=rel_instance
+                ).validate(val)
+            except ObjectErrors as err:
+                list_errors.append(i, err)
 
         if list_errors:
             raise list_errors
@@ -631,18 +551,17 @@ class Repository(Generic[MODEL]):
             field_name: str,
             value: Any,
             data: DATA,
-            instance: Optional[MODEL]
     ) -> None:
         field = self.get_field_instance(field_name)
         if value is None and not field.null:
             raise FieldRequired
         if field.generated:
-            raise UnexpectedDataKey
-        if not isinstance(value, field.field_type):
+            raise UnexpectedDataKey(f'{field_name} is generated in {self.__class__}')
+        if value is not None and not isinstance(value, field.field_type):
             raise InvalidType(f'{self.model}.{field_name} data must be instance of {field.field_type}, '
                               f'not {type(value)} ({value})')
         if field.unique:
-            await self.check_unique(field_name, value, data, instance)
+            await self.check_unique(field_name, value, data)
         # позаимствовал кусок из field.validate(value) за исключением последней строки
         for v in field.validators:
             if field.null and value is None:
@@ -660,185 +579,5 @@ class Repository(Generic[MODEL]):
             field_name: str,
             value: Any,
             data: DATA,
-            instance: Optional[MODEL]
     ) -> None:
         pass
-
-    @classmethod
-    def describe(cls) -> RepositoryDescription:
-        description = descriptions.get(cls)
-        if description is None:
-
-            description = RepositoryDescription()
-            opts = cls.opts()
-
-            def add_to_hidden(_name: str, _field: fields.Field):
-                description.hidden[_name] = _field
-                description.all[_name] = FieldTypes.HIDDEN
-
-            for name in opts.o2o_fields:
-                field = cast(models.OneToOneFieldInstance, opts.fields_map[name])
-                if name in cls.hidden_fields:
-                    add_to_hidden(name, field)
-                else:
-                    description.o2o[name] = field
-                    description.all[name] = FieldTypes.O2O
-                source_field = field.source_field
-                if source_field in cls.hidden_fields:
-                    add_to_hidden(name, field)
-                else:
-                    description.o2o_pk[source_field] = opts.fields_map[source_field]
-                    description.all[source_field] = FieldTypes.O2O_PK
-
-            for name in opts.fk_fields:
-                field = cast(models.ForeignKeyFieldInstance, opts.fields_map[name])
-                if name in cls.hidden_fields:
-                    add_to_hidden(name, field)
-                else:
-                    description.fk[name] = field
-                    description.all[name] = FieldTypes.FK
-                source_field = field.source_field
-                if source_field in cls.hidden_fields:
-                    add_to_hidden(name, field)
-                else:
-                    description.fk_pk[source_field] = opts.fields_map[source_field]
-                    description.all[source_field] = FieldTypes.FK_PK
-
-            for name in opts.backward_o2o_fields:
-                field = cast(fields.relational.BackwardOneToOneRelation, opts.fields_map[name])
-                if name in cls.hidden_fields:
-                    add_to_hidden(name, field)
-                else:
-                    description.back_o2o[name] = field
-                    description.all[name] = FieldTypes.BACK_O2O
-
-            for name in opts.backward_fk_fields:
-                field = cast(fields.relational.BackwardFKRelation, opts.fields_map[name])
-                if name in cls.hidden_fields:
-                    add_to_hidden(name, field)
-                description.back_fk[name] = field
-                description.all[name] = FieldTypes.BACK_FK
-
-            if opts.m2m_fields:
-                raise Exception('M2M запрещены здравым смыслом')
-
-            for name in opts.db_fields:
-                # если не o2o_pk/fk_pk
-                if name not in description.all:
-                    field = opts.fields_map[name]
-                    if name in cls.hidden_fields:
-                        add_to_hidden(name, field)
-                    else:
-                        description.db_field[name] = field
-                        description.all[name] = field_instance_to_type[field.__class__]
-
-            descriptions[cls] = description
-        return description
-
-    @classmethod
-    def get_field_type(cls, field_name: str) -> FieldTypes:
-        return cls.describe().all[field_name]
-
-    @classmethod
-    def get_field_instance(cls, field_name: str) -> fields.Field:
-        _, field_instance = cls.get_field_type_and_instance(field_name)
-        return field_instance
-
-    @classmethod
-    def get_field_type_and_instance(cls, field_name: str) -> tuple[FieldTypes, fields.Field]:
-        field_type = cls.get_field_type(field_name)
-        field_type_value = cast(str, field_type.value)
-        if field_type_value in RepositoryDescription.__annotations__:
-            return field_type, getattr(cls.describe(), field_type_value)[field_name]
-        return field_type, cls.describe().db_field[field_name]
-
-    @classmethod
-    def field_is_required(cls, field: fields.Field) -> bool:
-        if isinstance(field, (fields.DatetimeField, fields.TimeField)) and (field.auto_now or field.auto_now_add):
-            return False
-        if field.required:
-            return True
-        return False
-
-    @classmethod
-    def required_and_pairs(cls) -> tuple[dict[str, Optional[str]], dict[str, str]]:
-        """
-        Возвращает заранее просчитанную копию обязательных полей и пар o2o с o2o_pk и fk с fk_pk
-        Ключ - это поле, значение - это связанное поле. {"name": None, "user_id": "user", "user": "user_id"}
-        У pairs только пары. Это нужно, чтобы определять, например, что передали одновременно и user, и user_id
-        """
-        if not hasattr(cls, '__required_and_pairs'):
-            describe = cls.describe()
-            required = {}
-            pairs = {}
-            for name, field in describe.db_field.items():
-                if cls.field_is_required(field):
-                    required[name] = None
-            for name, field in {**describe.o2o, **describe.fk}.items():
-                if cls.field_is_required(field):
-                    required[name] = field.source_field
-                    pairs[name] = field.source_field
-            for name, field in {**describe.o2o_pk, **describe.fk_pk}.items():
-                if cls.field_is_required(field):
-                    required[name] = field.reference.model_field_name
-                    pairs[name] = field.reference.model_field_name
-            setattr(cls, '__required_and_pairs', (required, pairs))
-        required, pairs = getattr(cls, '__required_and_pairs')
-        return {**required}, {**pairs}
-
-    @classmethod
-    def repository_of(cls, field_name: str) -> Type["Repository"]:
-        field_type, field = cls.get_field_type_and_instance(field_name)
-        if field_type.is_no_pk_relation():
-            reference = cast(fields.relational.RelationalField, field)
-        elif field_type.is_pk_relation():
-            reference = cast(fields.relational.RelationalField, field.reference)
-        else:
-            raise ValueError(
-                f'Поле {cls.model}.{field_name} с типом {cls.get_field_type(field_name)} не может иметь репозиторий'
-            )
-        related_model: BaseModel = reference.related_model
-        repo_name = cls.related_repositories.get(reference.model_field_name, '__default__')
-        repo = related_model.REPOSITORIES.get(repo_name)
-        if repo is None:
-            raise ValueError(
-                f'У поля {cls.model}.{field_name} ({related_model}) нет репозитория {repo_name}'
-            )
-        return repo
-
-    @classmethod
-    def get_reverse_name(cls, field_name: str):
-        field_type, field = cls.get_field_type_and_instance(field_name)
-        assert field_type.is_relational(), f'{cls}, {field_name}, {field_type}'
-        if field_type.is_pk_relation():
-            return field.reference.related_name
-        elif field_type.is_back_relation():
-            return field.relation_field
-        else:
-            return field.related_name
-
-    @classmethod
-    def get_repo_name(cls) -> str:
-        return cls._REPOSITORY_NAME
-
-    @classmethod
-    def entity(cls):
-        repo_name = cls.get_repo_name()
-        if repo_name != '__default__':
-            return f'{cls.opts().full_name}.{repo_name}'
-        return cls.opts().full_name
-
-    @classmethod
-    def get_field_name_for_value(cls, name: str) -> str:
-        if name in cls.calculated:
-            return name
-        field_type = cls.get_field_type(name)
-        if field_type.is_pk_relation():
-            field = cls.get_field_instance(name)
-            name = field.reference.model_field_name
-        return name
-
-    @classmethod
-    def get_instance_value(cls, instance: MODEL, name: str) -> str:
-        field_name = cls.get_field_name_for_value(name)
-        return getattr(instance, field_name, UndefinedValue)

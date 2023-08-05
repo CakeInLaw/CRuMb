@@ -1,12 +1,12 @@
-from core.admin.resource import Resource, ListValueResource
-from .repository import RecipeCardRepository, RecipeCardIngredientsRepository
+from core.admin.resources import DirectoryResource, ValuesListResource
+from .repository import RecipeCardRepository, RecipeCardValuesListRepository
 from configuration.admin import CakeInLawAdmin
 
-__all__ = ["RecipeCardResource", "RecipeCardIngredientsResource"]
+__all__ = ["RecipeCardResource", "RecipeCardValuesListResource"]
 
 
 @CakeInLawAdmin.register()
-class RecipeCardResource(Resource):
+class RecipeCardResource(DirectoryResource[RecipeCardRepository]):
     repository = RecipeCardRepository
 
     def _methods(self) -> dict[str, ...]:
@@ -14,5 +14,5 @@ class RecipeCardResource(Resource):
 
 
 @CakeInLawAdmin.register()
-class RecipeCardIngredientsResource(ListValueResource):
-    repository = RecipeCardIngredientsRepository
+class RecipeCardValuesListResource(ValuesListResource):
+    repository = RecipeCardValuesListRepository

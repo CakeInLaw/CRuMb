@@ -26,7 +26,6 @@ class NomenclatureStock(AccumRegister):
 
 
 class NomenclatureStockResult(AccumRegisterResult):
-    id: int = orm_fields.IntField(pk=True)
     nomenclature_id: int
     nomenclature: Union["Nomenclature", fields.OneToOneRelation["Nomenclature"]] = fields.OneToOneField(
         'directories.Nomenclature', related_name='stock', on_delete=fields.CASCADE

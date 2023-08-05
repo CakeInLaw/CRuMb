@@ -9,13 +9,12 @@ from .input import InputWidget, Input
 
 
 class DatetimeInputWidget(InputWidget[datetime]):
-    min_dt: Optional[datetime]
-    max_dt: Optional[datetime]
     dt_fmt = '%d.%m.%Y %H:%M:%S'
+    real_value: Optional[datetime]
 
     @property
     def final_value(self) -> Optional[datetime]:
-        return self.to_datetime()
+        return self.real_value
 
     def __init__(
             self,
@@ -30,32 +29,42 @@ class DatetimeInputWidget(InputWidget[datetime]):
         self.max_dt = max_dt
         self.__finalize_init__()
 
-    def to_datetime(self) -> Optional[datetime]:
-        if self.value == '':
+    @classmethod
+    def to_datetime(cls, value: str) -> Optional[datetime]:
+        if value == '':
             return
-        return timezone.make_aware(datetime.strptime(self.value, self.dt_fmt))
+        return timezone.make_aware(datetime.strptime(value, cls.dt_fmt))
 
     def _validate(self) -> None:
-        empty = self.value == ''
-        if self.required and empty:
-            raise InputValidationError('Обязательное поле')
-        if empty:
+        if self.real_value is None:
+            if self.value != '':
+                raise InputValidationError('Неверный формат')
+            if self.required:
+                raise InputValidationError('Обязательное поле')
             return None
-        try:
-            datetime_v = self.to_datetime()
-        except ValueError:
-            raise InputValidationError(f'Формат {self.dt_fmt}')
-        if self.min_dt is not None and datetime_v < self.min_dt:
+        if self.min_dt is not None and self.real_value < self.min_dt:
             raise InputValidationError(f'Минимум {self.min_dt.strftime(self.dt_fmt)}')
-        if self.max_dt is not None and datetime_v > self.max_dt:
+        if self.max_dt is not None and self.real_value > self.max_dt:
             raise InputValidationError(f'Максимум {self.max_dt.strftime(self.dt_fmt)}')
 
-    def set_value(self, value: Optional[datetime], initial: bool = False) -> None:
-        assert value is None or isinstance(value, datetime)
+    def set_value(self, value: Optional[str | datetime], initial: bool = False) -> None:
+        assert value is None or isinstance(value, (str, datetime))
         if value is None:
             self.value = ''
+            self.real_value = None
+        elif isinstance(value, str):
+            self.value = value
+            try:
+                self.real_value = self.to_datetime(value)
+            except ValueError:
+                self.real_value = None
         else:
-            self.value = timezone.make_naive(value).strftime(self.dt_fmt)
+            if timezone.is_aware(value):
+                self.real_value = value
+                self.value = timezone.make_naive(value).strftime(self.dt_fmt)
+            else:
+                self.real_value = timezone.make_aware(value)
+                self.value = value.strftime(self.dt_fmt)
 
 
 @dataclass

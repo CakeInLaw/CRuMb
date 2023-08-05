@@ -15,11 +15,12 @@ class Primitive:
     def __iter__(self):
         return self.items.__iter__()
 
-    def add(self, item: str | PRIMITIVE_ITEM) -> "Primitive":
-        if isinstance(item, str):
-            self.items.append((item, {}))
-        else:
+    def add(self, item: str | PRIMITIVE_ITEM, index: int = -1) -> "Primitive":
+        item = (item, {}) if isinstance(item, str) else item
+        if index == -1:
             self.items.append(item)
+        else:
+            self.items.insert(index, item)
         return self
 
     def get(self, name: str) -> PRIMITIVE_ITEM:
@@ -27,11 +28,14 @@ class Primitive:
             if self.is_schema(item):
                 item_name = item.name
             elif self.is_group(item):
-                item_name = item['name']
+                item_name = item.get('name')
             else:
                 item_name = item[0]
             if item_name == name:
                 return item
+
+    def has(self, name: str) -> bool:
+        return self.get(name) is not None
 
     def remove(self, name: str) -> "Primitive":
         item = self.get(name)
@@ -57,4 +61,4 @@ class Primitive:
 
     @staticmethod
     def is_group(item: PRIMITIVE_ITEM) -> bool:
-        return isinstance(item, dict) and 'fields' in item
+        return isinstance(item, dict) and ('fields' in item or 'primitive' in item)

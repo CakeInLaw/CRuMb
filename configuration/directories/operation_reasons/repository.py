@@ -1,5 +1,3 @@
-from typing import Optional
-
 from core.repository import register_repository
 from core.entities.directories import DirectoryRepository
 from core.translations.langs import ru, en
@@ -14,7 +12,7 @@ from ...enums import OperationTypes
 
 
 @register_repository
-class OperationReasonRepository(DirectoryRepository):
+class OperationReasonRepository(DirectoryRepository[OperationReason]):
     model = OperationReason
 
     _t_ru = ru.Entity(
@@ -36,10 +34,9 @@ class OperationReasonRepository(DirectoryRepository):
             self,
             value: OperationTypes,
             data: DATA,
-            instance: Optional[OperationReason]
     ) -> None:
-        if instance is None:
-            await self.validate_db_field('operation_type', value=value, data=data, instance=instance)
+        if self.instance is None:
+            await self.validate_db_field('operation_type', value=value, data=data)
         else:
             raise ValueError('Тип операции можно установить только при создании')
 

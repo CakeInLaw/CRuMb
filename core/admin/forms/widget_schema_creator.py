@@ -2,13 +2,14 @@ from typing import TYPE_CHECKING, Any, Union, overload, Callable, Type
 
 from tortoise import fields
 
+from core.admin.forms.widgets import ObjectTableRow, IntInput
 from core.orm import fields as orm_fields
 from core.enums import FieldTypes
 from core.types import FK_TYPE
 from core.admin.forms import Primitive, PRIMITIVE_ITEM, InputGroup, widgets
 
 if TYPE_CHECKING:
-    from core.admin.resource import Resource
+    from core.admin.resources import Resource
 
 
 class WidgetSchemaCreator:
@@ -79,8 +80,8 @@ class WidgetSchemaCreator:
             return item
         elif Primitive.is_group(item):
             assert self.allow_groups
-            group_field = item.pop('fields')
-            group = InputGroup(**item)
+            group_field = item.get('primitive')
+            group = InputGroup(**{k: v for k, v in item.items() if k != 'primitive'})
             for f in group_field:
                 group.add_field(self.from_primitive_item(f))
             return group
@@ -110,12 +111,14 @@ class WidgetSchemaCreator:
             )
 
     def base_kwargs(self, field: fields.Field, extra: dict[str, Any]) -> dict[str, Any]:
+        constraints = field.constraints
         kwargs = {
             'name': field.model_field_name,
             'label': self.resource.translate_field(field.model_field_name),
             'null': field.null,
             'required': self.repository.field_is_required(field),
             'editable': field.constraints.get('editable', True),
+            'ignore_if_none': constraints.get('ignore_if_none', False),
             **self.pop_allowed_extra(
                 extra,
                 'name',
@@ -123,10 +126,18 @@ class WidgetSchemaCreator:
                 'null',
                 'required',
                 'editable',
+                'ignore_if_none',
+                'default',
                 'on_value_change',
                 'helper_text',
                 'width',
                 'height',
+                'resize_width',
+                'resize_height',
+                'min_width',
+                'max_width',
+                'min_height',
+                'max_height',
             )
         }
         if self.all_read_only:
@@ -293,5 +304,8 @@ class WidgetSchemaCreator:
             'variant',
             'rows_count',
         ))
+        object_schema: ObjectTableRow = kwargs['object_schema']
+        if not any(f.name == 'ordering' for f in object_schema.fields):
+            object_schema.fields.insert(0, IntInput(name='ordering', label='№', editable=False, width=40))
         self.raise_if_unexpected_extra(field, extra)
         return widgets.TableInput(**kwargs)

@@ -1,23 +1,27 @@
-from typing import TYPE_CHECKING, Any, Callable, Optional, Type, Coroutine
+from typing import TYPE_CHECKING, Any, Callable, Optional, Type, Coroutine, TypeVar, Generic
 
-from flet import ElevatedButton, Row
+from flet import ElevatedButton
 
 from core.exceptions import ObjectErrors
 from core.enums import NotifyStatus
+from core.orm import BaseModel
+from core.entities.directories import DirectoryRepository
+from core.entities.documents import DocumentRepository
 
 from core.admin.layout import PayloadInfo
-from core.repository import Repository
-from core.orm import BaseModel
 from core.admin.forms import Primitive, FormSchema, WidgetSchemaCreator
-from .input_form import InputForm
-from ...components.errors import ObjectErrorsContainer
+from core.admin.components.errors import ObjectErrorsContainer
+from .simple import SimpleInputForm
 
 if TYPE_CHECKING:
-    from core.admin.resource import Resource
+    from core.admin.resources import Resource
     from core.admin.layout import BOX
 
 
-class ModelInputForm(InputForm):
+REP = TypeVar("REP", DirectoryRepository, DocumentRepository)
+
+
+class ModelInputForm(Generic[REP], SimpleInputForm):
 
     def __init__(
             self,
@@ -40,7 +44,7 @@ class ModelInputForm(InputForm):
         self.on_error = on_error or self.on_error_default
 
     @property
-    def repository(self) -> Type["Repository"]:
+    def repository(self) -> Type[REP]:
         return self.resource.repository
 
     @property
@@ -58,10 +62,13 @@ class ModelInputForm(InputForm):
 
     def _generate_form_schema(self) -> FormSchema:
         schema = FormSchema()
-        widget_creator = WidgetSchemaCreator(resource=self.resource)
+        widget_creator = self.get_widget_creator()
         for item in self.primitive:
             schema.add_item(widget_creator.from_primitive_item(item))
         return schema
+
+    def get_widget_creator(self):
+        return WidgetSchemaCreator(resource=self.resource)
 
     @staticmethod
     async def on_success_default(form: "ModelInputForm", instance: "BaseModel"):
@@ -79,56 +86,49 @@ class ModelInputForm(InputForm):
     async def on_error_default(form: "ModelInputForm", error: ObjectErrors):
         pass
 
-    async def on_click_create(self, e):
+    async def save(self) -> tuple[Optional[BaseModel], bool]:
         if not self.form_is_valid():
             await self.update_async()
-            return
+            return None, False
         try:
-            instance = await self.repository().create(self.cleaned_data())
-            await self.app.notify('Создан 1 элемент', NotifyStatus.SUCCESS)
-            await self.on_success(form=self, instance=instance)
+            if self.create:
+                return await self.repository().create(self.cleaned_data()), True
+            else:
+                return await self.repository(instance=self.instance).edit(self.cleaned_data()), False
         except ObjectErrors as err:
             self.set_object_errors(err)
             await self.update_async()
-            await self.app.notify(
-                'Исправьте ошибки',
-                NotifyStatus.ERROR,
-                action='Детали',
-                on_action=self.show_object_error_details(err)
-            )
+            await self.notify_fix_errors(err)
             await self.on_error(form=self, error=err)
+            return None, False
 
-    def create_btn(self) -> ElevatedButton:
-        return ElevatedButton('Создать', on_click=self.on_click_create)
+    async def on_click_save(self, e=None):
+        async with self.app.error_tracker():
+            instance, created = await self.save()
+            if instance is None:
+                return
+            if created:
+                await self.app.notify(f'{instance} создан', NotifyStatus.SUCCESS)
+                await self.on_success(form=self, instance=instance)
+            else:
+                await self.app.notify(f'{instance} сохранён', NotifyStatus.SUCCESS)
+                await self.on_success(form=self, instance=instance)
 
-    async def on_click_edit(self, e):
-        if not self.form_is_valid():
-            await self.update_async()
-            return
-        try:
-            instance = await self.repository().edit(self.instance, self.cleaned_data())
-            await self.app.notify('Элемент изменен', NotifyStatus.SUCCESS)
-            await self.on_success(form=self, instance=instance)
-        except ObjectErrors as err:
-            self.set_object_errors(err)
-            await self.update_async()
-            await self.app.notify(
-                'Исправьте ошибки',
-                NotifyStatus.ERROR,
-                action='Детали',
-                on_action=self.show_object_error_details(err)
-            )
-            await self.on_error(form=self, error=err)
+    async def notify_fix_errors(self, err: ObjectErrors):
+        await self.app.notify(
+            'Исправьте ошибки',
+            NotifyStatus.ERROR,
+            action='Детали',
+            on_action=self.show_object_error_details(err)
+        )
 
-    def edit_btn(self) -> ElevatedButton:
-        return ElevatedButton('Изменить', on_click=self.on_click_edit)
-
-    def get_action_bar(self) -> Row:
-        action_bar = super().get_action_bar()
-        action_bar.controls.append(self.create_btn() if self.create else self.edit_btn())
-        return action_bar
+    def save_btn(self):
+        return ElevatedButton(
+            'Создать' if self.create else 'Сохранить',
+            on_click=self.on_click_save
+        )
 
     def show_object_error_details(self, error: ObjectErrors):
         async def wrapper(e=None):
-            await ObjectErrorsContainer.open_in_popup(error, self.app)
+            await ObjectErrorsContainer.open_in_popup(app=self.app, error=error)
         return wrapper

@@ -1,4 +1,3 @@
-from core.admin.forms import Primitive
 from configuration.admin import CakeInLawAdmin
 from configuration.menu_groups import Nomenclature
 from .default import (
@@ -20,5 +19,6 @@ class DishesResource(NomenclatureTypeBaseResource[DishesRepository]):
     create_form_primitive = nom_type_create_form_primitive.copy().add(RecipeInputSchema)
     edit_form_primitive = nom_type_edit_form_primitive.copy().add(RecipeInputSchema)
 
-    edit_prefetch_related = ('recipe__ingredients__product',)
+    edit_select_related = ('recipe', )
+    edit_prefetch_related = ('recipe__values_list__product',)
 

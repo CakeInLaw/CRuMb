@@ -1,10 +1,10 @@
-from typing import TYPE_CHECKING, Optional, Any
+from typing import TYPE_CHECKING, Any
 
 from flet import Control, Column, Row
 
 from core.constants import UndefinedValue
 from core.exceptions import ObjectErrors
-from .form import Form
+from core.admin.forms.forms.form import Form
 from core.admin.forms.schema import FormSchema, InputGroup
 from core.admin.forms.widgets import UserInputWidget, UserInput
 from core.admin.forms.widget_containers import SimpleWidgetContainer, BaseWidgetContainer
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 FIELDS_MAP = dict[str, UserInputWidget]
 
 
-class InputForm(Form):
+class SimpleInputForm(Form):
 
     schema: FormSchema = None
     fields_map: FIELDS_MAP

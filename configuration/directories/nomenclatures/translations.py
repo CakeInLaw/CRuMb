@@ -12,7 +12,6 @@ class NomenclatureTranslationRu(ru.Entity):
         'stock': 'Остаток',
         'cost': 'Себестоимость',
         'price': 'Цена',
-        'has_recipe': 'Есть техкарта',
     })
 
 
@@ -25,7 +24,6 @@ class NomenclatureTranslationEn(en.Entity):
         'stock': 'Stock',
         'cost': 'Cost',
         'price': 'Price',
-        'has_recipe': 'Has recipe',
     })
 
 

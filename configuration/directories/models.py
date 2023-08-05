@@ -7,5 +7,5 @@ from .operation_reasons.model import OperationReason
 from .positions.model import Position
 from .price_groups.model import PriceGroup
 from .providers.model import Provider
-from .recipe_cards.model import RecipeCard, RecipeCardIngredients
+from .recipe_cards.model import RecipeCard, RecipeCardValuesList
 from .users.model import User

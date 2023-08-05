@@ -15,6 +15,7 @@ class Popup(Container):
             content: Control,
             title: str = None,
             on_close: Callable[[], Coroutine[..., ..., None]] = None,
+            size: tuple[float | int, float | int] = None
     ):
         super().__init__(
             top=0,
@@ -47,6 +48,8 @@ class Popup(Container):
             padding=10,
             border_radius=15,
         )
+        if size:
+            self.set_size(*size)
 
     async def close(self, e=None):
         if self.on_close:

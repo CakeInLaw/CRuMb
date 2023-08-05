@@ -9,7 +9,7 @@ __all__ = ["EmployeeRepository"]
 
 
 @register_repository
-class EmployeeRepository(DirectoryRepository):
+class EmployeeRepository(DirectoryRepository[Employee]):
     model = Employee
 
     _t_ru = ru.Entity(

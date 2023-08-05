@@ -16,6 +16,6 @@ class HozRepository(NomenclatureTypeBaseRepository):
         name_plural='Хозтовары',
     )
     _t_en = NomenclatureTranslation.En(
-        name='household good',
-        name_plural='household goods',
+        name='Household good',
+        name_plural='Household goods',
     )

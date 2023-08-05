@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import TypeVar, Any
+from typing import TypeVar, Any, TypedDict
 from uuid import UUID
 
 from tortoise import fields
@@ -21,6 +21,10 @@ FK_TYPE = orm_fields.IntField | orm_fields.SmallIntField | orm_fields.BigIntFiel
 
 
 BackFKData = list[DATA]
+ValuesListData = TypedDict('ValuesListData', fields={
+    'head': tuple[str],
+    'values': list[tuple[...]]
+})
 
 
 @dataclass
@@ -32,7 +36,7 @@ class SortedData:
     fk: dict[str, DATA] = field(default_factory=dict)
     fk_pk: dict[str, int] = field(default_factory=dict)
     back_o2o: dict[str, DATA] = field(default_factory=dict)
-    back_fk: dict[str, BackFKData] = field(default_factory=dict)
+    back_fk: dict[str, BackFKData | ValuesListData] = field(default_factory=dict)
 
 
 @dataclass

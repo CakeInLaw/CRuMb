@@ -1,2 +1,2 @@
 from .model import AccumRegister, AccumRegisterResult
-from .repository import AccumRegisterRepository, AccumRegisterResultRepository
+from .repository import AccumRegisterRepository

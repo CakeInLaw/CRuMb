@@ -9,7 +9,7 @@ __all__ = ["CustomerRepository"]
 
 
 @register_repository
-class CustomerRepository(DirectoryRepository):
+class CustomerRepository(DirectoryRepository[Customer]):
     model = Customer
 
     _t_ru = ru.Entity(
@@ -26,6 +26,3 @@ class CustomerRepository(DirectoryRepository):
             'register_address': 'Register address',
         },
     )
-
-    def qs_select_related(self) -> tuple[str]:
-        return 'price_group',

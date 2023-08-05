@@ -1,14 +1,14 @@
-from core.orm.base_model import BaseModel
+from core.entities.registers import BaseRegister, BaseRegisterResult
 
 
 __all__ = ["InfoRegister", "InfoRegisterResult"]
 
 
-class InfoRegister(BaseModel):
+class InfoRegister(BaseRegister):
     class Meta:
         abstract = True
 
 
-class InfoRegisterResult(BaseModel):
+class InfoRegisterResult(BaseRegisterResult):
     class Meta:
         abstract = True

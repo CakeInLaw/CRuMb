@@ -56,15 +56,16 @@ class ContentBox(Container, Box):
         await self.load_content()
 
     async def load_content(self, e=None):
-        self.payload = await self.resource.get_payload(
-            box=self,
-            method=self.tab.info.method,
-            **self.filter_payload_query(self.tab.info),
-        )
-        if hasattr(self.payload, '__tab_title__'):
-            self.change_title(self.payload.__tab_title__)
-            await self.tab.update_async()
-        await self.update_async()
+        async with self.app.error_tracker():
+            self.payload = await self.resource.get_payload(
+                box=self,
+                method=self.tab.info.method,
+                **self.filter_payload_query(self.tab.info),
+            )
+            if hasattr(self.payload, '__tab_title__'):
+                self.change_title(self.payload.__tab_title__)
+                await self.tab.update_async()
+            await self.update_async()
 
     async def reload_content(self, e=None):
         await self.load_content(e)

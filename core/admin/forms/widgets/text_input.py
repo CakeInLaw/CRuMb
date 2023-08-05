@@ -21,7 +21,7 @@ class TextInputWidget(StrInputWidget):
 @dataclass
 class TextInput(StrInput[TextInputWidget]):
     width: int | float = 500
-    height: int | float = None
+    height: int | float = 200
     resize_width: bool = True
     resize_height: bool = True
 

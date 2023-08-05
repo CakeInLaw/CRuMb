@@ -1,10 +1,10 @@
 from typing import TypeVar
 
-from core.repository import Repository, ListValueRepository
+from core.repository import Repository, ValuesListRepository
 from core.entities.directories import Directory, DirectoryListValue
 
 
-__all__ = ["DirectoryRepository", "DirectoryListValueRepository"]
+__all__ = ["DirectoryRepository"]
 
 
 DirectoryModel = TypeVar('DirectoryModel', bound=Directory)
@@ -12,8 +12,4 @@ DirectoryListValueModel = TypeVar('DirectoryListValueModel', bound=DirectoryList
 
 
 class DirectoryRepository(Repository[DirectoryModel]):
-    pass
-
-
-class DirectoryListValueRepository(ListValueRepository[DirectoryListValueModel]):
     pass

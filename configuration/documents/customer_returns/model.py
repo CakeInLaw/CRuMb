@@ -3,13 +3,13 @@ from typing import TYPE_CHECKING, Union
 from tortoise import fields
 from core.orm import fields as orm_fields
 
-from ..base_nomenclature_move_documents.model import MoveDocument, MoveDocumentListValue
+from ..base_nomenclature_move_documents.model import MoveDocument, MoveDocumentValuesList
 
 if TYPE_CHECKING:
     from configuration.documents.models import Sale
 
 
-__all__ = ["CustomerReturn", "CustomerReturnValue"]
+__all__ = ["CustomerReturn", "CustomerReturnValuesList"]
 
 
 class CustomerReturn(MoveDocument):
@@ -21,20 +21,17 @@ class CustomerReturn(MoveDocument):
         'documents.Sale', related_name='returns', on_delete=fields.RESTRICT
     )
 
-    values_list: list["CustomerReturnValue"] | fields.BackwardFKRelation["CustomerReturnValue"]
+    values_list: list["CustomerReturnValuesList"] | fields.BackwardFKRelation["CustomerReturnValuesList"]
 
     class Meta:
         table = "doc__customer_returns"
-        ordering = ('dt',)
 
 
-class CustomerReturnValue(MoveDocumentListValue):
-    count: float = orm_fields.FloatField(min_value=0)
+class CustomerReturnValuesList(MoveDocumentValuesList):
     price: float = orm_fields.FloatField(min_value=0)
-    doc: Union["CustomerReturn", fields.ForeignKeyRelation["CustomerReturn"]] = fields.ForeignKeyField(
+    owner: Union["CustomerReturn", fields.ForeignKeyRelation["CustomerReturn"]] = fields.ForeignKeyField(
         'documents.CustomerReturn', related_name='values_list', on_delete=fields.CASCADE
     )
 
     class Meta:
         table = "doc__customer_returns__values"
-        ordering = 'ordering',

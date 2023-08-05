@@ -9,7 +9,7 @@ __all__ = ["CustomerLocationRepository"]
 
 
 @register_repository
-class CustomerLocationRepository(DirectoryRepository):
+class CustomerLocationRepository(DirectoryRepository[CustomerLocation]):
     model = CustomerLocation
 
     _t_ru = ru.Entity(

@@ -1,5 +1,6 @@
 import asyncio
 import importlib
+from contextlib import asynccontextmanager
 from typing import Type, TypeVar, Any, Callable, Coroutine
 
 from flet import (
@@ -12,8 +13,9 @@ from tortoise import Tortoise
 from core.enums import NotifyStatus
 from core.admin.layout import Header, TabsBar, PayloadInfo, Sidebar, MenuGroup, ContentsBoxContainer, Popover, Popup
 from core.translations.app_translation import AppTranslation
+from .components.errors import UnhandledErrorContainer
 
-from .resource import Resource
+from core.admin.resources import Resource
 
 
 RESOURCE = TypeVar("RESOURCE", bound=Resource)
@@ -154,7 +156,7 @@ class CRuMbAdmin(UserControl):
             content = Text(content)
         match status:
             case NotifyStatus.SUCCESS:
-                bgcolor = 'primary'
+                bgcolor = 'green'
             case NotifyStatus.ERROR:
                 bgcolor = 'error'
             case NotifyStatus.WARN:
@@ -170,20 +172,19 @@ class CRuMbAdmin(UserControl):
             on_action=on_action
         ))
 
-    async def dashboard(self):
-        return Text('Тут будет дэшборд')
-
     async def add_popup(
             self,
             content: Control,
             title: str = None,
             on_close: Callable[[], Coroutine[..., ..., None]] = None,
+            size: tuple[float | int, float | int] = None
     ) -> Popup:
         popup = Popup(
             app=self,
             content=content,
             title=title,
             on_close=on_close,
+            size=size
         )
         self.controls.append(popup)
         await self.update_async()
@@ -214,3 +215,11 @@ class CRuMbAdmin(UserControl):
             return
         self.controls.remove(popover)
         await self.update_async()
+
+    @asynccontextmanager
+    async def error_tracker(self):
+        try:
+            yield
+        except Exception as e:
+            await UnhandledErrorContainer.open_in_popup(app=self, error=e)
+            raise e

@@ -8,9 +8,6 @@ from .input import InputWidget, Input
 
 
 class IntInputWidget(InputWidget[int]):
-    min_value: Optional[int]
-    max_value: Optional[int]
-
     @property
     def final_value(self) -> int:
         return int(self.value)

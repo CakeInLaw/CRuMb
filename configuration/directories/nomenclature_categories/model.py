@@ -23,7 +23,6 @@ class NomenclatureCategory(Directory):
 
     class Meta:
         table = "dir__nomenclature_category"
-        ordering = ('id',)
 
     def __str__(self) -> str:
         return self.name

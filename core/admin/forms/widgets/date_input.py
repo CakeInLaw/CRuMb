@@ -9,13 +9,12 @@ from .input import InputWidget, Input
 
 
 class DateInputWidget(InputWidget[date]):
-    min_date: Optional[date]
-    max_date: Optional[date]
     date_fmt = '%d.%m.%Y'
+    real_value: Optional[date]
 
     @property
     def final_value(self) -> Optional[date]:
-        return self.to_date()
+        return self.real_value
 
     def __init__(
             self,
@@ -30,31 +29,36 @@ class DateInputWidget(InputWidget[date]):
         self.max_date = max_date
         self.__finalize_init__()
 
-    def to_date(self) -> Optional[date]:
-        if self.value == '':
+    def to_date(self, value: str) -> Optional[date]:
+        if value == '':
             return
-        return datetime.strptime(self.value, self.date_fmt).date()
+        return datetime.strptime(value, self.date_fmt).date()
 
     def _validate(self) -> None:
-        empty = self.value == ''
-        if self.required and empty:
-            raise InputValidationError('Обязательное поле')
-        if empty:
+        if self.real_value is None:
+            if self.value != '':
+                raise InputValidationError('Неверный формат')
+            if self.required:
+                raise InputValidationError('Обязательное поле')
             return None
-        try:
-            date_v = self.to_date()
-        except ValueError:
-            raise InputValidationError(f'Формат даты ({self.date_fmt})')
-        if self.min_date is not None and date_v < self.min_date:
+        if self.min_date is not None and self.real_value < self.min_date:
             raise InputValidationError(f'Минимум {self.min_date.strftime(self.date_fmt)}')
-        if self.max_date is not None and date_v > self.max_date:
+        if self.max_date is not None and self.real_value > self.max_date:
             raise InputValidationError(f'Максимум {self.max_date.strftime(self.date_fmt)}')
 
-    def set_value(self, value: Optional[date], initial: bool = False):
-        assert value is None or isinstance(value, date)
+    def set_value(self, value: Optional[str | date], initial: bool = False):
+        assert value is None or isinstance(value, (str, date))
         if value is None:
+            self.real_value = None
             self.value = ''
+        elif isinstance(value, str):
+            self.value = value
+            try:
+                self.real_value = self.to_date(value)
+            except ValueError:
+                self.real_value = None
         else:
+            self.real_value = value
             self.value = value.strftime(self.date_fmt)
 
 

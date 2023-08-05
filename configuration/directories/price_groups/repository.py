@@ -9,7 +9,7 @@ __all__ = ["PriceGroupRepository"]
 
 
 @register_repository
-class PriceGroupRepository(DirectoryRepository):
+class PriceGroupRepository(DirectoryRepository[PriceGroup]):
     model = PriceGroup
 
     _t_ru = ru.Entity(

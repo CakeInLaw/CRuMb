@@ -7,7 +7,7 @@ from core.entities.directories import Directory
 from configuration.enums import NomenclatureTypes, NomenclatureUnits
 
 if TYPE_CHECKING:
-    from configuration.directories.models import RecipeCard, RecipeCardIngredients, NomenclatureCategory
+    from configuration.directories.models import RecipeCard, NomenclatureCategory
     from configuration.accum_registers.models import NomenclatureStock, NomenclatureStockResult
     from configuration.info_registers.models import NomenclatureCost, NomenclaturePrice
 
@@ -28,7 +28,6 @@ class Nomenclature(Directory):
     units: NomenclatureUnits = orm_fields.CharEnumField(NomenclatureUnits)
 
     recipe: Union["RecipeCard", fields.BackwardOneToOneRelation["RecipeCard"]]
-    ingredient_of: list["RecipeCardIngredients"] | fields.BackwardFKRelation["RecipeCardIngredients"]
 
     stock_history: list["NomenclatureStock"] | fields.BackwardFKRelation["NomenclatureStock"]
     stock: Union["NomenclatureStockResult", fields.BackwardOneToOneRelation["NomenclatureStockResult"]]
@@ -41,12 +40,6 @@ class Nomenclature(Directory):
 
     class Meta:
         table = "dir__nomenclature"
-        ordering = ('id',)
 
     def __str__(self) -> str:
         return self.name
-
-    @property
-    def has_recipe(self) -> bool:
-        assert self.recipe is None or isinstance(self.recipe, Directory)
-        return bool(self.recipe)

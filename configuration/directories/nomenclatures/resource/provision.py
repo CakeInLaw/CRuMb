@@ -4,8 +4,8 @@ from .default import (
     NomenclatureTypeBaseResource,
     nom_type_list_form_primitive,
     nom_type_create_form_primitive,
-    RecipeInputSchema,
     nom_type_edit_form_primitive,
+    RecipeInputSchema,
 )
 from ..repository import ProvisionRepository
 
@@ -19,4 +19,5 @@ class ProvisionResource(NomenclatureTypeBaseResource[ProvisionRepository]):
     create_form_primitive = nom_type_create_form_primitive.copy().add(RecipeInputSchema)
     edit_form_primitive = nom_type_edit_form_primitive.copy().add(RecipeInputSchema)
 
-    edit_prefetch_related = ('recipe__ingredients', )
+    edit_select_related = ('recipe', )
+    edit_prefetch_related = ('recipe__values_list__product', )

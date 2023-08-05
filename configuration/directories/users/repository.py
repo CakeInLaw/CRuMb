@@ -1,7 +1,6 @@
 import re
 from random import choices
 from string import hexdigits
-from typing import Optional
 
 from tortoise import timezone
 from passlib.context import CryptContext
@@ -24,7 +23,7 @@ UNUSED_PASSWORD_PREFIX = '!'
 
 
 @register_repository
-class UserRepository(DirectoryRepository):
+class UserRepository(DirectoryRepository[User]):
     model = User
 
     hidden_fields: set[str] = {'password_hash', 'password_change_dt', 'password_salt'}
@@ -64,7 +63,6 @@ class UserRepository(DirectoryRepository):
             self,
             value: str,
             data: DATA,
-            instance: Optional[User]
     ) -> None:
         if self.password_pattern.match(value):
             raise PasswordIncorrect
@@ -73,7 +71,6 @@ class UserRepository(DirectoryRepository):
             self,
             value: str,
             data: DATA,
-            instance: Optional[User]
     ):
         if value != data.get('password'):
             raise PasswordMismatch

@@ -63,14 +63,15 @@ class ModalBox(Container, Box):
         self.payload_container.content = v
 
     async def load_content(self):
-        self.payload = await self.resource.get_payload(
-            box=self,
-            method=self.info.method,
-            **self.filter_payload_query(self.info),
-        )
-        if hasattr(self.payload, '__tab_title__'):
-            self.change_title(self.payload.__tab_title__)
-        await self.update_async()
+        async with self.app.error_tracker():
+            self.payload = await self.resource.get_payload(
+                box=self,
+                method=self.info.method,
+                **self.filter_payload_query(self.info),
+            )
+            if hasattr(self.payload, '__tab_title__'):
+                self.change_title(self.payload.__tab_title__)
+            await self.update_async()
 
     async def reload_content(self):
         await self.load_content()
