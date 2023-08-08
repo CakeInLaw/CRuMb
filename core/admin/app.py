@@ -1,6 +1,8 @@
 import asyncio
 import importlib
 from contextlib import asynccontextmanager
+from os import getenv
+from pathlib import Path
 from typing import Type, TypeVar, Any, Callable, Coroutine
 
 from flet import (
@@ -115,10 +117,11 @@ class CRuMbAdmin(UserControl):
     @classmethod
     def run_app(cls, **kwargs):
         kwargs.setdefault('target', cls.run_target)
-        cls._init_translations()
+        kwargs.setdefault('assets_dir', (Path().parent.absolute() / 'configuration' / 'assets').as_posix())
+        kwargs.setdefault('view', None)
+        kwargs.setdefault('host', getenv('HOST', None))
+        kwargs.setdefault('port', int(getenv('PORT', '8000')))
         asyncio.get_event_loop().run_until_complete(cls.on_startup())
-        importlib.import_module('configuration.repositories')
-        importlib.import_module('configuration.resources')
         flet_app(**kwargs)
         asyncio.get_event_loop().run_until_complete(cls.on_shutdown())
 
@@ -131,8 +134,11 @@ class CRuMbAdmin(UserControl):
 
     @classmethod
     async def on_startup(cls):
+        cls._init_translations()
         settings = importlib.import_module('configuration.settings')
         await Tortoise.init(config=settings.DATABASE)
+        importlib.import_module('configuration.repositories')
+        importlib.import_module('configuration.resources')
 
     @classmethod
     async def on_shutdown(cls):

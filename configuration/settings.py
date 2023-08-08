@@ -1,13 +1,16 @@
+from os import getenv
+
+
 DATABASE = {
     'connections': {
         'default': {
             "engine": 'tortoise.backends.asyncpg',
             'credentials': {
-                'host': '127.0.0.1',
-                'port': '5432',
-                'user': 'postgres',
-                'password': 'postgres',
-                'database': 'CRuMb',
+                'host': getenv('DB_HOST', '127.0.0.1'),
+                'port': getenv('DB_PORT', '5432'),
+                'user': getenv('DB_USER', 'postgres'),
+                'password': getenv('DB_PWD', 'postgres'),
+                'database': getenv('DB_NAME', 'CRuMb'),
             },
         }
     },

@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  pg:
+    container_name: 'pg'
+    image: postgres:15.3-alpine
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: CakeInLaw
+    volumes:
+      - ./data/pg:/var/lib/postgresql/data
+
+  app:
+    container_name: 'app'
+    image: cakeinlaw/crumb-app
+    restart: always
+    expose:
+      - "8000"
+    environment:
+      DB_HOST: pg
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PWD: postgres
+      DB_NAME: CakeInLaw
+      HOST: "0.0.0.0"
+      PORT: "8000"
+
+  nginx:
+    container_name: 'nginx'
+    image: nginx:1.25-alpine
+    restart: always
+    volumes:
+      - ./data/admin.nginx.conf:/etc/nginx/conf.d/admin.conf:ro
+    ports:
+      - "80:80"
