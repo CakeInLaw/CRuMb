@@ -25,6 +25,7 @@ class BaseListForm(Form):
             prefetch_related: tuple[str] = None,
     ):
         super().__init__(box=box)
+        self.app = self.box.app
         self.resource = self.box.resource
         widget_creator = WidgetSchemaCreator(resource=self.resource, all_read_only=True, allow_groups=False)
         self.widget_schemas: list[UserInput] = [widget_creator.from_primitive_item(item) for item in primitive]

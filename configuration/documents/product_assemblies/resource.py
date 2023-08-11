@@ -17,7 +17,7 @@ class ProductAssemblyResource(DocumentResource[ProductAssemblyRepository]):
     list_form_primitive = Primitive(
         'unique_number',
         'dt',
-        'product',
+        'product_id',
         'count',
         'responsible_id',
     )
@@ -25,13 +25,12 @@ class ProductAssemblyResource(DocumentResource[ProductAssemblyRepository]):
     common_select_related = ('product', 'responsible')
     edit_prefetch_related = ('values_list__nomenclature', )
     form_primitive = Primitive(
-        {'name': 'group1', 'primitive': Primitive('receive_id', 'responsible_id', 'dt')},
+        {'name': 'group1', 'primitive': Primitive('product_id', 'responsible_id', 'dt')},
         ('values_list', {
             'object_schema': {
                 'primitive': Primitive(
                     ('nomenclature_id', {'width': 300}),
                     ('count', {'width': 100}),
-                    ('price', {'width': 100}),
                 ),
             },
         }),

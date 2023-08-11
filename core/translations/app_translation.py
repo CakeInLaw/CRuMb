@@ -27,7 +27,7 @@ class AppTranslation:
         for lang in self.languages:
             repo_lang: EntityTranslation = getattr(repo, f'_t_{lang}', None)
             if repo_lang is None:
-                ValueError(f'{repo} не имеет перевода для языка {lang}')
+                raise ValueError(f'{repo} не имеет перевода для языка {lang}')
             repo_languages[lang] = repo_lang
         for lang_name, translation in repo_languages.items():
             self.languages[lang_name].add_entity(repo.entity(), translation)

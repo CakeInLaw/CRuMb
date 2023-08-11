@@ -1,4 +1,9 @@
-from configuration.admin import CakeInLawAdmin
+from sys import argv
 
+from core.commands.commands import run_command
 
-CakeInLawAdmin.run_app()
+if len(argv) == 1:
+    command_name = 'flet'
+else:
+    command_name = argv.pop(1)
+run_command(command_name)

@@ -3,12 +3,13 @@ from typing import TYPE_CHECKING
 from flet import Container, Card, Control, Row, Column, Text, MainAxisAlignment, ClipBehavior, ScrollMode,\
     Theme, ColorScheme
 
-from .loader import Loader
-from .payload import Box
-from ..components.buttons import CloseButton
+from .box import Box
+from ..loader import Loader
+from ...components.buttons import CloseButton
 
 if TYPE_CHECKING:
-    from core.admin.layout import ContentBox, PayloadInfo
+    from .content_box import ContentBox
+    from ..payload import PayloadInfo
 
 
 class ModalBox(Container, Box):

@@ -20,15 +20,15 @@ class PriceSetupResource(DocumentResource[PriceSetupRepository]):
         'price_group_id',
     )
 
-    common_select_related = ('price_group_id',)
+    common_select_related = ('price_group',)
     edit_prefetch_related = ('values_list__nomenclature',)
     form_primitive = Primitive(
-        {'name': 'group1', 'primitive': Primitive('price_group_id', 'responsible_id', 'dt')},
+        {'name': 'group1', 'primitive': Primitive('price_group_id', 'dt')},
         ('values_list', {
             'object_schema': {
                 'primitive': Primitive(
                     ('nomenclature_id', {'width': 300}),
-                    ('price', {'width': 100}),
+                    ('count', {'width': 100}),
                 ),
             },
         }),

@@ -3,7 +3,7 @@ import importlib
 from contextlib import asynccontextmanager
 from os import getenv
 from pathlib import Path
-from typing import Type, TypeVar, Any, Callable, Coroutine
+from typing import Type, TypeVar, Any, Callable, Coroutine, TYPE_CHECKING, ClassVar
 
 from flet import (
     Page, UserControl, Control, Column, Row, Text,
@@ -13,26 +13,32 @@ from flet import (
 from tortoise import Tortoise
 
 from core.enums import NotifyStatus
-from core.admin.layout import Header, TabsBar, PayloadInfo, Sidebar, MenuGroup, ContentsBoxContainer, Popover, Popup
 from core.translations.app_translation import AppTranslation
-from .components.errors import UnhandledErrorContainer
-
+from core.orm import connection as db_connection
+from core.admin.layout import Header, TabsBar, PayloadInfo, Sidebar, MenuGroup, ContentsBoxContainer, Popover, Popup
 from core.admin.resources import Resource
 
+from .components.errors import UnhandledErrorContainer
+from .login_view import LoginView
+from ..utils import import_string, get_settings
+
+if TYPE_CHECKING:
+    from core.users.repository import BaseUserRepository, USER_MODEL
 
 RESOURCE = TypeVar("RESOURCE", bound=Resource)
 
 
 class CRuMbAdmin(UserControl):
-    _resources: dict[str, Type["Resource"]] = {}
-    BASE_URL = 'http://127.0.0.1'
-    title: str = 'CRuMb Admin'
-    menu_groups: list[Type[MenuGroup]] = []
-    translations: AppTranslation
+    _resources: ClassVar[dict[str, Type["Resource"]]] = {}
+    title: ClassVar[str] = 'CRuMb Admin'
+    menu_groups: ClassVar[list[Type[MenuGroup]]] = []
+    translations: ClassVar[AppTranslation]
+    user_repository: ClassVar[Type["BaseUserRepository"]]
 
-    def __init__(self, page: Page):
+    def __init__(self, page: Page, user: "USER_MODEL"):
         super().__init__(expand=True)  # чтобы вложенные элементы тоже расширялись
 
+        self.user = user
         self.translation = self.translations.get('ru')
         self._init_resources()
         self.page = page
@@ -115,34 +121,37 @@ class CRuMbAdmin(UserControl):
         cls.translations = importlib.import_module('configuration.translations').app_translations
 
     @classmethod
+    def run_app_kwargs(cls):
+        return {
+            'target': cls.run_target,
+            'assets_dir': (Path().parent.absolute() / 'configuration' / 'assets').as_posix(),
+            'view': None,
+            'host': getenv('HOST', None),
+            'port': int(getenv('PORT', '8000')),
+        }
+
+    @classmethod
     def run_app(cls, **kwargs):
-        kwargs.setdefault('target', cls.run_target)
-        kwargs.setdefault('assets_dir', (Path().parent.absolute() / 'configuration' / 'assets').as_posix())
-        kwargs.setdefault('view', None)
-        kwargs.setdefault('host', getenv('HOST', None))
-        kwargs.setdefault('port', int(getenv('PORT', '8000')))
         asyncio.get_event_loop().run_until_complete(cls.on_startup())
-        flet_app(**kwargs)
+        flet_app(**{**cls.run_app_kwargs(), **kwargs})
         asyncio.get_event_loop().run_until_complete(cls.on_shutdown())
 
     @classmethod
     async def run_target(cls, page: Page):
         page.title = cls.title
         page.padding = 0
-        app = cls(page)
-        await page.add_async(app)
+        await page.add_async(LoginView(cls))
 
     @classmethod
     async def on_startup(cls):
         cls._init_translations()
-        settings = importlib.import_module('configuration.settings')
-        await Tortoise.init(config=settings.DATABASE)
-        importlib.import_module('configuration.repositories')
+        await db_connection.init()
+        cls.user_repository = import_string(get_settings().USER_REPOSITORY)
         importlib.import_module('configuration.resources')
 
     @classmethod
     async def on_shutdown(cls):
-        await Tortoise.close_connections()
+        await db_connection.close()
 
     async def open(self, info: PayloadInfo) -> None:
         if tab := self.tabs_bar.tab_by_info(info=info):

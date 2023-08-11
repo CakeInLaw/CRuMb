@@ -27,8 +27,25 @@ class StrInputWidget(InputWidget[str]):
         self.min_length = min_length
         self.empty_as_none = empty_as_none
         if is_password:
-            self.password = self.can_reveal_password = True
+            self.password = True
         self.__finalize_init__()
+
+    @property
+    def password(self):
+        return self.input.password
+
+    @password.setter
+    def password(self, v: bool):
+        self.input.password = v
+
+    @property
+    def value(self):
+        return self.input.value
+
+    @value.setter
+    def value(self, v: str):
+        self.text.value = '•' * len(v) if self.password else v
+        self.input.value = v
 
     def _validate(self) -> None:
         if self.max_length is not None and len(self.value) > self.max_length:

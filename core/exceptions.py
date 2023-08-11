@@ -13,6 +13,10 @@ class InvalidType(ValueError):
     """Выбрасывается, когда в репозиторий передано значение не того типа"""
 
 
+class NotAuthenticated(ValueError):
+    """Выбрасывается, когда пользователь ввел неправильный логин или пароль"""
+
+
 class FieldError(Exception):
     key: str
     msg: str

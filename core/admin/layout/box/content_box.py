@@ -2,8 +2,8 @@ from typing import TYPE_CHECKING
 
 from flet import Control, Column, Container, Stack, BoxShadow, ClipBehavior, ScrollMode
 
-from .loader import Loader
-from .payload import Box
+from ..loader import Loader
+from .box import Box
 from .modal_box import ModalBox
 
 if TYPE_CHECKING:

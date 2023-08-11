@@ -195,7 +195,7 @@ class UserInput(Generic[_I]):
     ignore: bool = False
     ignore_if_none: bool = False
     default: Any = None
-    on_value_change: Callable[[UserInputWidget], Coroutine[Any, Any, None]] = None
+    on_value_change: Callable[[UserInputWidget], None] = None
     helper_text: str = None
     width: int | float = 350
     height: int | float = 40

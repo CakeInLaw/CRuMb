@@ -16,13 +16,12 @@ class Form(UserControl):
     ):
         UserControl.__init__(self)
         self.box = box
-        self.app = box.app
 
     def build(self):
         controls = []
         self.body = self.build_body()
         self.action_bar: Row = self.get_action_bar()
-        if self.action_bar:
+        if self.action_bar.controls:
             controls.append(self.action_bar)
         controls.append(self.body)
         return Column(controls=controls, spacing=10)

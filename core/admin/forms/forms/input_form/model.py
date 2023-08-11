@@ -38,6 +38,7 @@ class ModelInputForm(Generic[REP], SimpleInputForm):
         else:
             self.instance = None
         super().__init__(box=box, initial=initial)
+        self.app = self.box.app
         self.resource = resource
         self.primitive = primitive
         self.on_success = on_success or self.on_success_default

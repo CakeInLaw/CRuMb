@@ -1,6 +1,7 @@
 import importlib
 
 from core.repository.base import REPOSITORY
+from core.utils import import_string, get_settings
 
 
 def register_repository(repo_cls: REPOSITORY) -> REPOSITORY:
@@ -10,5 +11,5 @@ def register_repository(repo_cls: REPOSITORY) -> REPOSITORY:
     if repo_name in repo_cls.model.REPOSITORIES:
         raise ValueError(f'{repo_cls.model} уже имеет репозиторий с именем {repo_name}')
     repo_cls.model.REPOSITORIES[repo_name] = repo_cls
-    importlib.import_module('configuration.translations').app_translations.add_repository(repo_cls)
+    import_string(get_settings().APP_TRANSLATIONS).add_repository(repo_cls)
     return repo_cls

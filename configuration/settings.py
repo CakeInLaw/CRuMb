@@ -24,3 +24,7 @@ DATABASE = {
     'use_tz': True,
     'timezone': 'Europe/Moscow'
 }
+
+FLET_APP = 'configuration.admin.CakeInLawAdmin'
+USER_REPOSITORY = 'configuration.directories.users.repository.UserRepository'
+APP_TRANSLATIONS = 'configuration.translations.app_translations'
