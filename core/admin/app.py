@@ -238,3 +238,8 @@ class CRuMbAdmin(UserControl):
         except Exception as e:
             await UnhandledErrorContainer.open_in_popup(app=self, error=e)
             raise e
+
+    async def logout(self, e=None):
+        page = self.page
+        await page.clean_async()
+        await page.add_async(LoginView(self.__class__))

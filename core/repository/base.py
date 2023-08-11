@@ -19,9 +19,9 @@ class BaseRepository(Generic[MODEL]):
     model: Type[MODEL]
     _REPOSITORY_NAME: str = '__default__'
 
-    hidden_fields: set[str] = set()
-    extra_allowed: set[str] = set()
-    calculated: dict[str, FieldTypes] = dict()  # заменить на mutable?
+    hidden_fields: set[str] = set()  # заменить на mutable?
+    extra_allowed: dict[str, FieldTypes | tuple[FieldTypes, dict[str, ...]]] = dict()  # заменить на mutable?
+    calculated: dict[str, FieldTypes | tuple[FieldTypes, dict[str, ...]]] = dict()  # заменить на mutable?
     related_repositories: dict[str, str] = dict()  # заменить на mutable?
 
     @classmethod

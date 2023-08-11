@@ -96,11 +96,22 @@ class WidgetSchemaCreator:
                 field_type, common_extra = field_type
                 extra = {**common_extra, **extra}
             return self.widget_schema_classes[field_type](**{  # type: ignore
+                'name': field_name,
                 'label': label,
                 'editable': False,
                 'ignore': True,
-                'name': field_name,
                 **extra,
+            })
+        if field_name in self.repository.extra_allowed:
+            label = self.resource.translate_field(field_name)
+            field_type = self.repository.extra_allowed[field_name]
+            if isinstance(field_type, tuple):
+                field_type, common_extra = field_type
+                extra = {**common_extra, **extra}
+            return self.widget_schema_classes[field_type](**{  # type: ignore
+                'name': field_name,
+                'label': label,
+                **extra
             })
         field_type, field = self.repository.get_field_type_and_instance(field_name)
         if field_type.is_hidden():
@@ -135,6 +146,7 @@ class WidgetSchemaCreator:
                 'null',
                 'required',
                 'editable',
+                'ignore',
                 'ignore_if_none',
                 'default',
                 'on_value_change',

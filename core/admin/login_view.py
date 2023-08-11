@@ -80,6 +80,7 @@ class LoginForm(SimpleInputForm):
 
     async def login(self, e=None):
         if not self.form_is_valid():
+            await self.update_async()
             return
         try:
             user = await self.box.app_cls.user_repository().authenticate(**self.cleaned_data())

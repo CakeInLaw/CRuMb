@@ -129,15 +129,10 @@ class CrudResource(Resource[REP]):
             on_success: Callable[[ModelInputForm[REP], "BaseModel"], Coroutine[..., ..., None]] = None,
             on_error: Callable[[ModelInputForm[REP], "ObjectErrors"], Coroutine[..., ..., None]] = None,
     ) -> ModelInputForm[REP] | Control:
-        try:
-            instance = await self.repository(
-                select_related=await self.get_edit_select_related(),
-                prefetch_related=await self.get_edit_prefetch_related(),
-            ).get_one(pk)
-        except ItemNotFound:
-            error = Text('Объект не найден')
-            error.__tab_title__ = 'Ошибка'
-            return error
+        instance = await self.repository(
+            select_related=await self.get_edit_select_related(),
+            prefetch_related=await self.get_edit_prefetch_related(),
+        ).get_one(pk)
         primitive = self.edit_form_primitive or self.form_primitive
         model_form = self.edit_model_form or self.model_form
         form = model_form(

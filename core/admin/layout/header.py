@@ -1,6 +1,10 @@
 from typing import TYPE_CHECKING
 
-from flet import Container, Row, Text, PopupMenuButton, PopupMenuItem, MainAxisAlignment, padding
+from flet import (
+    Container, Row, Icon, icons,
+    Text, PopupMenuButton, PopupMenuItem,
+    MainAxisAlignment, padding
+)
 
 if TYPE_CHECKING:
     from ..app import CRuMbAdmin
@@ -20,10 +24,10 @@ class Header(Container):
             controls=[
                 Text(app.title, color='background', size=20),
                 PopupMenuButton(
+                    content=Icon(icons.MORE_VERT_ROUNDED, color='background'),
                     items=[
-                        PopupMenuItem(text="Настройки"),
-                        PopupMenuItem(),  # divider
-                        PopupMenuItem(text="Выход"),
+                        PopupMenuItem(text="Выход", on_click=self.app.logout),
+                        # PopupMenuItem(),  # divider
                     ],
                 )
             ],

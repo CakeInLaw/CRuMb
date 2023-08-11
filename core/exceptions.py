@@ -36,6 +36,7 @@ class AnyFieldError(FieldError):
 
 NotUnique = AnyFieldError('not_unique', 'Значение не уникально')
 NotFoundFK = AnyFieldError('not_found_fk', 'Запись в БД не найдена')
+NotFound = AnyFieldError('not_found', 'Запись в БД не найдена')
 FieldRequired = AnyFieldError('required_field', 'Обязательное поле')
 OldPasswordIsIncorrect = AnyFieldError('old_password_is_incorrect', 'Старый пароль неверный')
 
